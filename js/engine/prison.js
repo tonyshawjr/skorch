@@ -37,17 +37,20 @@ export function isPrisonEmpty(prison) {
 
 export function getUnlockedCards(prison) {
     const unlocked = [];
+    // Unlocked = accessible position. Face-up or face-down doesn't matter.
+    // Front row cards are always accessible if they exist.
+    // Back row cards are accessible when the front card at same index is gone.
     for (let i = 0; i < prison.front.length; i++) {
         const slot = prison.front[i];
-        if (slot.card !== null && slot.faceUp) {
-            unlocked.push({ row: 'front', index: i, card: slot.card });
+        if (slot.card !== null) {
+            unlocked.push({ row: 'front', index: i, card: slot.card, faceUp: slot.faceUp });
         }
     }
     for (let i = 0; i < prison.back.length; i++) {
         const slot = prison.back[i];
-        if (slot.card !== null && slot.faceUp) {
+        if (slot.card !== null) {
             if (prison.front[i] && prison.front[i].card === null) {
-                unlocked.push({ row: 'back', index: i, card: slot.card });
+                unlocked.push({ row: 'back', index: i, card: slot.card, faceUp: slot.faceUp });
             }
         }
     }

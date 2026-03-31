@@ -42,7 +42,7 @@ export function showUndeadModal(state, onSwap, onCancel) {
     const myContainer = content.querySelector('#my-cards');
     if (myUnlocked.length > 0) {
         myUnlocked.forEach(u => {
-            const card = createModalCard(u.card);
+            const card = createModalCard(u.card, u.faceUp);
             card.addEventListener('click', () => {
                 myContainer.querySelectorAll('.sk-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
@@ -57,7 +57,8 @@ export function showUndeadModal(state, onSwap, onCancel) {
 
     const theirContainer = content.querySelector('#their-cards');
     theirUnlocked.forEach(u => {
-        const card = createModalCard(u.card);
+        // Always show opponent cards as face-up so you can see what you're taking
+        const card = createModalCard(u.card, u.faceUp);
         card.addEventListener('click', () => {
             theirContainer.querySelectorAll('.sk-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
@@ -84,10 +85,15 @@ export function showUndeadModal(state, onSwap, onCancel) {
     });
 }
 
-function createModalCard(card) {
+function createModalCard(card, faceUp = true) {
     const div = document.createElement('div');
-    div.className = 'sk-card sk-face-up';
-    div.style.backgroundImage = `url('assets/cards/${getCardImage(card)}')`;
+    if (faceUp) {
+        div.className = 'sk-card sk-face-up';
+        div.style.backgroundImage = `url('assets/cards/${getCardImage(card)}')`;
+    } else {
+        div.className = 'sk-card sk-face-down';
+        div.style.backgroundImage = `url('assets/cards/Card-Back.png')`;
+    }
     div.style.backgroundSize = 'var(--card-width) var(--card-height)';
     div.style.backgroundRepeat = 'no-repeat';
     div.style.backgroundPosition = 'center';

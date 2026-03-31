@@ -130,7 +130,8 @@ export function drawCard(state, who) {
 function processSpecialEffect(state, who, card) {
     switch (card.type) {
         case CardType.SKORCH:
-            state.discardPile = [card];
+            // Skorch burns EVERYTHING - the pile AND the Skorch card itself. All removed from game.
+            state.discardPile = [];
             return { type: 'skorch', message: ' Skorch! Discard pile burned.' };
         case CardType.SHIELD:
             return { type: 'shield', message: " Shield! Opponent's turn skipped." };

@@ -114,14 +114,20 @@ function createPlayerArea(state, handlers) {
         handContainer.appendChild(stackDiv);
     }
 
-    if (playable.length === 0 && state.currentTurn === 'player' && !state.gameOver) {
+    if (playable.length === 0 && state.player.hand.length > 0 && state.currentTurn === 'player' && !state.gameOver) {
+        // Only show "no playable cards" when player HAS cards but none are playable
+        // When hand is empty, player should be playing from prison instead
         const noPlays = el('div', 'no-plays-message');
-        noPlays.innerHTML = '<p>No playable cards available</p>';
+        noPlays.innerHTML = '<p>No playable cards - pick up the discard pile</p>';
         const pickupBtn = el('button', 'btn-pickup prominent');
         pickupBtn.textContent = 'Pick Up Discard Pile';
         pickupBtn.addEventListener('click', handlers.onPickup);
         noPlays.appendChild(pickupBtn);
         handContainer.appendChild(noPlays);
+    } else if (state.player.hand.length === 0 && state.currentTurn === 'player' && !state.gameOver) {
+        const prisonMsg = el('div', 'no-plays-message');
+        prisonMsg.innerHTML = '<p style="color: var(--skorch-green);">Hand empty - play from your prison!</p>';
+        handContainer.appendChild(prisonMsg);
     }
 
     handSection.appendChild(handContainer);
@@ -225,9 +231,15 @@ function createControlsBar(state, handlers) {
     buttonStack.appendChild(playBtn);
 
     const pickupBtn = el('button', 'btn-pickup');
-    if (state.currentTurn !== 'player' || state.gameOver) {
+    const canPickup = state.currentTurn === 'player' && !state.gameOver &&
+                      state.player.hand.length > 0 && state.discardPile.length > 0;
+    if (!canPickup) {
         pickupBtn.disabled = true;
-        pickupBtn.textContent = state.gameOver ? 'Game Over' : 'Waiting...';
+        if (state.gameOver) pickupBtn.textContent = 'Game Over';
+        else if (state.currentTurn !== 'player') pickupBtn.textContent = 'Waiting...';
+        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play from Prison';
+        else if (state.discardPile.length === 0) pickupBtn.textContent = 'Pile Empty';
+        else pickupBtn.textContent = 'Pick Up Discard Pile';
     } else {
         pickupBtn.textContent = 'Pick Up Discard Pile';
         pickupBtn.addEventListener('click', handlers.onPickup);

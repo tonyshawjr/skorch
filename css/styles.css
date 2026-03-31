@@ -1,7 +1,7 @@
 :root {
     --skorch-red: #EB2228;
-    --skorch-dark: #242424;
-    --skorch-darker: #161718;
+    --skorch-dark: #1a3a2a;
+    --skorch-darker: #143022;
     --skorch-light: #FFFFFF;
     --skorch-gray: #EFEFEF;
     --skorch-green: #10b981;
@@ -89,10 +89,14 @@ button { font-family: inherit; }
     background-size: var(--card-width) var(--card-height);
     background-repeat: no-repeat; background-position: center;
 }
-.sk-face-up { width: var(--card-width); height: var(--card-height); }
+.sk-face-up {
+    width: var(--card-width); height: var(--card-height);
+    border: 1px solid rgba(0,0,0,0.1);
+}
 .sk-face-down {
     width: var(--card-width); height: var(--card-height);
     background-image: url('../assets/cards/Card-Back.png');
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
 }
 .sk-placeholder {
     background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.15);

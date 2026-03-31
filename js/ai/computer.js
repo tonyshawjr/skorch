@@ -5,6 +5,7 @@ import { isPrisonCardAccessible, getUnlockedCards } from '../engine/prison.js';
 export function computerTurn(state) {
     const thoughts = [];
     const hand = state.computer.hand;
+    const handBefore = hand.map(c => c.type === 'attack' ? `Attack ${c.value}` : c.name).join(', ') || '(empty)';
     const effectiveValue = getEffectiveValue(state);
     thoughts.push(`Value to beat: ${effectiveValue}`);
     thoughts.push(`Hand size: ${hand.length}`);
@@ -22,42 +23,65 @@ export function computerTurn(state) {
         const result = pickupDiscardPile(state, 'computer');
         drawCard(state, 'computer');
         nextTurn(state);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
     }
 
-    const specialPlay = evaluateSpecialCards(state, specials, attacks, thoughts);
-    if (specialPlay) {
-        const result = playFromHand(state, 'computer', [specialPlay.index]);
-        handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
-    }
+    // PRIORITY ORDER:
+    // 1. Stack matching attack cards (always efficient)
+    // 2. Play single attack card (lowest valid)
+    // 3. Use special cards (only when no attacks work, or true emergency)
 
+    // 1. Try stacking first
     const stackPlay = findBestStack(state, attacks, thoughts);
     if (stackPlay) {
         const result = playFromHand(state, 'computer', stackPlay);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
     }
 
+    // 2. Play lowest attack card if we have any
     if (attacks.length > 0) {
         const sorted = [...attacks].sort((a, b) => a.card.value - b.card.value);
         const lowest = sorted[0];
         thoughts.push(`Playing lowest: Attack ${lowest.card.value}`);
         const result = playFromHand(state, 'computer', [lowest.index]);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
     }
 
-    if (specials.length > 0) {
-        thoughts.push(`Fallback: playing ${specials[0].card.name}`);
-        const result = playFromHand(state, 'computer', [specials[0].index]);
+    // 3. No attack cards playable - evaluate specials
+    thoughts.push('No playable attacks - evaluating specials.');
+    const specialPlay = evaluateSpecialCards(state, specials, attacks, thoughts);
+    if (specialPlay) {
+        const result = playFromHand(state, 'computer', [specialPlay.index]);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
     }
 
-    thoughts.push('No moves available (unexpected).');
+    // 4. Fallback: play a useful special card (never waste Shield)
+    if (specials.length > 0) {
+        // Priority: Demoter (resets value) > Skorch (burns pile) > Elude (buys time) > Undead
+        // NEVER play Shield as fallback - it doesn't change the value, just wastes a card
+        const priority = [CardType.DEMOTER, CardType.SKORCH, CardType.ELUDE, CardType.UNDEAD];
+        for (const type of priority) {
+            const card = specials.find(s => s.card.type === type);
+            if (card) {
+                thoughts.push(`Fallback: playing ${card.card.name} (useful)`);
+                const result = playFromHand(state, 'computer', [card.index]);
+                handlePostPlay(state, result, thoughts);
+                return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
+            }
+        }
+        // Only Shield left - don't play it, just pick up instead
+        thoughts.push('Only Shield available - not useful, picking up instead.');
+    }
+
+    // 5. Truly nothing - pick up
+    thoughts.push('No moves at all. Picking up.');
+    const pickResult = pickupDiscardPile(state, 'computer');
+    drawCard(state, 'computer');
     nextTurn(state);
-    return { message: 'Computer passed.', thoughts: thoughts.join('\n') };
+    return { message: pickResult.message, thoughts: thoughts.join('\n'), handBefore };
 }
 
 function handlePostPlay(state, result, thoughts) {
@@ -89,21 +113,35 @@ function evaluateSpecialCards(state, specials, attacks, thoughts) {
     for (const s of specials) {
         switch (s.card.type) {
             case CardType.SKORCH:
-                if (discardSize >= 5 || (noAttacks && discardSize >= 3)) {
+                // Only burn when pile is truly large (8+) or we're desperate
+                if (discardSize >= 8 || (noAttacks && discardSize >= 5)) {
                     thoughts.push(`Playing Skorch (${discardSize} cards in pile)`);
                     return s;
                 }
                 break;
             case CardType.DEMOTER:
-                if (noAttacks && effectiveValue >= 5) {
-                    thoughts.push(`Playing Demoter (value ${effectiveValue} too high)`);
+                // Demoter resets value to 0 - great when we can't play attacks
+                if (noAttacks && effectiveValue >= 3) {
+                    thoughts.push(`Playing Demoter (resets value from ${effectiveValue} to 0)`);
                     return s;
                 }
                 break;
             case CardType.SHIELD:
-                if (playerHandSize <= 2 || (noAttacks && effectiveValue >= 7)) {
-                    thoughts.push(`Playing Shield (player has ${playerHandSize} cards)`);
-                    return s;
+                // Shield skips opponent and gives us another turn, but value stays the same.
+                // Only play if: player is about to win AND we have a card to play on the extra turn.
+                // Never play Shield if we can't beat the current value - we'll just waste it.
+                if (playerHandSize <= 2) {
+                    // Check: can we actually play something on the extra turn?
+                    // After Shield, value to beat stays the same. Do we have an attack that beats it?
+                    const canFollowUp = state.computer.hand.some(c =>
+                        c.type === CardType.ATTACK && c.value >= effectiveValue
+                    );
+                    if (canFollowUp) {
+                        thoughts.push(`Playing Shield (player has ${playerHandSize} cards, have follow-up)`);
+                        return s;
+                    } else {
+                        thoughts.push(`Skipping Shield (can't follow up - no cards beat ${effectiveValue})`);
+                    }
                 }
                 break;
             case CardType.ELUDE:
@@ -126,27 +164,54 @@ function evaluateSpecialCards(state, specials, attacks, thoughts) {
 }
 
 function findBestStack(state, attacks, thoughts) {
+    // Group ALL attack cards in hand by value (not just playable ones)
+    // so we can find stacks even across the full hand
     const groups = {};
     for (const a of attacks) {
         const v = a.card.value;
         if (!groups[v]) groups[v] = [];
         groups[v].push(a);
     }
-    let bestGroup = null;
-    let bestValue = -1;
+
+    // Find all groups with 2+ cards
+    const stackable = [];
     for (const [value, group] of Object.entries(groups)) {
         if (group.length >= 2) {
-            const v = parseInt(value);
-            if (bestGroup === null || v < bestValue) {
-                bestGroup = group;
-                bestValue = v;
-            }
+            stackable.push({ value: parseInt(value), group });
         }
     }
-    if (bestGroup) {
-        thoughts.push(`Stacking ${bestGroup.length}x Attack ${bestValue}`);
-        return bestGroup.map(g => g.index);
+
+    if (stackable.length === 0) return null;
+
+    const handSize = state.computer.hand.length;
+    const inTrouble = handSize > 7;
+    const effectiveVal = getEffectiveValue(state);
+
+    // Check: how many DIFFERENT attack values do we have playable?
+    const uniqueValues = new Set(attacks.map(a => a.card.value));
+
+    // Sort lowest first
+    stackable.sort((a, b) => a.value - b.value);
+
+    for (const s of stackable) {
+        // ALWAYS stack low cards (1-5) - no reason to hold them
+        if (s.value <= 5) {
+            thoughts.push(`Stacking ${s.group.length}x Attack ${s.value} (low cards, dump them)`);
+            return s.group.map(g => g.index);
+        }
+        // Stack high cards if:
+        // - We're in trouble (hand > 7), OR
+        // - It's the ONLY attack value we have (no reason to play one at a time), OR
+        // - The value to beat is close to the stack value (within 3), OR
+        // - We have 3+ of them
+        if (inTrouble || uniqueValues.size === 1 || s.group.length >= 3 || (s.value - effectiveVal <= 3 && effectiveVal > 0)) {
+            const reason = inTrouble ? 'need to dump' : uniqueValues.size === 1 ? 'only attack value' : s.group.length >= 3 ? '3+ cards' : 'close to value';
+            thoughts.push(`Stacking ${s.group.length}x Attack ${s.value} (${reason})`);
+            return s.group.map(g => g.index);
+        }
     }
+
+    // If we have stacks but chose not to use them, return null
     return null;
 }
 
@@ -201,7 +266,7 @@ function computerPlayPrison(state, thoughts) {
         pickupDiscardPile(state, 'computer');
         drawCard(state, 'computer');
         nextTurn(state);
-        return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n') };
+        return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n'), handBefore: '(prison)' };
     }
     const faceUpPlayable = accessible.filter(a => a.faceUp && isValidPlay(a.card, state));
     if (faceUpPlayable.length > 0) {
@@ -214,7 +279,7 @@ function computerPlayPrison(state, thoughts) {
         thoughts.push(`Playing prison card: ${pick.card.name} (${pick.row}[${pick.index}])`);
         const result = playFromPrison(state, 'computer', pick.row, pick.index);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: '(prison - face up)' };
     }
     const faceDown = accessible.filter(a => !a.faceUp);
     if (faceDown.length > 0) {
@@ -222,11 +287,11 @@ function computerPlayPrison(state, thoughts) {
         thoughts.push(`Playing face-down prison card (risky): ${pick.row}[${pick.index}]`);
         const result = playFromPrison(state, 'computer', pick.row, pick.index);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n') };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: '(prison - face down)' };
     }
     thoughts.push('No prison plays possible. Picking up.');
     pickupDiscardPile(state, 'computer');
     drawCard(state, 'computer');
     nextTurn(state);
-    return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n') };
+    return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n'), handBefore: '(prison)' };
 }
