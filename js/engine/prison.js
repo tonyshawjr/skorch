@@ -58,7 +58,13 @@ export function getUnlockedCards(prison) {
 }
 
 export function swapPrisonCards(prisonA, rowA, indexA, prisonB, rowB, indexB) {
-    const temp = prisonA[rowA][indexA].card;
-    prisonA[rowA][indexA].card = prisonB[rowB][indexB].card;
-    prisonB[rowB][indexB].card = temp;
+    const slotA = prisonA[rowA][indexA];
+    const slotB = prisonB[rowB][indexB];
+    // Swap cards AND their face-up status together
+    const tempCard = slotA.card;
+    const tempFaceUp = slotA.faceUp;
+    slotA.card = slotB.card;
+    slotA.faceUp = slotB.faceUp;
+    slotB.card = tempCard;
+    slotB.faceUp = tempFaceUp;
 }
