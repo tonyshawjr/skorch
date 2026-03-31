@@ -102,7 +102,14 @@ export function playFromPrison(state, who, row, index) {
             return { success: true, message: `Flipped ${card.name} - invalid! Picked up the discard pile.`, effect: 'pickup' };
         }
     } else {
-        if (!isValidPlay(card, state)) return { success: false, message: 'That card cannot be played right now.' };
+        if (!isValidPlay(card, state)) {
+            // Face-up invalid play - strategic choice to pick up the pile and hide this card
+            player.hand = player.hand.concat(state.discardPile);
+            player.hand.push(card);
+            state.discardPile = [];
+            slot.card = null;
+            return { success: true, message: `Played ${card.name} - invalid! Picked up the discard pile.`, effect: 'pickup' };
+        }
     }
     slot.card = null;
     state.discardPile.push(card);
