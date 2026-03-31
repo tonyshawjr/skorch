@@ -491,21 +491,41 @@ function handleComputerUndead(state, thoughts) {
         thoughts.push('Undead: no opponent cards to take.');
         return;
     }
-    // Find best card to take (highest attack or any special)
+    // Score each opponent card to decide what to take
+    // Face-down cards are valuable targets: deny opponent info + could be anything
     let bestTake = null;
+    let bestTakeScore = -999;
     for (const u of theirUnlocked) {
-        if (!bestTake) { bestTake = u; continue; }
-        if (u.card.type === CardType.ATTACK && bestTake.card.type === CardType.ATTACK) {
-            if (u.card.value > bestTake.card.value) bestTake = u;
-        } else if (u.card.isSpecial && !bestTake.card.isSpecial) {
+        let score = 0;
+        if (!u.faceUp) {
+            // Face-down = mystery card. Worth taking to deny opponent + gamble on value
+            score = 7; // Mid-high priority - better than taking a known low card
+        } else if (u.card.isSpecial) {
+            score = 10; // Specials are always valuable to steal
+        } else if (u.card.type === CardType.ATTACK) {
+            score = u.card.value; // Higher attack = more valuable
+        }
+        if (score > bestTakeScore) {
+            bestTakeScore = score;
             bestTake = u;
         }
     }
-    // Find worst card to give (lowest attack)
+
+    // Find worst card to give (lowest attack, or face-down if we have one)
     let worstGive = null;
+    let worstGiveScore = 999;
     for (const u of myUnlocked) {
-        if (u.card.type === CardType.ATTACK) {
-            if (!worstGive || u.card.value < worstGive.card.value) worstGive = u;
+        let score;
+        if (!u.faceUp) {
+            score = 5; // Mystery - might be giving away something good, risky
+        } else if (u.card.type === CardType.ATTACK) {
+            score = u.card.value; // Lower = better to give away
+        } else {
+            score = 11; // Don't give away specials
+        }
+        if (score < worstGiveScore) {
+            worstGiveScore = score;
+            worstGive = u;
         }
     }
     if (bestTake && worstGive) {
