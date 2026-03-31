@@ -1,0 +1,25 @@
+:root {
+    --skorch-red: #EB2228;
+    --skorch-dark: #242424;
+    --skorch-darker: #161718;
+    --skorch-light: #FFFFFF;
+    --skorch-gray: #EFEFEF;
+    --skorch-green: #10b981;
+    --skorch-yellow: #eab308;
+    --skorch-blue: #3b82f6;
+    --card-width: 100px;
+    --card-height: 140px;
+    --card-radius: 10px;
+    --card-overlap: -30px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--skorch-dark);
+    color: var(--skorch-light);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    line-height: 1.5;
+}
