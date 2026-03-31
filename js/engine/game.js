@@ -47,6 +47,11 @@ export function getEffectiveValue(state) {
             return state.discardPile[i].value;
         }
     }
+    // If no attack card found, check if Elude is on top (value = 1 per rules)
+    if (state.discardPile.length > 0) {
+        const topCard = state.discardPile[state.discardPile.length - 1];
+        if (topCard.type === CardType.ELUDE) return 1;
+    }
     return 0;
 }
 
@@ -65,7 +70,9 @@ export function isValidStack(cards) {
     if (cards.length === 0) return false;
     if (cards.length === 1) return true;
     const first = cards[0];
-    return cards.every(c => c.type === first.type && (c.type !== CardType.ATTACK || c.value === first.value));
+    // Only attack cards can be stacked, and they must have the same value
+    if (first.type !== CardType.ATTACK) return false;
+    return cards.every(c => c.type === CardType.ATTACK && c.value === first.value);
 }
 
 export function playFromHand(state, who, handIndexes) {
