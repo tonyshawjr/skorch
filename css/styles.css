@@ -452,33 +452,39 @@ button { font-family: inherit; }
 
 .flame-particle {
     position: absolute;
-    bottom: -60px;
-    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-    animation: flameRise 1s ease-out forwards;
+    bottom: -20px;
+    border-radius: 0 50% 50% 50%;
+    transform: rotate(-45deg);
+    animation: flameRise 1.2s ease-out forwards;
     opacity: 0;
+    filter: blur(3px);
 }
 
-.flame-particle:nth-child(odd) {
-    background: radial-gradient(ellipse at center, rgba(255,200,50,0.9) 0%, rgba(235,34,40,0.8) 40%, rgba(235,34,40,0) 70%);
+.flame-particle:nth-child(3n) {
+    background: linear-gradient(to top, rgba(235,34,40,0.9), rgba(255,120,20,0.6), transparent);
 }
-.flame-particle:nth-child(even) {
-    background: radial-gradient(ellipse at center, rgba(255,160,20,0.8) 0%, rgba(200,30,30,0.6) 50%, rgba(235,34,40,0) 70%);
+.flame-particle:nth-child(3n+1) {
+    background: linear-gradient(to top, rgba(255,80,0,0.8), rgba(255,180,50,0.5), transparent);
+}
+.flame-particle:nth-child(3n+2) {
+    background: linear-gradient(to top, rgba(200,20,20,0.7), rgba(235,34,40,0.4), transparent);
 }
 
 @keyframes flameRise {
     0% {
-        transform: translateY(0) scaleX(1) rotate(0deg);
+        transform: rotate(-45deg) translateY(0) scale(0.5);
         opacity: 0;
     }
-    10% {
-        opacity: 0.9;
+    15% {
+        opacity: 0.8;
+        transform: rotate(-45deg) translateY(-10vh) scale(1);
     }
-    50% {
-        transform: translateY(-40vh) scaleX(0.8) rotate(-5deg);
-        opacity: 0.7;
+    60% {
+        opacity: 0.5;
+        transform: rotate(-50deg) translateY(-50vh) scale(0.7);
     }
     100% {
-        transform: translateY(-100vh) scaleX(0.3) rotate(10deg);
+        transform: rotate(-55deg) translateY(-100vh) scale(0.2);
         opacity: 0;
     }
 }

@@ -72,7 +72,16 @@ export function computerTurn(state) {
                 return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
             }
         }
-        // Only Shield left - don't play it, just pick up instead
+        // Only Shields left - check if playing them empties hand to reach prison
+        const attacksLeft = state.computer.hand.filter(c => c.type === 'attack').length;
+        const shieldsLeft = specials.filter(s => s.card.type === 'shield');
+        if (attacksLeft === 0 && shieldsLeft.length > 0) {
+            // Playing shields empties hand → prison access
+            thoughts.push(`Fallback: playing Shield to empty hand (${shieldsLeft.length} shields → prison)`);
+            const result = playFromHand(state, 'computer', [shieldsLeft[0].index]);
+            handlePostPlay(state, result, thoughts);
+            return { message: result.message, thoughts: thoughts.join('\n'), handBefore: handBefore || '(prison)' };
+        }
         thoughts.push('Only Shield available - not useful, picking up instead.');
     }
 
@@ -126,24 +135,39 @@ function evaluateSpecialCards(state, specials, attacks, thoughts) {
                     return s;
                 }
                 break;
-            case CardType.SHIELD:
+            case CardType.SHIELD: {
                 // Shield skips opponent and gives us another turn, but value stays the same.
-                // Only play if: player is about to win AND we have a card to play on the extra turn.
-                // Never play Shield if we can't beat the current value - we'll just waste it.
-                if (playerHandSize <= 2) {
-                    // Check: can we actually play something on the extra turn?
-                    // After Shield, value to beat stays the same. Do we have an attack that beats it?
-                    const canFollowUp = state.computer.hand.some(c =>
-                        c.type === CardType.ATTACK && c.value >= effectiveValue
-                    );
-                    if (canFollowUp) {
-                        thoughts.push(`Playing Shield (player has ${playerHandSize} cards, have follow-up)`);
-                        return s;
-                    } else {
-                        thoughts.push(`Skipping Shield (can't follow up - no cards beat ${effectiveValue})`);
-                    }
+                const canFollowUp = state.computer.hand.some(c =>
+                    c.type === CardType.ATTACK && c.value >= effectiveValue
+                );
+
+                // Count how many specials (non-attack) are in hand
+                const specialsInHand = state.computer.hand.filter(c => c.isSpecial).length;
+                const attacksInHand = state.computer.hand.filter(c => c.type === CardType.ATTACK).length;
+
+                // Play Shield if:
+                // 1. Player is about to win and we can follow up with an attack
+                if (playerHandSize <= 2 && canFollowUp) {
+                    thoughts.push(`Playing Shield (player has ${playerHandSize} cards, have follow-up)`);
+                    return s;
                 }
+
+                // 2. Playing remaining specials will empty our hand → access prison cards
+                //    If hand is ALL specials (no attacks), playing them gets us to prison
+                if (attacksInHand === 0 && specialsInHand <= 3) {
+                    thoughts.push(`Playing Shield (emptying hand to reach prison, ${specialsInHand} specials left)`);
+                    return s;
+                }
+
+                // 3. We have an attack follow-up and discardPile is small (not wasting much)
+                if (canFollowUp && discardSize <= 3) {
+                    thoughts.push(`Playing Shield (have follow-up, small pile)`);
+                    return s;
+                }
+
+                thoughts.push(`Skipping Shield (no strategic benefit)`);
                 break;
+            }
             case CardType.ELUDE:
                 if (noAttacks && effectiveValue >= 4) {
                     thoughts.push(`Playing Elude (can't beat ${effectiveValue})`);
