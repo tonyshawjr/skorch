@@ -406,7 +406,7 @@ button { font-family: inherit; }
     position: fixed; inset: 0; z-index: 3000;
     display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0);
-    pointer-events: none;
+    pointer-events: all;
     transition: background 200ms ease;
 }
 .announce-overlay.visible {

@@ -328,10 +328,14 @@ function el(tag, className = '') {
 
 // Restore saved position for center piles
 const PILE_POS_KEY = 'skorch_pile_pos';
+let _dragCleanup = null;
 
 function makeDraggable(el) {
+    // Clean up previous listeners
+    if (_dragCleanup) _dragCleanup();
+
     let isDragging = false;
-    let startX, startY, origX, origY;
+    let startX, startY;
 
     // Restore saved position
     try {
@@ -362,13 +366,13 @@ function makeDraggable(el) {
         e.preventDefault();
     });
 
-    document.addEventListener('mousemove', (e) => {
+    const onMouseMove = (e) => {
         if (!isDragging) return;
         el.style.left = (e.clientX - startX) + 'px';
         el.style.top = (e.clientY - startY) + 'px';
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    const onMouseUp = () => {
         if (!isDragging) return;
         isDragging = false;
         el.style.cursor = 'grab';
@@ -379,5 +383,13 @@ function makeDraggable(el) {
                 top: el.style.top
             }));
         } catch(e) {}
-    });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    _dragCleanup = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
 }

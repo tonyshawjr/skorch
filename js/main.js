@@ -21,6 +21,8 @@ function loadState() {
 
 let state = loadState() || createGameState();
 let selectedIndexes = new Set();
+let isProcessing = false;
+let computerTurnTimeout = null;
 const root = document.getElementById('game-root');
 
 function logHand(who) {
@@ -74,6 +76,8 @@ function onCardSelect(index, cardEl) {
 
 async function onPlaySelected() {
     if (state.currentTurn !== 'player' || selectedIndexes.size === 0) return;
+    if (isProcessing) return;
+    isProcessing = true;
     logState('BEFORE PLAYER PLAY');
     const indexes = Array.from(selectedIndexes).sort((a, b) => a - b);
     const cardsBeingPlayed = indexes.map(i => state.player.hand[i]);
@@ -117,21 +121,24 @@ async function onPlaySelected() {
                     state.status = 'Undead swap complete!';
                     drawCard(state, 'player');
                     if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
-                    if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
+                    if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); isProcessing = false; return; }
                     nextTurn(state);
                     update();
-                    setTimeout(doComputerTurn, 800);
+                    isProcessing = false;
+                    computerTurnTimeout = setTimeout(doComputerTurn, 800);
                 },
                 () => {
                     state.status = 'Undead - no swap made.';
                     drawCard(state, 'player');
                     if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
-                    if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
+                    if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); isProcessing = false; return; }
                     nextTurn(state);
                     update();
-                    setTimeout(doComputerTurn, 800);
+                    isProcessing = false;
+                    computerTurnTimeout = setTimeout(doComputerTurn, 800);
                 }
             );
+            // isProcessing will be cleared in the modal callbacks
             return;
         }
 
@@ -141,6 +148,7 @@ async function onPlaySelected() {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             update();
             showGameOver('player', onRestart);
+            isProcessing = false;
             return;
         }
 
@@ -154,12 +162,14 @@ async function onPlaySelected() {
         if (result.effect === 'shield') {
             state.status += ' You go again!';
             update();
+            isProcessing = false;
             return;
         }
 
         nextTurn(state);
         update();
-        setTimeout(doComputerTurn, 800);
+        isProcessing = false;
+        computerTurnTimeout = setTimeout(doComputerTurn, 800);
     } else if (result.effect === 'pickup') {
         // AI Memory: invalid play caused pickup — player now has all pile cards
         if (state._aiMemory) {
@@ -169,15 +179,19 @@ async function onPlaySelected() {
         }
         nextTurn(state);
         update();
-        setTimeout(doComputerTurn, 800);
+        isProcessing = false;
+        computerTurnTimeout = setTimeout(doComputerTurn, 800);
     } else {
         update();
+        isProcessing = false;
     }
 }
 
 function onPickup() {
     logState('BEFORE PLAYER PICKUP');
     if (state.currentTurn !== 'player' || state.gameOver) return;
+    if (isProcessing) return;
+    isProcessing = true;
     // AI Memory: player picks up discard pile - we know exactly what they got
     if (state._aiMemory) {
         for (const c of state.discardPile) {
@@ -191,11 +205,14 @@ function onPickup() {
     state.status = 'You picked up the discard pile.';
     nextTurn(state);
     update();
-    setTimeout(doComputerTurn, 800);
+    isProcessing = false;
+    computerTurnTimeout = setTimeout(doComputerTurn, 800);
 }
 
 function onPrisonClick(row, index) {
     if (state.currentTurn !== 'player' || state.player.hand.length > 0 || state.gameOver) return;
+    if (isProcessing) return;
+    isProcessing = true;
     logState('BEFORE PLAYER PRISON PLAY');
     // AI Memory: capture discard pile + prison card before play (in case of pickup)
     const pileBeforePrison = state._aiMemory ? state.discardPile.map(c => ({ type: c.type, value: c.value, name: c.name, isSpecial: c.isSpecial })) : [];
@@ -228,18 +245,21 @@ function onPrisonClick(row, index) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             update();
             showGameOver('player', onRestart);
+            isProcessing = false;
             return;
         }
-        if (result.effect === 'shield') { state.status += ' You go again!'; update(); return; }
+        if (result.effect === 'shield') { state.status += ' You go again!'; update(); isProcessing = false; return; }
         nextTurn(state);
     } else if (result.effect === 'pickup') {
         nextTurn(state);
     }
     update();
-    if (state.currentTurn === 'computer' && !state.gameOver) setTimeout(doComputerTurn, 800);
+    isProcessing = false;
+    if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 800);
 }
 
 async function doComputerTurn() {
+    isProcessing = false;
     if (state.gameOver) return;
     if (state.currentTurn !== 'computer') return; // Guard: don't play on player's turn
     const result = computerTurn(state);
@@ -272,17 +292,19 @@ async function doComputerTurn() {
     // Shield: computer goes again
     if (result.message.includes('Shield') || result.message.includes('shield')) {
         update();
-        setTimeout(doComputerTurn, 1500);
+        computerTurnTimeout = setTimeout(doComputerTurn, 1500);
         return;
     }
     update();
 }
 
 function onRestart() {
+    if (computerTurnTimeout) clearTimeout(computerTurnTimeout);
+    isProcessing = false;
     localStorage.removeItem(SAVE_KEY);
     state = createGameState();
     update();
-    if (state.currentTurn === 'computer') setTimeout(doComputerTurn, 1000);
+    if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 1000);
 }
 
 // Keyboard shortcuts
@@ -294,4 +316,4 @@ document.addEventListener('keydown', (e) => {
 
 // Initial render
 update();
-if (state.currentTurn === 'computer') setTimeout(doComputerTurn, 1000);
+if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 1000);
