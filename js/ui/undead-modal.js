@@ -94,7 +94,6 @@ function createModalCard(card, faceUp = true) {
         div.className = 'sk-card sk-face-down';
         div.style.backgroundImage = `url('assets/cards/Card-Back.png')`;
     }
-    div.style.backgroundSize = 'var(--card-width) var(--card-height)';
     div.style.backgroundRepeat = 'no-repeat';
     div.style.backgroundPosition = 'center';
     div.style.cursor = 'pointer';

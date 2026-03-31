@@ -65,12 +65,17 @@ button { font-family: inherit; }
     .game-board { grid-template-columns: 1fr; }
 }
 
-/* Area Boxes */
+/* Area Boxes - fixed height, scroll if overflow */
 .area-box {
-    background: var(--skorch-darker); border-radius: 1.5rem; padding: 2rem;
+    background: var(--skorch-darker); border-radius: 1.5rem; padding: 1.5rem;
     backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.1);
+    height: calc(100vh - 160px); overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
+.area-box::-webkit-scrollbar { width: 4px; }
+.area-box::-webkit-scrollbar-track { background: transparent; }
+.area-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 .area-box h2 { font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0; color: #fff; }
 .area-box h3 { font-size: 1.25rem; color: #e5e7eb; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
 .area-box h4 { font-size: 1rem; color: #9ca3af; margin-bottom: 0.75rem; }
@@ -91,7 +96,7 @@ button { font-family: inherit; }
     width: var(--card-width); height: var(--card-height);
     border-radius: var(--card-radius); position: relative;
     transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    background-size: var(--card-width) var(--card-height);
+    background-size: cover;
     background-repeat: no-repeat; background-position: center;
 }
 .sk-face-up {
@@ -124,13 +129,17 @@ button { font-family: inherit; }
 }
 
 /* Larger cards in center piles */
-.center-piles .pile-stack .sk-card {
+.center-piles .sk-card {
     width: 130px; height: 182px;
     background-size: cover;
     background-position: center;
+    border-radius: 8px;
 }
-.center-piles .pile-stack .sk-placeholder {
+.center-piles .sk-placeholder {
     width: 130px; height: 182px;
+}
+.center-piles .pile-stack {
+    line-height: 0;
 }
 .center-piles .pile-label {
     font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;

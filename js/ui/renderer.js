@@ -288,15 +288,9 @@ function createCardElement(card, faceUp) {
     if (!faceUp || !card) {
         div.classList.add('sk-face-down');
         div.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
-        div.style.backgroundSize = 'var(--card-width) var(--card-height)';
-        div.style.backgroundRepeat = 'no-repeat';
-        div.style.backgroundPosition = 'center';
     } else {
         div.classList.add('sk-face-up');
         div.style.backgroundImage = `url('${ASSETS_PATH}${getCardImage(card)}')`;
-        div.style.backgroundSize = 'var(--card-width) var(--card-height)';
-        div.style.backgroundRepeat = 'no-repeat';
-        div.style.backgroundPosition = 'center';
         div.dataset.type = card.type;
         if (card.type === CardType.ATTACK) div.dataset.value = card.value;
         else div.dataset.effect = card.name;
