@@ -56,8 +56,14 @@ button { font-family: inherit; }
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Game Board */
-.game-board { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; }
+/* Game Board - side by side with center overlay */
+.game-board {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem;
+    align-items: start; margin-bottom: 2rem; position: relative;
+}
+@media (max-width: 1024px) {
+    .game-board { grid-template-columns: 1fr; }
+}
 
 /* Area Boxes */
 .area-box {
@@ -102,18 +108,20 @@ button { font-family: inherit; }
     width: var(--card-width); height: var(--card-height); border-radius: var(--card-radius);
 }
 
-/* Center Section (piles + buttons, vertical stack) */
+/* Center Section (piles + buttons, vertical stack, between players) */
 .center-piles {
     display: flex; flex-direction: column; align-items: center; gap: 1rem;
-    padding: 1.5rem 2rem; background: var(--skorch-darker); border-radius: 1.5rem;
+    padding: 1.5rem; background: var(--skorch-darker); border-radius: 1.5rem;
     border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: sticky; top: 100px; align-self: start;
+    min-width: 160px;
 }
 
 .center-buttons {
-    display: flex; gap: 0.75rem; align-items: center;
+    display: flex; flex-direction: column; gap: 0.5rem; width: 100%;
 }
 .center-buttons .btn-play, .center-buttons .btn-pickup {
-    min-width: 140px; padding: 0.6rem 1.25rem; font-size: 0.875rem;
+    min-width: unset; width: 100%; padding: 0.6rem 1rem; font-size: 0.8rem;
 }
 
 /* Prison */
