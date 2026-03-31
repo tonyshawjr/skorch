@@ -2,6 +2,7 @@ import { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawC
 import { computerTurn } from './ai/computer.js';
 import { render } from './ui/renderer.js';
 import { showUndeadModal } from './ui/undead-modal.js';
+import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 
 const SAVE_KEY = 'skorch_game_state';
 
@@ -46,6 +47,12 @@ function update() {
         onRestart,
         onPrisonClick
     });
+
+    // Animate newly rendered player cards
+    const playerCards = root.querySelectorAll('.playable-cards .sk-card');
+    playerCards.forEach((card, i) => {
+        card.style.animation = `fadeSlideUp 200ms ease-out ${i * 30}ms both`;
+    });
 }
 
 function onCardSelect(index, cardEl) {
@@ -64,7 +71,7 @@ function onCardSelect(index, cardEl) {
     }
 }
 
-function onPlaySelected() {
+async function onPlaySelected() {
     if (state.currentTurn !== 'player' || selectedIndexes.size === 0) return;
     logState('BEFORE PLAYER PLAY');
     const indexes = Array.from(selectedIndexes).sort((a, b) => a - b);
@@ -101,6 +108,13 @@ function onPlaySelected() {
 
         drawCard(state, 'player');
         if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
+
+        if (result.effect === 'skorch') {
+            update();
+            const discardArea = root.querySelector('.pile-stack');
+            if (discardArea) await animateBurn(discardArea, 500);
+            await wait(200);
+        }
 
         if (result.effect === 'shield') {
             state.status += ' You go again!';
@@ -149,11 +163,13 @@ function onPrisonClick(row, index) {
     if (state.currentTurn === 'computer' && !state.gameOver) setTimeout(doComputerTurn, 800);
 }
 
-function doComputerTurn() {
+async function doComputerTurn() {
     if (state.gameOver) return;
     if (state.currentTurn !== 'computer') return; // Guard: don't play on player's turn
     const result = computerTurn(state);
     state.status = `Computer: ${result.message}`;
+    // Brief pause so player can see what happened
+    await wait(300);
     const discardList = state.discardPile.map(c => c.type === 'attack' ? `A${c.value}` : c.name.substring(0,3)).join(', ');
     console.log('--- COMPUTER TURN ---');
     console.log('Computer BEFORE:', result.handBefore);
