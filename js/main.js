@@ -86,8 +86,13 @@ async function onPlaySelected() {
             update();
             showUndeadModal(state,
                 (myCard, theirCard) => {
+                    console.log('UNDEAD SWAP:', { myCard, theirCard });
+                    console.log('BEFORE swap - my prison:', JSON.stringify(state.player.prison));
+                    console.log('BEFORE swap - their prison:', JSON.stringify(state.computer.prison));
                     if (myCard) executeUndeadSwap(state, 'player', myCard, theirCard);
                     else executeUndeadTake(state, 'player', theirCard);
+                    console.log('AFTER swap - my prison:', JSON.stringify(state.player.prison));
+                    console.log('AFTER swap - their prison:', JSON.stringify(state.computer.prison));
                     state.status = 'Undead swap complete!';
                     drawCard(state, 'player');
                     if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }

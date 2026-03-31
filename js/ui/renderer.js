@@ -215,6 +215,9 @@ function createPrisonSection(state, who, handlers) {
 function createCenterSection(state, handlers) {
     const section = el('div', 'center-piles');
 
+    // Make draggable
+    makeDraggable(section);
+
     // Discard pile (top)
     const discardPile = el('div', 'pile-section');
     const discardLabel = el('div', 'pile-label');
@@ -301,4 +304,59 @@ function el(tag, className = '') {
     const element = document.createElement(tag);
     if (className) element.className = className;
     return element;
+}
+
+// Restore saved position for center piles
+const PILE_POS_KEY = 'skorch_pile_pos';
+
+function makeDraggable(el) {
+    let isDragging = false;
+    let startX, startY, origX, origY;
+
+    // Restore saved position
+    try {
+        const saved = JSON.parse(localStorage.getItem(PILE_POS_KEY));
+        if (saved) {
+            el.style.left = saved.left;
+            el.style.top = saved.top;
+            el.style.transform = 'none';
+        }
+    } catch(e) {}
+
+    el.style.cursor = 'grab';
+
+    el.addEventListener('mousedown', (e) => {
+        // Don't drag if clicking a button
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        isDragging = true;
+        el.style.cursor = 'grabbing';
+        const rect = el.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        origX = rect.left;
+        origY = rect.top;
+        el.style.transform = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        el.style.left = (origX + dx) + 'px';
+        el.style.top = (origY + dy) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        el.style.cursor = 'grab';
+        // Save position
+        try {
+            localStorage.setItem(PILE_POS_KEY, JSON.stringify({
+                left: el.style.left,
+                top: el.style.top
+            }));
+        } catch(e) {}
+    });
 }

@@ -47,13 +47,16 @@ button { font-family: inherit; }
 }
 .btn-restart:hover { background-color: #c41a1f; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 
-/* Status */
-.status-container { margin-top: 1rem; margin-bottom: 1rem; }
+/* Status - fixed at bottom of viewport */
+.status-container {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 500; padding: 0;
+}
 .status-message {
-    background: var(--skorch-darker); border: 1px solid rgba(255,255,255,0.1);
-    padding: 1.25rem; border-radius: 1rem; margin-bottom: 1rem;
-    backdrop-filter: blur(8px); font-size: 1.1rem; text-align: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: var(--skorch-darker); border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 0.75rem 2rem; margin: 0;
+    backdrop-filter: blur(12px); font-size: 1rem; text-align: center;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
 }
 
 /* Game Board - side by side with center overlay */
