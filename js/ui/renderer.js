@@ -242,6 +242,14 @@ function createCenterSection(state, handlers) {
         const discardCount = el('span', 'pile-count');
         discardCount.textContent = state.discardPile.length;
         discardStack.appendChild(discardCount);
+
+        // Show effective value when top card is a special (value hidden)
+        if (topCard.isSpecial) {
+            const effectiveVal = getEffectiveValue(state);
+            const valueBadge = el('div', 'discard-value-badge');
+            valueBadge.textContent = effectiveVal === 0 ? 'Any' : `Beat ${effectiveVal}`;
+            discardStack.appendChild(valueBadge);
+        }
     } else {
         discardStack.appendChild(el('div', 'sk-card sk-placeholder'));
     }
