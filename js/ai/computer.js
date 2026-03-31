@@ -263,14 +263,19 @@ function handleComputerUndead(state, thoughts) {
     }
     if (bestTake && worstGive) {
         executeUndeadSwap(state, 'computer', { row: worstGive.row, index: worstGive.index }, { row: bestTake.row, index: bestTake.index });
-        thoughts.push(`Undead: swapped ${worstGive.card.name} for ${bestTake.card.name}`);
+        const swapMsg = `Gave ${worstGive.card.name} → Took your ${bestTake.card.name}`;
+        thoughts.push(`Undead: ${swapMsg}`);
+        state._lastUndeadSwap = { gave: worstGive.card.name, took: bestTake.card.name, swapMsg };
     } else if (bestTake && myUnlocked.length === 0) {
         const card = state.player.prison[bestTake.row][bestTake.index].card;
         state.player.prison[bestTake.row][bestTake.index].card = null;
         state.computer.hand.push(card);
-        thoughts.push(`Undead: took ${bestTake.card.name} (nothing to give)`);
+        const swapMsg = `Took your ${bestTake.card.name}`;
+        thoughts.push(`Undead: ${swapMsg}`);
+        state._lastUndeadSwap = { gave: null, took: bestTake.card.name, swapMsg };
     } else {
         thoughts.push('Undead: no beneficial swap found.');
+        state._lastUndeadSwap = null;
     }
 }
 

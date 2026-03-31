@@ -200,7 +200,7 @@ async function doComputerTurn() {
     const specialMatch = result.message.match(/Skorch|Shield|Demoter|Elude|Undead/i);
     if (specialMatch) {
         update();
-        await announceSpecial(specialMatch[0].toLowerCase(), 'computer');
+        await announceSpecial(specialMatch[0].toLowerCase(), 'computer', 1200, state);
     }
 
     // Shield: computer goes again

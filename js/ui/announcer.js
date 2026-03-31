@@ -11,13 +11,19 @@ const SPECIAL_CONFIG = {
 /**
  * Show a special card announcement overlay.
  */
-export function announceSpecial(type, who, duration = 1200) {
+export function announceSpecial(type, who, duration = 1200, state = null) {
     const config = SPECIAL_CONFIG[type];
     if (!config) return Promise.resolve();
 
     return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.className = 'announce-overlay';
+
+        // Override sub text for Undead if we have swap details
+        let subText = config.sub;
+        if (type === 'undead' && state && state._lastUndeadSwap) {
+            subText = state._lastUndeadSwap.swapMsg;
+        }
 
         let extraHTML = '';
         if (type === 'skorch') {
@@ -37,7 +43,7 @@ export function announceSpecial(type, who, duration = 1200) {
             ${extraHTML}
             <div class="announce-card" style="--announce-color: ${config.color}">
                 <div class="announce-text">${config.text}</div>
-                <div class="announce-sub">${who === 'player' ? 'You' : 'Computer'} - ${config.sub}</div>
+                <div class="announce-sub">${who === 'player' ? 'You' : 'Computer'} - ${subText}</div>
             </div>
         `;
 
