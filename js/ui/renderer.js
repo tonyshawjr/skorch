@@ -5,17 +5,16 @@ const ASSETS_PATH = 'assets/cards/';
 
 export function render(state, root, handlers) {
     root.innerHTML = '';
-    root.appendChild(createHeader(handlers.onRestart));
+    root.appendChild(createHeader(state, handlers.onRestart));
     const board = el('div', 'game-board');
     board.appendChild(createPlayerArea(state, handlers));
     board.appendChild(createComputerArea(state));
     board.appendChild(createCenterSection(state, handlers));
     root.appendChild(board);
     root.appendChild(createStatusBar(state));
-    root.appendChild(createTurnIndicator(state));
 }
 
-function createHeader(onRestart) {
+function createHeader(state, onRestart) {
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
@@ -24,6 +23,14 @@ function createHeader(onRestart) {
     img.className = 'game-logo';
     logo.appendChild(img);
     header.appendChild(logo);
+
+    // Turn indicator in center of header
+    const indicator = el('div', `turn-indicator${state.currentTurn === 'player' ? ' your-turn' : ''}`);
+    indicator.textContent = state.gameOver
+        ? (state.winner === 'player' ? 'You Win!' : 'Computer Wins!')
+        : (state.currentTurn === 'player' ? 'Your Turn' : "Computer's Turn");
+    header.appendChild(indicator);
+
     const actions = el('div', 'header-actions');
     const restartBtn = el('button', 'btn-restart');
     restartBtn.textContent = 'Restart Game';
@@ -273,14 +280,6 @@ function createCenterSection(state, handlers) {
     section.appendChild(drawPile);
 
     return section;
-}
-
-function createTurnIndicator(state) {
-    const indicator = el('div', `turn-indicator${state.currentTurn === 'player' ? ' your-turn' : ''}`);
-    indicator.textContent = state.gameOver
-        ? (state.winner === 'player' ? 'You Win!' : 'Computer Wins!')
-        : (state.currentTurn === 'player' ? 'Your Turn' : "Computer's Turn");
-    return indicator;
 }
 
 function createCardElement(card, faceUp) {
