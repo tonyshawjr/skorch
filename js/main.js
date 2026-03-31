@@ -76,8 +76,29 @@ async function onPlaySelected() {
     if (state.currentTurn !== 'player' || selectedIndexes.size === 0) return;
     logState('BEFORE PLAYER PLAY');
     const indexes = Array.from(selectedIndexes).sort((a, b) => a - b);
-    const cardsPlayed = indexes.map(i => state.player.hand[i]).map(c => c.type === 'attack' ? `Attack ${c.value}` : c.name).join(', ');
+    const cardsBeingPlayed = indexes.map(i => state.player.hand[i]);
+    const cardsPlayed = cardsBeingPlayed.map(c => c.type === 'attack' ? `Attack ${c.value}` : c.name).join(', ');
+    // AI Memory: capture discard pile before play (in case of invalid play pickup)
+    const pileBeforePlay = state._aiMemory ? state.discardPile.map(c => ({ type: c.type, value: c.value, name: c.name, isSpecial: c.isSpecial })) : [];
     const result = playFromHand(state, 'player', indexes);
+
+    // AI Memory: track what player played
+    if (state._aiMemory && result.success) {
+        for (const c of cardsBeingPlayed) {
+            // Add to play history
+            state._aiMemory.opponentPlayHistory.push({ type: c.type, value: c.value, name: c.name });
+            // Remove ONE matching card from known cards (if it was known)
+            const knownIdx = state._aiMemory.knownOpponentCards.findIndex(k =>
+                k.type === c.type && (c.type !== 'attack' || k.value === c.value)
+            );
+            if (knownIdx !== -1) {
+                state._aiMemory.knownOpponentCards.splice(knownIdx, 1);
+            } else {
+                // Played an unknown card - decrement unknown draws
+                if (state._aiMemory.unknownOpponentDraws > 0) state._aiMemory.unknownOpponentDraws--;
+            }
+        }
+    }
     console.log(`>> Player played: ${cardsPlayed} → ${result.message}`);
     state.status = result.message;
 
@@ -95,6 +116,7 @@ async function onPlaySelected() {
                     console.log('AFTER swap - their prison:', JSON.stringify(state.computer.prison));
                     state.status = 'Undead swap complete!';
                     drawCard(state, 'player');
+                    if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
                     if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
                     nextTurn(state);
                     update();
@@ -103,6 +125,7 @@ async function onPlaySelected() {
                 () => {
                     state.status = 'Undead - no swap made.';
                     drawCard(state, 'player');
+                    if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
                     if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
                     nextTurn(state);
                     update();
@@ -113,6 +136,7 @@ async function onPlaySelected() {
         }
 
         drawCard(state, 'player');
+        if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             update();
@@ -137,6 +161,12 @@ async function onPlaySelected() {
         update();
         setTimeout(doComputerTurn, 800);
     } else if (result.effect === 'pickup') {
+        // AI Memory: invalid play caused pickup — player now has all pile cards
+        if (state._aiMemory) {
+            for (const c of pileBeforePlay) {
+                state._aiMemory.knownOpponentCards.push(c);
+            }
+        }
         nextTurn(state);
         update();
         setTimeout(doComputerTurn, 800);
@@ -148,8 +178,16 @@ async function onPlaySelected() {
 function onPickup() {
     logState('BEFORE PLAYER PICKUP');
     if (state.currentTurn !== 'player' || state.gameOver) return;
+    // AI Memory: player picks up discard pile - we know exactly what they got
+    if (state._aiMemory) {
+        for (const c of state.discardPile) {
+            state._aiMemory.knownOpponentCards.push({ type: c.type, value: c.value, name: c.name, isSpecial: c.isSpecial });
+        }
+    }
     pickupDiscardPile(state, 'player');
     drawCard(state, 'player');
+    // AI Memory: player drew an unknown card
+    if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
     state.status = 'You picked up the discard pile.';
     nextTurn(state);
     update();
@@ -159,11 +197,33 @@ function onPickup() {
 function onPrisonClick(row, index) {
     if (state.currentTurn !== 'player' || state.player.hand.length > 0 || state.gameOver) return;
     logState('BEFORE PLAYER PRISON PLAY');
+    // AI Memory: capture discard pile + prison card before play (in case of pickup)
+    const pileBeforePrison = state._aiMemory ? state.discardPile.map(c => ({ type: c.type, value: c.value, name: c.name, isSpecial: c.isSpecial })) : [];
+    const prisonCard = state.player.prison[row][index]?.card;
+    const prisonCardInfo = prisonCard && state._aiMemory ? { type: prisonCard.type, value: prisonCard.value, name: prisonCard.name, isSpecial: prisonCard.isSpecial } : null;
+
     const result = playFromPrison(state, 'player', row, index);
     state.status = result.message;
 
+    // AI Memory: track prison play results
+    if (state._aiMemory && result.success) {
+        if (result.effect === 'pickup') {
+            // Player picked up the pile + the prison card — all become known
+            for (const c of pileBeforePrison) {
+                state._aiMemory.knownOpponentCards.push(c);
+            }
+            if (prisonCardInfo) {
+                state._aiMemory.knownOpponentCards.push(prisonCardInfo);
+            }
+        } else if (prisonCardInfo) {
+            // Successful play — add to play history
+            state._aiMemory.opponentPlayHistory.push(prisonCardInfo);
+        }
+    }
+
     if (result.success && result.effect !== 'pickup') {
         drawCard(state, 'player');
+        if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             update();

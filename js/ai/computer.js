@@ -43,6 +43,15 @@ export function computerTurn(state) {
         thoughts.push(`  ${move.description}: ${move.score} pts`);
     }
 
+    // Strategic awareness logging
+    if (state._aiMemory?.knownOpponentCards?.length > 0) {
+        const known = state._aiMemory.knownOpponentCards;
+        const knownStr = known.map(c => c.type === 'attack' ? `A${c.value}` : c.name.substring(0,3)).join(', ');
+        thoughts.push(`[Strategy] Known opp cards: ${knownStr}`);
+        const highest = Math.max(...known.filter(c => c.type === 'attack').map(c => c.value), 0);
+        if (highest > 0) thoughts.push(`[Strategy] Opp highest known: ${highest}`);
+    }
+
     // Sort descending by score
     moves.sort((a, b) => b.score - a.score);
     const best = moves[0];
@@ -252,6 +261,9 @@ function scoreMove(move, state, counting) {
         score += scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting);
     }
 
+    // ── 5. Strategic scoring based on opponent knowledge ──
+    score += scoreStrategic(move, state, counting);
+
     return Math.round(score);
 }
 
@@ -279,6 +291,15 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
                     if (c.isSpecial) pileValue += 3;
                 }
                 score += pileValue;
+            }
+
+            // Don't burn pile if opponent would have to pick it up anyway
+            const knownCards = (state._aiMemory?.knownOpponentCards || []);
+            const canOpponentBeat = knownCards.some(c =>
+                (c.type === 'attack' && c.value >= effectiveValue) || c.isSpecial
+            );
+            if (!canOpponentBeat && knownCards.length > 0 && pileSize >= 3) {
+                score -= 20; // Let them pick up instead of burning
             }
 
             // Extra value if it empties hand
@@ -371,6 +392,72 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
     }
 
     return score;
+}
+
+// ─── STRATEGIC SCORING (OPPONENT AWARENESS) ───────────────────
+
+function scoreStrategic(move, state, counting) {
+    const memory = state._aiMemory;
+    if (!memory || !move.card) return 0;
+
+    let score = 0;
+    const card = move.card;
+    const knownCards = memory.knownOpponentCards || [];
+    const effectiveValue = getEffectiveValue(state);
+
+    // Only apply to attack cards
+    if (card.type !== CardType.ATTACK) return score;
+
+    // --- BLOCK SCORING ---
+    // If we know opponent's highest attack, play just above it
+    const knownAttacks = knownCards.filter(c => c.type === 'attack');
+    const highestKnown = knownAttacks.length > 0
+        ? Math.max(...knownAttacks.map(c => c.value))
+        : 0;
+
+    if (highestKnown > 0 && card.value > highestKnown) {
+        // This card blocks their known highest - great play
+        score += 12;
+        // Even better if it's just 1 above (efficient block)
+        if (card.value === highestKnown + 1) score += 5;
+    }
+
+    // --- DUMP PREVENTION ---
+    // Don't play below what we know they have
+    const knownLow = knownAttacks.filter(c => c.value <= card.value);
+    if (knownLow.length > 0 && card.value <= 3) {
+        // Playing low when they have low cards = letting them dump
+        score -= 10;
+    }
+
+    // --- TRAP SCORING ---
+    // If opponent can't beat current value with known cards, pile is a trap
+    const canBeatWithKnown = knownCards.some(c =>
+        (c.type === 'attack' && c.value >= card.value) || c.isSpecial
+    );
+    if (!canBeatWithKnown && knownCards.length > 0 && memory.unknownOpponentDraws <= 2) {
+        // High confidence they can't beat this
+        const pileSize = state.discardPile.length;
+        score += 8 + (pileSize * 2); // Bigger pile = better trap
+    }
+
+    // --- ENDGAME PRESSURE ---
+    const opponentTotal = state.player.hand.length;
+    // Count remaining prison cards
+    let opponentPrisonCards = 0;
+    for (const row of ['front', 'back']) {
+        for (const slot of state.player.prison[row]) {
+            if (slot.card !== null) opponentPrisonCards++;
+        }
+    }
+    const totalToWin = opponentTotal + opponentPrisonCards;
+
+    if (totalToWin <= 3) {
+        // Opponent is close to winning - play high to block
+        score += card.value * 2;
+    }
+
+    return Math.round(score);
 }
 
 // ─── POST-PLAY HANDLING ────────────────────────────────────────

@@ -28,7 +28,12 @@ export function createGameState() {
         gameOver: false,
         winner: null,
         status: firstPlayer === 'player' ? "Game started! It's your turn." : "Game started! Special card flipped - computer goes first.",
-        log: []
+        log: [],
+        _aiMemory: {
+            knownOpponentCards: [],
+            unknownOpponentDraws: 0,
+            opponentPlayHistory: []
+        }
     };
 }
 
