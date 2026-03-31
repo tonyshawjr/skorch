@@ -24,6 +24,7 @@ export function createGameState() {
         computer: { hand: computerHand, prison: computerPrison },
         currentTurn: firstPlayer,
         turnCount: 1,
+        burnedCards: [],
         gameOver: false,
         winner: null,
         status: firstPlayer === 'player' ? "Game started! It's your turn." : "Game started! Special card flipped - computer goes first.",
@@ -131,6 +132,7 @@ function processSpecialEffect(state, who, card) {
     switch (card.type) {
         case CardType.SKORCH:
             // Skorch burns EVERYTHING - the pile AND the Skorch card itself. All removed from game.
+            state.burnedCards = (state.burnedCards || []).concat(state.discardPile);
             state.discardPile = [];
             return { type: 'skorch', message: ' Skorch! Discard pile burned.' };
         case CardType.SHIELD:

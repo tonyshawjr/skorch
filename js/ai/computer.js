@@ -12,6 +12,15 @@ export function computerTurn(state) {
     thoughts.push(`Value to beat: ${effectiveValue}`);
     thoughts.push(`Hand: ${hand.length} cards | Deck: ${state.deck.length} | Pile: ${state.discardPile.length}`);
 
+    // Card counting intel
+    const cc = countCards(state);
+    const burned = (state.burnedCards || []).length;
+    thoughts.push(`[Card Count] Unknown: ${cc.total} | Opp hand: ${cc.opponentHand} | Burned: ${burned}`);
+    if (effectiveValue > 0) {
+        const beatProb = cc.canOpponentBeat(effectiveValue);
+        thoughts.push(`[Card Count] P(opp beats ${effectiveValue}): ${(beatProb * 100).toFixed(0)}%`);
+    }
+
     // Prison phase
     if (hand.length === 0) return computerPlayPrison(state, thoughts);
 
@@ -27,9 +36,10 @@ export function computerTurn(state) {
         return { message: result.message, thoughts: thoughts.join('\n'), handBefore };
     }
 
-    // Score every move
+    // Score every move (with card counting data)
+    const counting = countCards(state);
     for (const move of moves) {
-        move.score = scoreMove(move, state);
+        move.score = scoreMove(move, state, counting);
         thoughts.push(`  ${move.description}: ${move.score} pts`);
     }
 
@@ -110,9 +120,78 @@ function generateMoves(state) {
     return moves;
 }
 
+// ─── CARD COUNTING ────────────────────────────────────────────
+
+const FULL_DECK = (() => {
+    const d = {};
+    for (let i = 1; i <= 10; i++) d[i] = 6;
+    d.elude = 4; d.shield = 4; d.demoter = 4; d.skorch = 4; d.undead = 1;
+    return d;
+})();
+
+function cardKey(card) {
+    return card.type === 'attack' ? card.value : card.type;
+}
+
+function subtractCards(remaining, cards) {
+    for (const card of cards) {
+        const key = cardKey(card);
+        if (remaining[key] > 0) remaining[key]--;
+    }
+}
+
+function countCards(state) {
+    // Start with full deck
+    const remaining = { ...FULL_DECK };
+
+    // Subtract: computer's own hand (known)
+    subtractCards(remaining, state.computer.hand);
+
+    // Subtract: face-up prison cards (both players)
+    for (const who of ['player', 'computer']) {
+        for (const row of ['front', 'back']) {
+            for (const slot of state[who].prison[row]) {
+                if (slot.card && slot.faceUp) {
+                    subtractCards(remaining, [slot.card]);
+                }
+            }
+        }
+    }
+
+    // Subtract: discard pile (known)
+    subtractCards(remaining, state.discardPile);
+
+    // Subtract: burned cards (removed from game by Skorch)
+    subtractCards(remaining, state.burnedCards || []);
+
+    // Total unknown cards = deck + opponent hand + face-down prison cards
+    const total = Object.values(remaining).reduce((sum, n) => sum + n, 0);
+    const opponentHand = state.player.hand.length;
+
+    // Probability opponent can beat a given attack value
+    // Cards that beat value V: attacks V through 10, plus all specials (always playable)
+    function canOpponentBeat(value) {
+        if (total === 0) return 0;
+        let beaters = 0;
+        for (let v = value; v <= 10; v++) {
+            beaters += remaining[v];
+        }
+        beaters += remaining.elude + remaining.shield + remaining.demoter + remaining.skorch + remaining.undead;
+        // Probability at least one of opponent's cards can beat it
+        // P(none beat) = C(non-beaters, handSize) / C(total, handSize)
+        // Simplified: 1 - ((total - beaters) / total) ^ handSize
+        const nonBeaters = total - beaters;
+        if (nonBeaters <= 0) return 1;
+        if (opponentHand === 0) return 0;
+        return 1 - Math.pow(nonBeaters / total, opponentHand);
+    }
+
+    return { remaining, total, opponentHand, canOpponentBeat };
+}
+
 // ─── SCORING ENGINE ────────────────────────────────────────────
 
-function scoreMove(move, state) {
+function scoreMove(move, state, counting) {
     // Pickup: heavily penalized, proportional to pile size
     if (move.type === 'pickup') {
         return -10 - state.discardPile.length * 3;
@@ -150,17 +229,33 @@ function scoreMove(move, state) {
         if (opponentCards <= 3) {
             score += card.value * 0.5;
         }
+
+        // Card counting: if opponent is unlikely to beat this value, bonus for playing it
+        if (counting) {
+            const beatProb = counting.canOpponentBeat(card.value);
+            if (beatProb < 0.3) {
+                // Opponent probably can't beat this — great play
+                score += 8;
+            } else if (beatProb < 0.5) {
+                score += 4;
+            }
+            // If most high cards are gone, mid-value cards are effectively high
+            const highCardsLeft = (counting.remaining[8] || 0) + (counting.remaining[9] || 0) + (counting.remaining[10] || 0);
+            if (highCardsLeft <= 3 && card.value >= 5) {
+                score += 5; // Mid cards are strong when highs are depleted
+            }
+        }
     }
 
     // ── 4. Special card scoring ──
     if (card.isSpecial) {
-        score += scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize);
+        score += scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting);
     }
 
     return Math.round(score);
 }
 
-function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize) {
+function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting) {
     let score = 0;
 
     // Count what else we have
@@ -169,15 +264,27 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
     const hasPlayableAttacks = playableAttacks.length > 0;
 
     switch (card.type) {
-        case CardType.SKORCH:
+        case CardType.SKORCH: {
             // Value scales with pile size — burning a big pile removes lots of cards from game
             if (pileSize >= 8) score += 20;
             else if (pileSize >= 5) score += 12;
             else if (pileSize >= 3) score += 5;
             else score -= 12; // Don't waste on tiny piles
+
+            // Card counting: bonus if pile contains high-value or special cards worth burning
+            if (counting && pileSize > 0) {
+                let pileValue = 0;
+                for (const c of state.discardPile) {
+                    if (c.type === CardType.ATTACK && c.value >= 7) pileValue += 2;
+                    if (c.isSpecial) pileValue += 3;
+                }
+                score += pileValue;
+            }
+
             // Extra value if it empties hand
             if (handSizeAfter === 0) score += 15;
             break;
+        }
 
         case CardType.DEMOTER:
             // Resets value to 0 — great when we can't play attacks
@@ -190,6 +297,14 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
                 // We have attacks that work — save demoter for later
                 score -= 8;
             }
+
+            // Card counting: if lots of low cards remain, opponent easily plays after reset — less valuable
+            if (counting) {
+                const lowRemaining = (counting.remaining[1] || 0) + (counting.remaining[2] || 0) + (counting.remaining[3] || 0);
+                if (lowRemaining >= 8) score -= 4; // Opponent has easy follow-ups
+                else if (lowRemaining <= 2) score += 4; // Few low cards left, harder for them
+            }
+
             // Empties hand bonus
             if (handSizeAfter === 0) score += 15;
             break;
