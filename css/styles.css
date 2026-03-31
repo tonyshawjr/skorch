@@ -27,7 +27,7 @@ body {
 
 button { font-family: inherit; }
 
-.game-container { max-width: 1400px; margin: 0 auto; position: relative; padding-bottom: 80px; padding-top: 90px; }
+.game-container { max-width: 1400px; margin: 0 auto; position: relative; padding-bottom: 2rem; padding-top: 80px; }
 
 /* Header */
 .game-header {
@@ -48,7 +48,7 @@ button { font-family: inherit; }
 .btn-restart:hover { background-color: #c41a1f; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 
 /* Status */
-.status-container { margin-bottom: 2rem; padding-top: 80px; }
+.status-container { margin-top: 1rem; margin-bottom: 1rem; }
 .status-message {
     background: var(--skorch-darker); border: 1px solid rgba(255,255,255,0.1);
     padding: 1.25rem; border-radius: 1rem; margin-bottom: 1rem;

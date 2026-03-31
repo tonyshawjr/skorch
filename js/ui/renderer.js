@@ -6,12 +6,12 @@ const ASSETS_PATH = 'assets/cards/';
 export function render(state, root, handlers) {
     root.innerHTML = '';
     root.appendChild(createHeader(handlers.onRestart));
-    root.appendChild(createStatusBar(state));
     const board = el('div', 'game-board');
     board.appendChild(createPlayerArea(state, handlers));
     board.appendChild(createComputerArea(state));
     board.appendChild(createCenterSection(state, handlers));
     root.appendChild(board);
+    root.appendChild(createStatusBar(state));
     root.appendChild(createTurnIndicator(state));
 }
 
