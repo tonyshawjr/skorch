@@ -460,16 +460,47 @@ function computerPlayPrison(state, thoughts) {
         return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n'), handBefore: '(prison)' };
     }
 
-    // Face-up cards: pick the best playable one
+    // Face-up cards: score each one like hand plays
     const faceUpPlayable = accessible.filter(a => a.faceUp && isValidPlay(a.card, state));
     if (faceUpPlayable.length > 0) {
-        const sorted = faceUpPlayable.sort((a, b) => {
-            // Prefer specials first, then highest attack
-            if (a.card.isSpecial && !b.card.isSpecial) return -1;
-            if (!a.card.isSpecial && b.card.isSpecial) return 1;
-            return (b.card.value || 0) - (a.card.value || 0);
-        });
-        const pick = sorted[0];
+        const effectiveValue = getEffectiveValue(state);
+        const pileSize = state.discardPile.length;
+        const opponentCards = state.player.hand.length;
+        const counting = countCards(state);
+
+        // Score each prison card
+        for (const a of faceUpPlayable) {
+            const card = a.card;
+            let score = 0;
+            if (card.type === CardType.ATTACK) {
+                // Play lowest valid attack (conservation)
+                score += (11 - card.value) * 2;
+                // Pressure
+                score += card.value;
+                // Don't overkill
+                if (effectiveValue > 0 && card.value - effectiveValue >= 5) {
+                    score -= (card.value - effectiveValue) * 2;
+                }
+            } else {
+                // Specials from prison: only play if attacks can't handle it
+                const hasAttacks = faceUpPlayable.some(p => p.card.type === CardType.ATTACK);
+                if (hasAttacks) {
+                    score -= 10; // Save specials, play attacks first
+                } else {
+                    score += 5;
+                }
+                // Skorch from prison is great if pile is big
+                if (card.type === CardType.SKORCH && pileSize >= 5) score += 15;
+                // Shield from prison - only if can't play attacks
+                if (card.type === CardType.SHIELD && hasAttacks) score -= 20;
+            }
+            a.score = score;
+            thoughts.push(`  Prison ${card.name} (${a.row}[${a.index}]): ${score} pts`);
+        }
+
+        faceUpPlayable.sort((a, b) => b.score - a.score);
+        const pick = faceUpPlayable[0];
+        thoughts.push(`→ Best prison: ${pick.card.name} (${pick.score} pts)`);
         thoughts.push(`Playing prison card: ${pick.card.name} (${pick.row}[${pick.index}])`);
         const result = playFromPrison(state, 'computer', pick.row, pick.index);
         handlePostPlay(state, result, thoughts);
