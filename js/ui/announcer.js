@@ -74,7 +74,7 @@ export function showGameOver(winner, onRestart) {
     overlay.innerHTML = `
         <div class="gameover-content">
             <div class="gameover-title">${isWin ? 'VICTORY' : 'DEFEAT'}</div>
-            <div class="gameover-sub">${isWin ? 'You scorched the competition.' : 'The computer got the best of you.'}</div>
+            <div class="gameover-sub">${isWin ? 'You Skorched the competition.' : 'The computer got the best of you.'}</div>
             <button class="gameover-btn">${isWin ? 'Play Again' : 'Rematch'}</button>
         </div>
     `;

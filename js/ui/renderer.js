@@ -43,7 +43,19 @@ function createHeader(state, onRestart) {
 function createStatusBar(state) {
     const container = el('div', 'status-container');
     const msg = el('div', 'status-message');
-    msg.textContent = state.status;
+
+    // Show value to beat
+    const value = getEffectiveValue(state);
+    const valueText = state.discardPile.length === 0 ? 'Play anything' : `Beat: ${value}`;
+    const valueSpan = el('span', 'value-to-beat');
+    valueSpan.textContent = valueText;
+    msg.appendChild(valueSpan);
+
+    // Status text
+    const statusText = el('span');
+    statusText.textContent = state.status;
+    msg.appendChild(statusText);
+
     container.appendChild(msg);
     return container;
 }
