@@ -208,21 +208,23 @@ function createPrisonSection(state, who, handlers) {
 function createCenterSection(state, handlers) {
     const section = el('div', 'center-piles');
 
-    // Discard pile (top) - only show if cards exist
+    // Discard pile (top)
+    const discardPile = el('div', 'pile-section');
+    const discardLabel = el('div', 'pile-label');
+    discardLabel.textContent = 'Discard Pile';
+    discardPile.appendChild(discardLabel);
+    const discardStack = el('div', 'pile-stack');
     if (state.discardPile.length > 0) {
-        const discardPile = el('div', 'pile-section');
-        const discardLabel = el('div', 'pile-label');
-        discardLabel.textContent = 'Discard Pile';
-        discardPile.appendChild(discardLabel);
-        const discardStack = el('div', 'pile-stack');
         const topCard = state.discardPile[state.discardPile.length - 1];
         discardStack.appendChild(createCardElement(topCard, true));
         const discardCount = el('span', 'pile-count');
         discardCount.textContent = state.discardPile.length;
         discardStack.appendChild(discardCount);
-        discardPile.appendChild(discardStack);
-        section.appendChild(discardPile);
+    } else {
+        discardStack.appendChild(el('div', 'sk-card sk-placeholder'));
     }
+    discardPile.appendChild(discardStack);
+    section.appendChild(discardPile);
 
     // Buttons (middle)
     const buttonGroup = el('div', 'center-buttons');
@@ -253,20 +255,22 @@ function createCenterSection(state, handlers) {
     buttonGroup.appendChild(pickupBtn);
     section.appendChild(buttonGroup);
 
-    // Draw pile (bottom) - only show if deck has cards
+    // Draw pile (bottom)
+    const drawPile = el('div', 'pile-section');
+    const drawLabel = el('div', 'pile-label');
+    drawLabel.textContent = 'Draw Pile';
+    drawPile.appendChild(drawLabel);
+    const drawStack = el('div', 'pile-stack');
     if (state.deck.length > 0) {
-        const drawPile = el('div', 'pile-section');
-        const drawLabel = el('div', 'pile-label');
-        drawLabel.textContent = 'Draw Pile';
-        drawPile.appendChild(drawLabel);
-        const drawStack = el('div', 'pile-stack');
         drawStack.appendChild(createCardElement(null, false));
         const drawCount = el('span', 'pile-count');
         drawCount.textContent = state.deck.length;
         drawStack.appendChild(drawCount);
-        drawPile.appendChild(drawStack);
-        section.appendChild(drawPile);
+    } else {
+        drawStack.appendChild(el('div', 'sk-card sk-placeholder'));
     }
+    drawPile.appendChild(drawStack);
+    section.appendChild(drawPile);
 
     return section;
 }
