@@ -117,8 +117,9 @@ async function onPlaySelected() {
 
         // Announce special cards
         if (['skorch', 'shield', 'demoter', 'elude', 'undead'].includes(result.effect)) {
+            console.log(`ANNOUNCING: ${result.effect} by player`);
             update();
-            await announceSpecial(result.effect, 'player');
+            await announceSpecial(result.effect, 'player', 1200, state);
         }
 
         if (result.effect === 'shield') {
