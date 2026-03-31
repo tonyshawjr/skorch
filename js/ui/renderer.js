@@ -330,21 +330,22 @@ function makeDraggable(el) {
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
         isDragging = true;
         el.style.cursor = 'grabbing';
+        // Get actual rendered position
         const rect = el.getBoundingClientRect();
-        startX = e.clientX;
-        startY = e.clientY;
-        origX = rect.left;
-        origY = rect.top;
+        // Store offset of mouse within the element
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        // Kill the centering transform immediately
         el.style.transform = 'none';
+        el.style.left = rect.left + 'px';
+        el.style.top = rect.top + 'px';
         e.preventDefault();
     });
 
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        el.style.left = (origX + dx) + 'px';
-        el.style.top = (origY + dy) + 'px';
+        el.style.left = (e.clientX - startX) + 'px';
+        el.style.top = (e.clientY - startY) + 'px';
     });
 
     document.addEventListener('mouseup', () => {
