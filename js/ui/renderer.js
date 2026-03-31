@@ -8,10 +8,11 @@ export function render(state, root, handlers) {
     root.appendChild(createHeader(handlers.onRestart));
     root.appendChild(createStatusBar(state));
     const board = el('div', 'game-board');
-    board.appendChild(createPlayerArea(state, handlers));
     board.appendChild(createComputerArea(state));
+    board.appendChild(createCenterPiles(state));
+    board.appendChild(createPlayerArea(state, handlers));
     root.appendChild(board);
-    root.appendChild(createControlsBar(state, handlers));
+    root.appendChild(createButtonBar(state, handlers));
     root.appendChild(createTurnIndicator(state));
 }
 
@@ -205,8 +206,8 @@ function createPrisonSection(state, who, handlers) {
     return section;
 }
 
-function createControlsBar(state, handlers) {
-    const controls = el('div', 'game-controls');
+function createCenterPiles(state) {
+    const section = el('div', 'center-piles');
 
     const drawPile = el('div', 'pile-section');
     const drawLabel = el('div', 'pile-label');
@@ -218,34 +219,7 @@ function createControlsBar(state, handlers) {
     drawCount.textContent = state.deck.length;
     drawStack.appendChild(drawCount);
     drawPile.appendChild(drawStack);
-    controls.appendChild(drawPile);
-
-    const buttonStack = el('div', 'button-stack');
-    const playBtn = el('button', 'btn-play');
-    playBtn.id = 'playSelectedBtn';
-    playBtn.textContent = 'Play Selected Cards';
-    playBtn.disabled = true;
-    if (state.currentTurn === 'player' && !state.gameOver) {
-        playBtn.addEventListener('click', handlers.onPlaySelected);
-    }
-    buttonStack.appendChild(playBtn);
-
-    const pickupBtn = el('button', 'btn-pickup');
-    const canPickup = state.currentTurn === 'player' && !state.gameOver &&
-                      state.player.hand.length > 0 && state.discardPile.length > 0;
-    if (!canPickup) {
-        pickupBtn.disabled = true;
-        if (state.gameOver) pickupBtn.textContent = 'Game Over';
-        else if (state.currentTurn !== 'player') pickupBtn.textContent = 'Waiting...';
-        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play from Prison';
-        else if (state.discardPile.length === 0) pickupBtn.textContent = 'Pile Empty';
-        else pickupBtn.textContent = 'Pick Up Discard Pile';
-    } else {
-        pickupBtn.textContent = 'Pick Up Discard Pile';
-        pickupBtn.addEventListener('click', handlers.onPickup);
-    }
-    buttonStack.appendChild(pickupBtn);
-    controls.appendChild(buttonStack);
+    section.appendChild(drawPile);
 
     const discardPile = el('div', 'pile-section');
     const discardLabel = el('div', 'pile-label');
@@ -266,9 +240,40 @@ function createControlsBar(state, handlers) {
         discardStack.appendChild(empty);
     }
     discardPile.appendChild(discardStack);
-    controls.appendChild(discardPile);
+    section.appendChild(discardPile);
 
-    return controls;
+    return section;
+}
+
+function createButtonBar(state, handlers) {
+    const bar = el('div', 'game-controls');
+
+    const playBtn = el('button', 'btn-play');
+    playBtn.id = 'playSelectedBtn';
+    playBtn.textContent = 'Play Selected Cards';
+    playBtn.disabled = true;
+    if (state.currentTurn === 'player' && !state.gameOver) {
+        playBtn.addEventListener('click', handlers.onPlaySelected);
+    }
+    bar.appendChild(playBtn);
+
+    const pickupBtn = el('button', 'btn-pickup');
+    const canPickup = state.currentTurn === 'player' && !state.gameOver &&
+                      state.player.hand.length > 0 && state.discardPile.length > 0;
+    if (!canPickup) {
+        pickupBtn.disabled = true;
+        if (state.gameOver) pickupBtn.textContent = 'Game Over';
+        else if (state.currentTurn !== 'player') pickupBtn.textContent = 'Waiting...';
+        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play from Prison';
+        else if (state.discardPile.length === 0) pickupBtn.textContent = 'Pile Empty';
+        else pickupBtn.textContent = 'Pick Up Discard Pile';
+    } else {
+        pickupBtn.textContent = 'Pick Up Discard Pile';
+        pickupBtn.addEventListener('click', handlers.onPickup);
+    }
+    bar.appendChild(pickupBtn);
+
+    return bar;
 }
 
 function createTurnIndicator(state) {
