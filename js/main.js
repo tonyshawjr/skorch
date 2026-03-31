@@ -3,6 +3,7 @@ import { computerTurn } from './ai/computer.js';
 import { render } from './ui/renderer.js';
 import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
+import { announceSpecial, showGameOver } from './ui/announcer.js';
 
 const SAVE_KEY = 'skorch_game_state';
 
@@ -107,13 +108,17 @@ async function onPlaySelected() {
         }
 
         drawCard(state, 'player');
-        if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
-
-        if (result.effect === 'skorch') {
+        if (checkWin(state, 'player')) {
+            state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             update();
-            const discardArea = root.querySelector('.pile-stack');
-            if (discardArea) await animateBurn(discardArea, 500);
-            await wait(200);
+            showGameOver('player', onRestart);
+            return;
+        }
+
+        // Announce special cards
+        if (['skorch', 'shield', 'demoter', 'elude', 'undead'].includes(result.effect)) {
+            update();
+            await announceSpecial(result.effect, 'player');
         }
 
         if (result.effect === 'shield') {
@@ -153,7 +158,12 @@ function onPrisonClick(row, index) {
 
     if (result.success && result.effect !== 'pickup') {
         drawCard(state, 'player');
-        if (checkWin(state, 'player')) { state.gameOver = true; state.winner = 'player'; state.status = 'You win!'; update(); return; }
+        if (checkWin(state, 'player')) {
+            state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
+            update();
+            showGameOver('player', onRestart);
+            return;
+        }
         if (result.effect === 'shield') { state.status += ' You go again!'; update(); return; }
         nextTurn(state);
     } else if (result.effect === 'pickup') {
@@ -180,7 +190,18 @@ async function doComputerTurn() {
     console.log(`Deck: ${state.deck.length}`);
     console.log('---------------------');
 
-    if (state.gameOver) { update(); return; }
+    if (state.gameOver) {
+        update();
+        showGameOver(state.winner, onRestart);
+        return;
+    }
+
+    // Announce computer's special cards
+    const specialMatch = result.message.match(/Skorch|Shield|Demoter|Elude|Undead/i);
+    if (specialMatch) {
+        update();
+        await announceSpecial(specialMatch[0].toLowerCase(), 'computer');
+    }
 
     // Shield: computer goes again
     if (result.message.includes('Shield') || result.message.includes('shield')) {
