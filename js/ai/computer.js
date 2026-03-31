@@ -219,19 +219,46 @@ function scoreMove(move, state, counting) {
     score += cardsPlayed * 8;
 
     // ── 2. Hand emptying bonus (reaching prison is huge) ──
-    if (handSizeAfter === 0) score += 25;
+    if (handSizeAfter === 0) {
+        // Check prison readiness
+        let faceDownCount = 0;
+        for (const row of ['front', 'back']) {
+            for (const slot of state.computer.prison[row]) {
+                if (slot.card !== null && !slot.faceUp) faceDownCount++;
+            }
+        }
+        score += faceDownCount >= 4 ? 12 : 25;
+    }
 
     // ── 3. Attack card logic ──
     if (card.type === CardType.ATTACK) {
-        // Conservation: prefer playing LOW cards, save HIGH for later
-        score += (11 - card.value) * 2;
+        // Conservation: prefer low, but less dominant
+        score += (11 - card.value) * 1.5;
 
-        // Pressure: higher values are harder for opponent to beat
-        score += card.value;
+        // Pressure: scales with opponent proximity to winning
+        let oppCardsTotal = opponentCards;
+        for (const row of ['front', 'back']) {
+            for (const slot of state.player.prison[row]) {
+                if (slot.card !== null) oppCardsTotal++;
+            }
+        }
+        if (oppCardsTotal <= 3) {
+            score += card.value * 2.5;  // Heavy pressure when they're close
+        } else if (oppCardsTotal <= 6) {
+            score += card.value * 1.5;
+        } else {
+            score += card.value;
+        }
 
         // Waste penalty: don't play a 10 when a 3 would do
-        if (effectiveValue > 0 && card.value - effectiveValue >= 5) {
+        if (effectiveValue > 0 && card.value - effectiveValue >= 3) {
             score -= (card.value - effectiveValue) * 1.5;
+        }
+
+        // Large hand: prioritize dumping cards
+        if (hand.length >= 10) {
+            score += cardsPlayed * 5;  // Extra bonus per card played
+            score += (11 - card.value) * 0.5;  // Even more conservation (dump low first)
         }
 
         // Endgame: if opponent is close, play high to block them
@@ -288,6 +315,7 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
                 let pileValue = 0;
                 for (const c of state.discardPile) {
                     if (c.type === CardType.ATTACK && c.value >= 7) pileValue += 2;
+                    if (c.type === CardType.ATTACK && c.value <= 3) pileValue += 1;
                     if (c.isSpecial) pileValue += 3;
                 }
                 score += pileValue;
@@ -308,6 +336,11 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
         }
 
         case CardType.DEMOTER:
+            // Demoter on a 0-value pile does nothing useful
+            if (effectiveValue === 0) {
+                score -= 15;
+                break;
+            }
             // Resets value to 0 — great when we can't play attacks
             if (!hasPlayableAttacks) {
                 score += 18;
@@ -326,36 +359,37 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
                 else if (lowRemaining <= 2) score += 4; // Few low cards left, harder for them
             }
 
+            // Large pile + Demoter = gift to opponent (easy play for them)
+            if (pileSize >= 6) score -= 5;
+
             // Empties hand bonus
             if (handSizeAfter === 0) score += 15;
             break;
 
         case CardType.SHIELD:
-            // Shield skips opponent's turn, value stays the same, we go again.
-            // KEY INSIGHT: Shield doesn't change the value. If we have attacks that beat it,
-            // we should play attacks instead of wasting a Shield. Shield is a defensive card
-            // for when we CAN'T beat the value, not an offensive play.
             if (handSizeAfter === 0) {
-                // Empties hand to reach prison — always great
                 score += 25;
             } else if (!hasPlayableAttacks) {
-                // Can't beat the value - Shield buys another turn (maybe draw helps)
                 score += 8;
                 if (opponentCards <= 2) score += 10;
             } else {
-                // We HAVE attacks that work. Don't waste Shield - save it.
-                // Shield should almost never beat a playable attack card.
+                // Has attacks - Shield is usually worse than just playing them
                 score -= 15;
+                // BUT: Shield + high attack on big pile = combo play
+                if (pileSize >= 6) {
+                    const maxAttack = Math.max(...playableAttacks.map(c => c.value));
+                    if (maxAttack >= 7) score += maxAttack + pileSize;
+                }
             }
             break;
 
         case CardType.ELUDE:
-            // Mirrors current value, doesn't help change the situation
             if (!hasPlayableAttacks) {
-                // Can't beat the value with attacks — elude buys time
                 score += 10;
+            } else if (effectiveValue >= 7) {
+                // Elude maintains high pressure AND saves our high cards
+                score += effectiveValue - 3;
             } else {
-                // Attacks work fine — save elude
                 score -= 6;
             }
             if (handSizeAfter === 0) score += 15;
@@ -423,11 +457,10 @@ function scoreStrategic(move, state, counting) {
     }
 
     // --- DUMP PREVENTION ---
-    // Don't play below what we know they have
-    const knownLow = knownAttacks.filter(c => c.value <= card.value);
-    if (knownLow.length > 0 && card.value <= 3) {
-        // Playing low when they have low cards = letting them dump
-        score -= 10;
+    // Don't play below what we know they can beat
+    const knownBeatable = knownAttacks.filter(c => c.value >= card.value);
+    if (knownBeatable.length > 0) {
+        score -= 6 + knownBeatable.length * 2;
     }
 
     // --- TRAP SCORING ---
@@ -439,6 +472,14 @@ function scoreStrategic(move, state, counting) {
         // High confidence they can't beat this
         const pileSize = state.discardPile.length;
         score += 8 + (pileSize * 2); // Bigger pile = better trap
+    }
+
+    // Also apply probability-based trap with pile size
+    if (counting && card.type === CardType.ATTACK) {
+        const beatProb = counting.canOpponentBeat(card.value);
+        if (beatProb < 0.4 && state.discardPile.length >= 4) {
+            score += Math.round((1 - beatProb) * state.discardPile.length);
+        }
     }
 
     // --- ENDGAME PRESSURE ---
