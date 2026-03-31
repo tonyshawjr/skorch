@@ -207,7 +207,7 @@ async function doComputerTurn() {
     // Shield: computer goes again
     if (result.message.includes('Shield') || result.message.includes('shield')) {
         update();
-        setTimeout(doComputerTurn, 1000);
+        setTimeout(doComputerTurn, 1500);
         return;
     }
     update();

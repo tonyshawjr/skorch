@@ -195,21 +195,21 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
             break;
 
         case CardType.SHIELD:
-            // Shield skips opponent's turn, value stays the same, we go again
-            // We need to be able to follow up or it's pointless
+            // Shield skips opponent's turn, value stays the same, we go again.
+            // KEY INSIGHT: Shield doesn't change the value. If we have attacks that beat it,
+            // we should play attacks instead of wasting a Shield. Shield is a defensive card
+            // for when we CAN'T beat the value, not an offensive play.
             if (handSizeAfter === 0) {
                 // Empties hand to reach prison — always great
                 score += 25;
-            } else if (hasPlayableAttacks) {
-                // We can follow up with an attack
-                score += 10;
-                // Extra value if opponent is close to winning
-                if (opponentCards <= 2) score += 15;
-                else if (opponentCards <= 4) score += 5;
+            } else if (!hasPlayableAttacks) {
+                // Can't beat the value - Shield buys another turn (maybe draw helps)
+                score += 8;
+                if (opponentCards <= 2) score += 10;
             } else {
-                // No follow-up, doesn't empty hand — mostly useless
-                // We'll just face the same value again with fewer options
-                score -= 20;
+                // We HAVE attacks that work. Don't waste Shield - save it.
+                // Shield should almost never beat a playable attack card.
+                score -= 15;
             }
             break;
 
