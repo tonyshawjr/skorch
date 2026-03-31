@@ -9,8 +9,8 @@ export function render(state, root, handlers) {
     root.appendChild(createStatusBar(state));
     const board = el('div', 'game-board');
     board.appendChild(createPlayerArea(state, handlers));
-    board.appendChild(createCenterSection(state, handlers));
     board.appendChild(createComputerArea(state));
+    board.appendChild(createCenterSection(state, handlers));
     root.appendChild(board);
     root.appendChild(createTurnIndicator(state));
 }
