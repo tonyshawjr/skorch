@@ -102,11 +102,18 @@ button { font-family: inherit; }
     width: var(--card-width); height: var(--card-height); border-radius: var(--card-radius);
 }
 
-/* Center Piles (between players) */
+/* Center Section (piles + buttons, vertical stack) */
 .center-piles {
-    display: flex; justify-content: center; align-items: center; gap: 3rem;
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
     padding: 1.5rem 2rem; background: var(--skorch-darker); border-radius: 1.5rem;
     border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.center-buttons {
+    display: flex; gap: 0.75rem; align-items: center;
+}
+.center-buttons .btn-play, .center-buttons .btn-pickup {
+    min-width: 140px; padding: 0.6rem 1.25rem; font-size: 0.875rem;
 }
 
 /* Prison */
@@ -152,14 +159,8 @@ button { font-family: inherit; }
 .computer-hand .sk-card { margin-left: -30px; flex-shrink: 0; }
 .computer-hand .sk-card:hover { transform: translateY(-5px); z-index: 1; }
 
-/* Game Controls (compact fixed button bar) */
-.game-controls {
-    position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
-    background: var(--skorch-darker); padding: 0.75rem 1.5rem; border-radius: 9999px;
-    display: flex; align-items: center; gap: 1rem;
-    backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1); z-index: 1000;
-}
+/* Game Controls - no longer needed as separate bar */
+.game-controls { display: none; }
 
 /* Pile sections (now in center-piles, not controls) */
 .pile-section { text-align: center; }
@@ -189,7 +190,7 @@ button { font-family: inherit; }
 .btn-play.active { background-color: var(--skorch-red); color: white; border-color: var(--skorch-red); cursor: pointer; }
 .btn-play.active:hover { background-color: #c41a1f; transform: translateY(-1px); }
 .btn-pickup:disabled, .btn-play:disabled { background-color: #374151; color: #6b7280; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; border-color: #374151; }
-.game-controls .btn-play, .game-controls .btn-pickup { min-width: 160px; }
+/* buttons sized via center-buttons now */
 
 /* Card Button */
 .card-button { background: none; border: none; padding: 0; cursor: pointer; }
@@ -246,12 +247,9 @@ button { font-family: inherit; }
 @media (max-width: 768px) {
     body { padding: 1rem; }
     .game-logo { height: 32px; }
-    .game-controls {
-        width: calc(100% - 2rem); padding: 0.75rem 1rem;
-        gap: 0.75rem; border-radius: 9999px;
-    }
-    .btn-pickup, .btn-play { min-width: unset; padding: 0.6rem 1.25rem; font-size: 0.875rem; }
-    .center-piles { gap: 1.5rem; padding: 1rem; }
+    .center-piles { gap: 0.75rem; padding: 1rem; }
+    .center-buttons { flex-direction: column; width: 100%; }
+    .center-buttons .btn-play, .center-buttons .btn-pickup { min-width: unset; width: 100%; }
     .sk-card { width: 80px; height: 112px; }
     :root { --card-width: 80px; --card-height: 112px; }
     .area-box { padding: 1rem; }

@@ -9,10 +9,9 @@ export function render(state, root, handlers) {
     root.appendChild(createStatusBar(state));
     const board = el('div', 'game-board');
     board.appendChild(createComputerArea(state));
-    board.appendChild(createCenterPiles(state));
+    board.appendChild(createCenterSection(state, handlers));
     board.appendChild(createPlayerArea(state, handlers));
     root.appendChild(board);
-    root.appendChild(createButtonBar(state, handlers));
     root.appendChild(createTurnIndicator(state));
 }
 
@@ -206,56 +205,36 @@ function createPrisonSection(state, who, handlers) {
     return section;
 }
 
-function createCenterPiles(state) {
+function createCenterSection(state, handlers) {
     const section = el('div', 'center-piles');
 
-    const drawPile = el('div', 'pile-section');
-    const drawLabel = el('div', 'pile-label');
-    drawLabel.textContent = 'Draw Pile';
-    drawPile.appendChild(drawLabel);
-    const drawStack = el('div', 'pile-stack');
-    drawStack.appendChild(createCardElement(null, false));
-    const drawCount = el('span', 'pile-count');
-    drawCount.textContent = state.deck.length;
-    drawStack.appendChild(drawCount);
-    drawPile.appendChild(drawStack);
-    section.appendChild(drawPile);
-
-    const discardPile = el('div', 'pile-section');
-    const discardLabel = el('div', 'pile-label');
-    discardLabel.textContent = 'Discard Pile';
-    discardPile.appendChild(discardLabel);
-    const discardStack = el('div', 'pile-stack');
+    // Discard pile (top) - only show if cards exist
     if (state.discardPile.length > 0) {
+        const discardPile = el('div', 'pile-section');
+        const discardLabel = el('div', 'pile-label');
+        discardLabel.textContent = 'Discard Pile';
+        discardPile.appendChild(discardLabel);
+        const discardStack = el('div', 'pile-stack');
         const topCard = state.discardPile[state.discardPile.length - 1];
         discardStack.appendChild(createCardElement(topCard, true));
         const discardCount = el('span', 'pile-count');
         discardCount.textContent = state.discardPile.length;
         discardStack.appendChild(discardCount);
-    } else {
-        const empty = el('div', 'sk-card sk-placeholder');
-        const emptyText = el('div', 'empty-pile-text');
-        emptyText.textContent = 'No Cards';
-        empty.appendChild(emptyText);
-        discardStack.appendChild(empty);
+        discardPile.appendChild(discardStack);
+        section.appendChild(discardPile);
     }
-    discardPile.appendChild(discardStack);
-    section.appendChild(discardPile);
 
-    return section;
-}
-
-function createButtonBar(state, handlers) {
-    const bar = el('div', 'game-controls');
+    // Buttons (middle)
+    const buttonGroup = el('div', 'center-buttons');
 
     const playBtn = el('button', 'btn-play');
     playBtn.id = 'playSelectedBtn';
-    playBtn.textContent = 'Play Selected Cards';
+    playBtn.textContent = 'Play Selected';
     playBtn.disabled = true;
     if (state.currentTurn === 'player' && !state.gameOver) {
         playBtn.addEventListener('click', handlers.onPlaySelected);
     }
-    bar.appendChild(playBtn);
+    buttonGroup.appendChild(playBtn);
 
     const pickupBtn = el('button', 'btn-pickup');
     const canPickup = state.currentTurn === 'player' && !state.gameOver &&
@@ -264,16 +243,32 @@ function createButtonBar(state, handlers) {
         pickupBtn.disabled = true;
         if (state.gameOver) pickupBtn.textContent = 'Game Over';
         else if (state.currentTurn !== 'player') pickupBtn.textContent = 'Waiting...';
-        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play from Prison';
+        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play Prison';
         else if (state.discardPile.length === 0) pickupBtn.textContent = 'Pile Empty';
-        else pickupBtn.textContent = 'Pick Up Discard Pile';
+        else pickupBtn.textContent = 'Pick Up Pile';
     } else {
-        pickupBtn.textContent = 'Pick Up Discard Pile';
+        pickupBtn.textContent = 'Pick Up Pile';
         pickupBtn.addEventListener('click', handlers.onPickup);
     }
-    bar.appendChild(pickupBtn);
+    buttonGroup.appendChild(pickupBtn);
+    section.appendChild(buttonGroup);
 
-    return bar;
+    // Draw pile (bottom) - only show if deck has cards
+    if (state.deck.length > 0) {
+        const drawPile = el('div', 'pile-section');
+        const drawLabel = el('div', 'pile-label');
+        drawLabel.textContent = 'Draw Pile';
+        drawPile.appendChild(drawLabel);
+        const drawStack = el('div', 'pile-stack');
+        drawStack.appendChild(createCardElement(null, false));
+        const drawCount = el('span', 'pile-count');
+        drawCount.textContent = state.deck.length;
+        drawStack.appendChild(drawCount);
+        drawPile.appendChild(drawStack);
+        section.appendChild(drawPile);
+    }
+
+    return section;
 }
 
 function createTurnIndicator(state) {
