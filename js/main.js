@@ -52,11 +52,6 @@ function update() {
         onPrisonClick
     });
 
-    // Animate newly rendered player cards
-    const playerCards = root.querySelectorAll('.playable-cards .sk-card');
-    playerCards.forEach((card, i) => {
-        card.style.animation = `fadeSlideUp 200ms ease-out ${i * 30}ms both`;
-    });
 }
 
 function onCardSelect(index, cardEl) {
