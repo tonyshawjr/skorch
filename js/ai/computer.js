@@ -477,9 +477,24 @@ function scoreStrategic(move, state, counting) {
     // Only apply to attack cards
     if (card.type !== CardType.ATTACK) return score;
 
+    // --- VISIBLE PRISON AWARENESS ---
+    // When opponent is in prison phase, their face-up prison cards ARE known threats
+    let allKnownThreats = [...knownCards];
+    if (state.player.hand.length === 0) {
+        // Opponent is in prison - add their visible prison cards as known
+        for (const row of ['front', 'back']) {
+            for (let i = 0; i < state.player.prison[row].length; i++) {
+                const slot = state.player.prison[row][i];
+                if (slot.card && slot.faceUp) {
+                    allKnownThreats.push(slot.card);
+                }
+            }
+        }
+    }
+
     // --- BLOCK SCORING ---
     // If we know opponent's highest attack, play just above it
-    const knownAttacks = knownCards.filter(c => c.type === 'attack');
+    const knownAttacks = allKnownThreats.filter(c => c.type === 'attack');
     const highestKnown = knownAttacks.length > 0
         ? Math.max(...knownAttacks.map(c => c.value))
         : 0;
@@ -500,10 +515,10 @@ function scoreStrategic(move, state, counting) {
 
     // --- TRAP SCORING ---
     // If opponent can't beat current value with known cards, pile is a trap
-    const canBeatWithKnown = knownCards.some(c =>
+    const canBeatWithKnown = allKnownThreats.some(c =>
         (c.type === 'attack' && c.value >= card.value) || c.isSpecial
     );
-    if (!canBeatWithKnown && knownCards.length > 0 && memory.unknownOpponentDraws <= 2) {
+    if (!canBeatWithKnown && allKnownThreats.length > 0 && memory.unknownOpponentDraws <= 2) {
         // High confidence they can't beat this
         const pileSize = state.discardPile.length;
         score += 8 + (pileSize * 2); // Bigger pile = better trap
