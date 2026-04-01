@@ -199,7 +199,7 @@ button { font-family: inherit; }
 
 /* Unplayable Stack */
 .unplayable-stack { margin: -0.5rem 0 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.stacked-cards { position: relative; height: var(--card-height); width: 100%; display: flex; justify-content: center; }
+.stacked-cards { position: relative; height: var(--card-height); width: 100%; display: flex; justify-content: center; overflow: visible; min-width: 350px; }
 .stacked-cards .sk-card { position: absolute; transform-origin: center bottom; transition: transform 0.2s ease; }
 .stacked-cards .sk-card:nth-child(1) { transform: rotate(-14deg) translateX(-30px); }
 .stacked-cards .sk-card:nth-child(2) { transform: rotate(-10deg) translateX(-20px); }

@@ -4,6 +4,9 @@ import { toggleMute, isMuted } from './sound.js';
 
 const ASSETS_PATH = 'assets/cards/';
 
+const SVG_SOUND = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>';
+const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+
 export function render(state, root, handlers) {
     root.innerHTML = '';
     root.appendChild(createHeader(state, handlers.onRestart));
@@ -34,10 +37,10 @@ function createHeader(state, onRestart) {
 
     const actions = el('div', 'header-actions');
     const muteBtn = el('button', 'btn-mute');
-    muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
+    muteBtn.innerHTML = isMuted() ? SVG_MUTED : SVG_SOUND;
     muteBtn.addEventListener('click', () => {
         const nowMuted = toggleMute();
-        muteBtn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
+        muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
     });
     actions.appendChild(muteBtn);
     const restartBtn = el('button', 'btn-restart');
