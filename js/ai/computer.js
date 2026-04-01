@@ -317,11 +317,30 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
 
     switch (card.type) {
         case CardType.SKORCH: {
+            // === SKORCH-UNDEAD STRATEGY ===
+            // The Skorch card is the ONLY way to permanently remove the Undead card from the game.
+            // If Undead is in the discard pile, Skorching it eliminates a major threat.
+            // If Undead has NOT appeared yet, consider saving Skorch as insurance.
+
+            const undeadInPile = state.discardPile.some(c => c.type === CardType.UNDEAD);
+            const undeadBurned = (state.burnedCards || []).some(c => c.type === CardType.UNDEAD);
+            const undeadInMyHand = hand.some(c => c.type === CardType.UNDEAD);
+            const undeadAccountedFor = undeadBurned || undeadInMyHand; // We know where it is
+
+            if (undeadInPile) {
+                // CRITICAL: Undead is in the pile - Skorch it NOW to remove from game
+                score += 25;
+            } else if (!undeadAccountedFor && !hasPlayableAttacks) {
+                // Undead is still out there and we can't play attacks - save Skorch if possible
+                // But if we have no other options, still play it
+                score -= 8;
+            }
+
             // Value scales with pile size — burning a big pile removes lots of cards from game
             if (pileSize >= 8) score += 20;
             else if (pileSize >= 5) score += 12;
             else if (pileSize >= 3) score += 5;
-            else score -= 12; // Don't waste on tiny piles
+            else if (!undeadInPile) score -= 12; // Don't waste on tiny piles (unless Undead is there)
 
             // Card counting: bonus if pile contains high-value or special cards worth burning
             if (counting && pileSize > 0) {
@@ -335,12 +354,15 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
             }
 
             // Don't burn pile if opponent would have to pick it up anyway
-            const knownCards = (state._aiMemory?.knownOpponentCards || []);
-            const canOpponentBeat = knownCards.some(c =>
-                (c.type === 'attack' && c.value >= effectiveValue) || c.isSpecial
-            );
-            if (!canOpponentBeat && knownCards.length > 0 && pileSize >= 3) {
-                score -= 20; // Let them pick up instead of burning
+            // UNLESS Undead is in the pile (always burn Undead)
+            if (!undeadInPile) {
+                const knownCards = (state._aiMemory?.knownOpponentCards || []);
+                const canOpponentBeat = knownCards.some(c =>
+                    (c.type === 'attack' && c.value >= effectiveValue) || c.isSpecial
+                );
+                if (!canOpponentBeat && knownCards.length > 0 && pileSize >= 3) {
+                    score -= 20; // Let them pick up instead of burning
+                }
             }
 
             // Extra value if it empties hand
