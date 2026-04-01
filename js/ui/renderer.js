@@ -116,15 +116,34 @@ export function render(state, root, handlers) {
         handScroll.appendChild(cardEl);
     });
 
-    // Unplayable cards - shown dimmed inline so player can plan ahead
+    // Unplayable badge - tap to see all in modal
     if (unplayable.length > 0) {
-        const divider = el('div', 'mobile-hand-divider');
-        handScroll.appendChild(divider);
-        unplayable.forEach(({ card }) => {
-            const cardEl = createCardElement(card, true);
-            cardEl.classList.add('mobile-hand-card', 'mobile-hand-card-dim');
-            handScroll.appendChild(cardEl);
+        const badge = el('button', 'mobile-unplayable-badge');
+        badge.textContent = `+${unplayable.length}`;
+        badge.addEventListener('click', () => {
+            const sheet = el('div', 'mobile-peek-sheet');
+            sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
+            const content = el('div', 'mobile-peek-content');
+            const title = el('h3');
+            title.textContent = `Cards You Can't Play Yet (${unplayable.length})`;
+            title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+            content.appendChild(title);
+            const cardGrid = el('div', 'mobile-unplayable-grid');
+            unplayable.forEach(({ card }) => {
+                const cardEl = createCardElement(card, true);
+                cardEl.classList.add('mobile-hand-card');
+                cardEl.style.margin = '0';
+                cardGrid.appendChild(cardEl);
+            });
+            content.appendChild(cardGrid);
+            const hint = el('p');
+            hint.textContent = 'Tap outside to close';
+            hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+            content.appendChild(hint);
+            sheet.appendChild(content);
+            document.body.appendChild(sheet);
         });
+        handScroll.appendChild(badge);
     }
 
     handSection.appendChild(handScroll);

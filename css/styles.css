@@ -395,14 +395,15 @@ button { font-family: inherit; }
     box-shadow: 0 4px 8px rgba(227,30,36,0.3);
 }
 
-.mobile-hand-divider {
-    flex-shrink: 0; width: 2px; height: 80px;
-    background: rgba(255,255,255,0.15); margin: 0 6px;
-    align-self: center; border-radius: 1px;
+.mobile-unplayable-badge {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #9ca3af; padding: 0.4rem 0.75rem; margin-left: 4px;
+    border-radius: 0.5rem; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
 }
-.mobile-hand-card-dim {
-    opacity: 0.35 !important;
-    pointer-events: none;
+.mobile-unplayable-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
 }
 
 .mobile-prison-section { padding: 0.25rem 0.5rem; }
