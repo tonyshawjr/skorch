@@ -85,7 +85,7 @@ button { font-family: inherit; }
 /* Area Boxes - fixed height, scroll if overflow */
 .area-box {
     background: var(--skorch-darker); border-radius: 1.5rem; padding: 1.5rem;
-    backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.1);
     overflow: visible;
 }
@@ -198,7 +198,7 @@ button { font-family: inherit; }
 
 /* Unplayable Stack - fanned out cards */
 .unplayable-stack { margin: -0.5rem 0 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: visible; }
-.stacked-cards { position: relative; height: var(--card-height); width: 100%; display: flex; justify-content: center; overflow: visible; }
+.stacked-cards { position: relative; height: 140px; width: 100%; display: flex; justify-content: center; }
 .stacked-cards .sk-card { position: absolute; transform-origin: center bottom; transition: transform 0.2s ease; }
 .stacked-cards .sk-card:nth-child(1) { transform: rotate(-14deg) translateX(-30px); }
 .stacked-cards .sk-card:nth-child(2) { transform: rotate(-10deg) translateX(-20px); }
