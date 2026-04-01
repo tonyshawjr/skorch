@@ -28,7 +28,7 @@ export function connect(handlers) {
         // Load Socket.io from CDN
         if (!window.io) {
             const script = document.createElement('script');
-            script.src = 'https://cdn.socket.io/4.7.4/socket.io.min.js';
+            script.src = 'js/lib/socket.io.min.js';
             script.onload = () => { initSocket().then(resolve).catch(reject); };
             script.onerror = () => reject(new Error('Failed to load Socket.io'));
             document.head.appendChild(script);
@@ -41,8 +41,9 @@ export function connect(handlers) {
 function initSocket() {
     return new Promise((resolve, reject) => {
         socket = window.io(SERVER_URL, {
-            transports: ['websocket', 'polling'],
-            timeout: 10000
+            transports: ['polling', 'websocket'],
+            timeout: 15000,
+            forceNew: true
         });
 
         socket.on('connect', () => {
