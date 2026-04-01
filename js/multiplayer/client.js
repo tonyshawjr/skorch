@@ -12,7 +12,7 @@ let onRematchRequested = null;
 let onRoomCreated = null;
 let onRoomJoined = null;
 
-const SERVER_URL = 'http://localhost:3001'; // Change for production
+const SERVER_URL = 'https://skorch-multiplayer.onrender.com';
 
 export function connect(handlers) {
     onStateUpdate = handlers.onStateUpdate;
