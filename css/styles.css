@@ -506,6 +506,19 @@ button { font-family: inherit; }
 }
 
 /* Hamburger menu */
+/* Opponent badge in header */
+.mobile-opp-header {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(0,0,0,0.15); border: none;
+    color: var(--skorch-dark); padding: 0.3rem 0.6rem;
+    border-radius: 9999px; cursor: pointer;
+    font-family: inherit; font-size: 0.8rem; line-height: 1;
+}
+.mobile-opp-header .opp-count {
+    font-weight: 700; font-size: 0.85rem;
+}
+.mobile-opp-header svg { opacity: 0.7; }
+
 .hamburger-btn {
     background: none; border: none; color: var(--skorch-dark);
     cursor: pointer; padding: 0.25rem; line-height: 0;

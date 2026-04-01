@@ -189,55 +189,7 @@ export function render(state, root, handlers) {
     }
     root.appendChild(prisonSection);
 
-    // 5. Opponent peek bar
-    const oppBar = el('div', 'mobile-opponent-bar');
-    const oppInfo = el('span', 'mobile-opp-info');
-    oppInfo.textContent = `${state._opponentName || 'Opponent'}: ${state.computer.hand.length} cards`;
-    oppBar.appendChild(oppInfo);
-
-    const peekBtn = el('button', 'mobile-peek-btn');
-    peekBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-    peekBtn.addEventListener('click', () => {
-        // Show opponent peek sheet
-        const sheet = el('div', 'mobile-peek-sheet');
-        sheet.addEventListener('click', () => sheet.remove());
-
-        const content = el('div', 'mobile-peek-content');
-        const title = el('h3');
-        title.textContent = `${state._opponentName || 'Opponent'} - ${state.computer.hand.length} cards in hand`;
-        title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
-        content.appendChild(title);
-
-        // Show opponent prison
-        for (const rowName of ['front', 'back']) {
-            const row = el('div', 'mobile-prison-row');
-            state.computer.prison[rowName].forEach((slot) => {
-                if (slot.card === null) {
-                    row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
-                } else {
-                    const showFace = slot.faceUp;
-                    const cardEl = createCardElement(slot.card, showFace);
-                    cardEl.classList.add('mobile-prison-card');
-                    if (!showFace) {
-                        cardEl.className = 'sk-card sk-face-down mobile-prison-card';
-                        cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
-                    }
-                    row.appendChild(cardEl);
-                }
-            });
-            content.appendChild(row);
-        }
-
-        const hint = el('p');
-        hint.textContent = 'Tap anywhere to close';
-        hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
-        content.appendChild(hint);
-
-        sheet.appendChild(content);
-        document.body.appendChild(sheet);
-    });
-    oppBar.appendChild(peekBtn);
-    root.appendChild(oppBar);
+    // Opponent info is now in the header - no bottom bar needed
 
     // Status at very bottom
     root.appendChild(createStatusBar(state));
@@ -279,6 +231,43 @@ function createHeader(state, onRestart, onMultiplayer) {
     const isMobile = window.innerWidth <= 1024;
 
     if (isMobile) {
+        // Opponent card count + peek in header
+        const oppBadge = el('button', 'mobile-opp-header');
+        oppBadge.innerHTML = `<span class="opp-count">${state.computer.hand.length}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        oppBadge.addEventListener('click', () => {
+            const sheet = el('div', 'mobile-peek-sheet');
+            sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
+            const content = el('div', 'mobile-peek-content');
+            const title = el('h3');
+            title.textContent = `${state._opponentName || 'Opponent'} - ${state.computer.hand.length} cards`;
+            title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+            content.appendChild(title);
+            for (const rowName of ['front', 'back']) {
+                const row = el('div', 'mobile-prison-row');
+                state.computer.prison[rowName].forEach((slot) => {
+                    if (slot.card === null) {
+                        row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
+                    } else {
+                        const cardEl = createCardElement(slot.card, slot.faceUp);
+                        cardEl.classList.add('mobile-prison-card');
+                        if (!slot.faceUp) {
+                            cardEl.className = 'sk-card sk-face-down mobile-prison-card';
+                            cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
+                        }
+                        row.appendChild(cardEl);
+                    }
+                });
+                content.appendChild(row);
+            }
+            const hint = el('p');
+            hint.textContent = 'Tap outside to close';
+            hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+            content.appendChild(hint);
+            sheet.appendChild(content);
+            document.body.appendChild(sheet);
+        });
+        header.appendChild(oppBadge);
+
         // Hamburger menu for mobile
         const hamburger = el('button', 'hamburger-btn');
         hamburger.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
