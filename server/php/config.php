@@ -22,6 +22,10 @@ function getDB() {
 function jsonResponse($data, $code = 200) {
     http_response_code($code);
     header('Content-Type: application/json');
+    header('Cache-Control: no-store, no-cache, must-revalidate, private');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    header('Vary: Cookie');
     header('Access-Control-Allow-Origin: https://play.skorchthegame.com');
     header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

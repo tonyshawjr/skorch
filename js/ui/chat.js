@@ -1,6 +1,6 @@
-// js/ui/chat.js - In-game chat drawer
+// js/ui/chat.js - In-game chat bubble window
 
-let chatDrawer = null;
+let chatBubble = null;
 let messages = [];
 let onSend = null;
 let isOpen = false;
@@ -14,7 +14,7 @@ export function initChat(sendHandler) {
 
 export function addMessage(msg) {
     messages.push(msg);
-    if (chatDrawer) {
+    if (chatBubble) {
         renderMessages();
         scrollToBottom();
     }
@@ -27,10 +27,10 @@ export function addMessage(msg) {
 export function getUnreadCount() { return unreadCount; }
 
 export function toggleChat() {
-    if (!chatDrawer) createDrawer();
+    if (!chatBubble) createBubble();
     isOpen = !isOpen;
-    chatDrawer.classList.toggle('open', isOpen);
-    if (chatDrawer._backdrop) chatDrawer._backdrop.classList.toggle('open', isOpen);
+    chatBubble.classList.toggle('open', isOpen);
+    if (chatBubble._backdrop) chatBubble._backdrop.classList.toggle('open', isOpen);
     if (isOpen) {
         unreadCount = 0;
         updateBadge();
@@ -38,32 +38,32 @@ export function toggleChat() {
         // Auto-focus input on desktop
         if (window.innerWidth > 1024) {
             setTimeout(() => {
-                const input = chatDrawer?.querySelector('.chat-input');
+                const input = chatBubble?.querySelector('.chat-input');
                 if (input) input.focus();
-            }, 300);
+            }, 150);
         }
     }
 }
 
 export function destroyChat() {
-    if (chatDrawer?._backdrop) chatDrawer._backdrop.remove();
-    if (chatDrawer) { chatDrawer.remove(); chatDrawer = null; }
+    if (chatBubble?._backdrop) chatBubble._backdrop.remove();
+    if (chatBubble) { chatBubble.remove(); chatBubble = null; }
     messages = [];
     isOpen = false;
     unreadCount = 0;
 }
 
-function createDrawer() {
+function createBubble() {
     // Backdrop for click-outside-to-close
     const backdrop = document.createElement('div');
     backdrop.className = 'chat-backdrop';
     backdrop.addEventListener('click', toggleChat);
     document.body.appendChild(backdrop);
 
-    chatDrawer = document.createElement('div');
-    chatDrawer.className = 'chat-drawer';
-    chatDrawer._backdrop = backdrop;
-    chatDrawer.innerHTML = `
+    chatBubble = document.createElement('div');
+    chatBubble.className = 'chat-bubble';
+    chatBubble._backdrop = backdrop;
+    chatBubble.innerHTML = `
         <div class="chat-header">
             <span>Chat</span>
             <button class="chat-close">&times;</button>
@@ -74,12 +74,12 @@ function createDrawer() {
             <button class="chat-send">Send</button>
         </div>
     `;
-    document.body.appendChild(chatDrawer);
+    document.body.appendChild(chatBubble);
 
-    chatDrawer.querySelector('.chat-close').addEventListener('click', toggleChat);
+    chatBubble.querySelector('.chat-close').addEventListener('click', toggleChat);
 
-    const input = chatDrawer.querySelector('.chat-input');
-    const sendBtn = chatDrawer.querySelector('.chat-send');
+    const input = chatBubble.querySelector('.chat-input');
+    const sendBtn = chatBubble.querySelector('.chat-send');
 
     function send() {
         const text = input.value.trim();
@@ -95,7 +95,7 @@ function createDrawer() {
 }
 
 function renderMessages() {
-    const container = chatDrawer?.querySelector('#chat-messages');
+    const container = chatBubble?.querySelector('#chat-messages');
     if (!container) return;
     container.innerHTML = '';
     messages.forEach(msg => {
@@ -114,7 +114,7 @@ function renderMessages() {
 }
 
 function scrollToBottom() {
-    const container = chatDrawer?.querySelector('#chat-messages');
+    const container = chatBubble?.querySelector('#chat-messages');
     if (container) container.scrollTop = container.scrollHeight;
 }
 

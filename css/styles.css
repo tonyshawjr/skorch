@@ -1356,18 +1356,23 @@ button { font-family: inherit; }
     font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
 }
 
-/* ========== CHAT DRAWER ========== */
-.chat-drawer {
-    position: fixed; right: -300px; top: 0; bottom: 0;
-    width: 300px; max-width: 85vw;
+/* ========== CHAT BUBBLE WINDOW ========== */
+.chat-bubble {
+    position: fixed; bottom: 5rem; right: 0.75rem;
+    width: 300px; max-width: 85vw; max-height: 50vh;
     background: var(--skorch-darker);
-    border-left: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 0.75rem;
     display: flex; flex-direction: column;
     z-index: 4500;
-    transition: right 0.25s ease;
-    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+    transform: scale(0.85); transform-origin: bottom right;
+    opacity: 0; pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
-.chat-drawer.open { right: 0; }
+.chat-bubble.open {
+    transform: scale(1); opacity: 1; pointer-events: all;
+}
 
 .chat-backdrop {
     position: fixed; inset: 0; z-index: 4499;
@@ -1382,6 +1387,7 @@ button { font-family: inherit; }
     display: flex; justify-content: space-between; align-items: center;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem 0.75rem 0 0;
     color: white; font-weight: 600; font-size: 1rem;
 }
 .chat-close {
