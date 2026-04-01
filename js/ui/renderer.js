@@ -198,23 +198,32 @@ export function render(state, root, handlers) {
 
     handSection.appendChild(handScroll);
 
-    // Swipe up to play selected cards - listen on the whole hand section, not just scroll
+    // Swipe up to play selected cards
     let flickStartY = 0;
     let flickStartX = 0;
+    let isFlicking = false;
     handSection.addEventListener('touchstart', (e) => {
         flickStartY = e.touches[0].clientY;
         flickStartX = e.touches[0].clientX;
+        isFlicking = false;
     }, { passive: true });
+    handSection.addEventListener('touchmove', (e) => {
+        const dy = flickStartY - e.touches[0].clientY;
+        const dx = Math.abs(flickStartX - e.touches[0].clientX);
+        // If moving upward more than horizontal, it's a flick - prevent scroll
+        if (dy > 20 && dy > dx * 1.5) {
+            isFlicking = true;
+            e.preventDefault();
+        }
+    }, { passive: false }); // non-passive so we can preventDefault
     handSection.addEventListener('touchend', (e) => {
-        const dy = flickStartY - e.changedTouches[0].clientY;
-        const dx = Math.abs(flickStartX - e.changedTouches[0].clientX);
-        // Upward flick: vertical > 40px, and more vertical than horizontal
-        if (dy > 40 && dy > dx * 1.5) {
+        if (isFlicking) {
             const playBtn = document.getElementById('playSelectedBtn');
             if (playBtn && !playBtn.disabled) {
                 playBtn.click();
             }
         }
+        isFlicking = false;
     }, { passive: true });
 
     root.appendChild(handSection);
