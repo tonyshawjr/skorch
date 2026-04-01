@@ -196,7 +196,7 @@ button { font-family: inherit; }
 
 /* Card Selection */
 .sk-card.selectable { cursor: pointer; position: relative; }
-.sk-card.selectable:hover { transform: translateY(-6px); }
+@media (hover: hover) { .sk-card.selectable:hover { transform: translateY(-6px); } }
 .sk-card.selected { border: 3px solid var(--skorch-red); transform: translateY(-8px); box-shadow: 0 4px 8px rgba(227,30,36,0.3); }
 
 /* Unplayable Stack - fanned out cards using flex + rotation */
