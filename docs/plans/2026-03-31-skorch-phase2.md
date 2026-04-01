@@ -277,3 +277,33 @@ GET  /api/history      - Match history for user
 - Computer hand capped at 8 visual cards (cosmetic)
 - Draggable position persists across restart
 - Player Undead doesn't show announcement overlay (modal serves as feedback)
+
+---
+
+## Future Features (Backlog)
+
+### Onboarding / Tutorial
+- First-time player tutorial walkthrough
+- Guided highlights: "These are your cards", "Tap to select", "This is the discard pile"
+- Step-by-step with focus rings/tooltips pointing to each UI element
+- Help button (? icon) accessible anytime that shows:
+  - Game rules summary
+  - Card type reference (what each special card does)
+  - Quick tips
+- Could be a series of overlay cards or a coach-marks style walkthrough
+- Skip option for returning players
+
+### Login / Profiles / Stats
+- PHP + SQLite backend already built (server/php/)
+- Login/register screen
+- Player profile with win/loss record
+- Match history
+- Leaderboard
+- Achievement badges (first win, 10 wins, first Skorch, etc.)
+
+### Polish
+- iPad-specific layout (between phone and desktop)
+- Card dealing animation on game start
+- Victory/defeat screen improvements
+- Haptic feedback on mobile (navigator.vibrate)
+- PWA support (add to home screen, offline play vs AI)
