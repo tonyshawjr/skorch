@@ -371,11 +371,13 @@ button { font-family: inherit; }
 .mobile-section-label {
     font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;
     letter-spacing: 1px; font-weight: 600; padding: 0.25rem 0.5rem;
+    text-align: center;
 }
 
 .mobile-hand-section { padding: 0.25rem 0; }
 .mobile-hand-scroll {
     display: flex; overflow-x: auto; gap: 0; padding: 0.5rem;
+    justify-content: center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
