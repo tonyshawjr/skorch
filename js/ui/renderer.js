@@ -14,6 +14,48 @@ export function render(state, root, handlers) {
     if (window.innerWidth <= 1024) {
     // --- MOBILE LAYOUT ---
 
+    // 0. Opponent info bar (top of playing field)
+    const oppRow = el('div', 'mobile-opp-field');
+    const oppLabel = el('span', 'mobile-opp-field-label');
+    oppLabel.textContent = `${state._opponentName || 'Opponent'}: ${state.computer.hand.length} cards`;
+    oppRow.appendChild(oppLabel);
+    const peekLink = el('button', 'mobile-opp-field-peek');
+    peekLink.textContent = 'View Prison';
+    peekLink.addEventListener('click', () => {
+        const sheet = el('div', 'mobile-peek-sheet');
+        sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
+        const content = el('div', 'mobile-peek-content');
+        const title = el('h3');
+        title.textContent = `${state._opponentName || 'Opponent'} - ${state.computer.hand.length} cards`;
+        title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+        content.appendChild(title);
+        for (const rowName of ['front', 'back']) {
+            const row = el('div', 'mobile-prison-row');
+            state.computer.prison[rowName].forEach((slot) => {
+                if (slot.card === null) {
+                    row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
+                } else {
+                    const cardEl = createCardElement(slot.card, slot.faceUp);
+                    cardEl.classList.add('mobile-prison-card');
+                    if (!slot.faceUp) {
+                        cardEl.className = 'sk-card sk-face-down mobile-prison-card';
+                        cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
+                    }
+                    row.appendChild(cardEl);
+                }
+            });
+            content.appendChild(row);
+        }
+        const hint = el('p');
+        hint.textContent = 'Tap outside to close';
+        hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+        content.appendChild(hint);
+        sheet.appendChild(content);
+        document.body.appendChild(sheet);
+    });
+    oppRow.appendChild(peekLink);
+    root.appendChild(oppRow);
+
     // 1. Discard area (hero section)
     const discardArea = el('div', 'mobile-discard-area');
 
@@ -104,27 +146,7 @@ export function render(state, root, handlers) {
         return 0;
     });
 
-    // No playable cards - show pickup card
-    if (playable.length === 0 && state.currentTurn === 'player' && !state.gameOver && state.discardPile.length > 0) {
-        const pickupCard = el('div', 'mobile-pickup-card');
-        pickupCard.textContent = 'Pick Up';
-        pickupCard.addEventListener('click', handlers.onPickup);
-        handScroll.appendChild(pickupCard);
-    }
-
-    // Render playable cards
-    playable.forEach(({ card, index }) => {
-        const cardEl = createCardElement(card, true);
-        cardEl.classList.add('mobile-hand-card');
-        if (state.currentTurn === 'player' && !state.gameOver) {
-            cardEl.classList.add('selectable');
-            cardEl.dataset.index = index;
-            cardEl.addEventListener('click', () => handlers.onCardSelect(index, cardEl));
-        }
-        handScroll.appendChild(cardEl);
-    });
-
-    // Unplayable badge - tap to see all in modal
+    // Unplayable badge on LEFT side - tap to see all in modal
     if (unplayable.length > 0) {
         const badge = el('button', 'mobile-unplayable-badge');
         badge.textContent = `+${unplayable.length}`;
@@ -154,11 +176,37 @@ export function render(state, root, handlers) {
         handScroll.appendChild(badge);
     }
 
+    // No playable cards - show pickup card
+    if (playable.length === 0 && state.currentTurn === 'player' && !state.gameOver && state.discardPile.length > 0) {
+        const pickupCard = el('div', 'mobile-pickup-card');
+        pickupCard.textContent = 'Pick Up';
+        pickupCard.addEventListener('click', handlers.onPickup);
+        handScroll.appendChild(pickupCard);
+    }
+
+    // Render playable cards
+    playable.forEach(({ card, index }) => {
+        const cardEl = createCardElement(card, true);
+        cardEl.classList.add('mobile-hand-card');
+        if (state.currentTurn === 'player' && !state.gameOver) {
+            cardEl.classList.add('selectable');
+            cardEl.dataset.index = index;
+            cardEl.addEventListener('click', () => handlers.onCardSelect(index, cardEl));
+        }
+        handScroll.appendChild(cardEl);
+    });
+
     handSection.appendChild(handScroll);
     root.appendChild(handSection);
 
-    // Reset scroll to left
-    requestAnimationFrame(() => { handScroll.scrollLeft = 0; });
+    // Center if not scrollable, scroll to left if scrollable
+    requestAnimationFrame(() => {
+        if (handScroll.scrollWidth <= handScroll.clientWidth) {
+            handScroll.style.justifyContent = 'center';
+        } else {
+            handScroll.scrollLeft = 0;
+        }
+    });
 
     // 4. Your prison
     const prisonSection = el('div', 'mobile-prison-section');
@@ -231,43 +279,6 @@ function createHeader(state, onRestart, onMultiplayer) {
     const isMobile = window.innerWidth <= 1024;
 
     if (isMobile) {
-        // Opponent card count + peek in header
-        const oppBadge = el('button', 'mobile-opp-header');
-        oppBadge.innerHTML = `<span class="opp-count">${state.computer.hand.length}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-        oppBadge.addEventListener('click', () => {
-            const sheet = el('div', 'mobile-peek-sheet');
-            sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
-            const content = el('div', 'mobile-peek-content');
-            const title = el('h3');
-            title.textContent = `${state._opponentName || 'Opponent'} - ${state.computer.hand.length} cards`;
-            title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
-            content.appendChild(title);
-            for (const rowName of ['front', 'back']) {
-                const row = el('div', 'mobile-prison-row');
-                state.computer.prison[rowName].forEach((slot) => {
-                    if (slot.card === null) {
-                        row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
-                    } else {
-                        const cardEl = createCardElement(slot.card, slot.faceUp);
-                        cardEl.classList.add('mobile-prison-card');
-                        if (!slot.faceUp) {
-                            cardEl.className = 'sk-card sk-face-down mobile-prison-card';
-                            cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
-                        }
-                        row.appendChild(cardEl);
-                    }
-                });
-                content.appendChild(row);
-            }
-            const hint = el('p');
-            hint.textContent = 'Tap outside to close';
-            hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
-            content.appendChild(hint);
-            sheet.appendChild(content);
-            document.body.appendChild(sheet);
-        });
-        header.appendChild(oppBadge);
-
         // Hamburger menu for mobile
         const hamburger = el('button', 'hamburger-btn');
         hamburger.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
