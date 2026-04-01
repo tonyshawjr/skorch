@@ -119,12 +119,18 @@ export function render(state, root, handlers) {
 
     const handScroll = el('div', 'mobile-hand-scroll');
 
-    // Separate playable from unplayable
+    // Separate playable from unplayable - only split on player's turn
+    const isMyTurn = state.currentTurn === 'player' && !state.gameOver;
     const effectiveValue = getEffectiveValue(state);
     const playable = [];
     const unplayable = [];
     state.player.hand.forEach((card, index) => {
         if (!card) return;
+        // When it's not our turn, treat all cards as playable (no split, no glitch)
+        if (!isMyTurn) {
+            playable.push({ card, index });
+            return;
+        }
         const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
         if (isSpecial || state.discardPile.length === 0 ||
             (card.type === 'attack' && card.value >= effectiveValue) ||
