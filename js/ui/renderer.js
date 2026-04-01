@@ -198,18 +198,18 @@ export function render(state, root, handlers) {
 
     handSection.appendChild(handScroll);
 
-    // Swipe up to play selected cards
-    let touchStartY = 0;
-    let touchStartX = 0;
-    handScroll.addEventListener('touchstart', (e) => {
-        touchStartY = e.touches[0].clientY;
-        touchStartX = e.touches[0].clientX;
+    // Swipe up to play selected cards - listen on the whole hand section, not just scroll
+    let flickStartY = 0;
+    let flickStartX = 0;
+    handSection.addEventListener('touchstart', (e) => {
+        flickStartY = e.touches[0].clientY;
+        flickStartX = e.touches[0].clientX;
     }, { passive: true });
-    handScroll.addEventListener('touchend', (e) => {
-        const dy = touchStartY - e.changedTouches[0].clientY;
-        const dx = Math.abs(touchStartX - e.changedTouches[0].clientX);
-        // Upward flick: vertical movement > 60px, more vertical than horizontal
-        if (dy > 60 && dy > dx) {
+    handSection.addEventListener('touchend', (e) => {
+        const dy = flickStartY - e.changedTouches[0].clientY;
+        const dx = Math.abs(flickStartX - e.changedTouches[0].clientX);
+        // Upward flick: vertical > 40px, and more vertical than horizontal
+        if (dy > 40 && dy > dx * 1.5) {
             const playBtn = document.getElementById('playSelectedBtn');
             if (playBtn && !playBtn.disabled) {
                 playBtn.click();
