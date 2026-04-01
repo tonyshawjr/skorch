@@ -370,7 +370,15 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
     img.alt = 'Skorch';
     img.className = 'game-logo';
     img.style.cursor = 'pointer';
-    img.addEventListener('click', () => location.reload());
+    img.addEventListener('click', () => {
+        if (state._roomCode) {
+            if (confirm('You are in a multiplayer game. Refreshing will disconnect you. Continue?')) {
+                location.reload();
+            }
+        } else {
+            location.reload();
+        }
+    });
     logo.appendChild(img);
     header.appendChild(logo);
 
