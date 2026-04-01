@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>How to Play - Skorch</title>
+    <meta name="description" content="Learn how to play Skorch - a strategic card game of attacks, shields, and special powers. Complete rules and card guide.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --skorch-red: #EB2228;
+            --skorch-red-dark: #c41a1f;
+            --skorch-dark: #1a3a2a;
+            --skorch-darker: #143022;
+            --skorch-darkest: #0e2418;
+            --skorch-light: #FFFFFF;
+            --skorch-gray: #EFEFEF;
+            --skorch-green: #10b981;
+            --skorch-yellow: #eab308;
+            --skorch-blue: #3b82f6;
+            --skorch-muted: rgba(255,255,255,0.5);
+            --nav-height: 64px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--skorch-dark);
+            color: var(--skorch-light);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── Nav ── */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--skorch-gray);
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .nav-logo img { height: 36px; width: auto; }
+        .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+        .nav-links a {
+            color: var(--skorch-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--skorch-red); }
+        .nav-btn {
+            background: var(--skorch-red);
+            color: var(--skorch-light) !important;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .nav-btn:hover { background: var(--skorch-red-dark); transform: translateY(-1px); }
+
+        /* ── Hero ── */
+        .hero {
+            text-align: center;
+            padding: 3rem 2rem 2.5rem;
+            background: linear-gradient(180deg, var(--skorch-darker) 0%, var(--skorch-dark) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(235,34,40,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1rem;
+            color: var(--skorch-muted);
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        /* ── Rules Content ── */
+        .rules-content {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 4rem;
+        }
+
+        /* ── Section Card ── */
+        .section {
+            background: var(--skorch-darker);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title .icon { font-size: 1.3rem; }
+        .section p {
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+        .section p:last-child { margin-bottom: 0; }
+        .section ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 0.75rem;
+        }
+        .section ul:last-child { margin-bottom: 0; }
+        .section li {
+            color: rgba(255,255,255,0.8);
+            padding: 0.35rem 0 0.35rem 1.25rem;
+            position: relative;
+            line-height: 1.6;
+        }
+        .section li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.75rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--skorch-red);
+        }
+        .highlight {
+            color: var(--skorch-yellow);
+            font-weight: 600;
+        }
+        .highlight-red {
+            color: var(--skorch-red);
+            font-weight: 700;
+        }
+
+        /* ── Deck Breakdown ── */
+        .deck-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .deck-item {
+            background: var(--skorch-darkest);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .deck-item .count {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--skorch-red);
+        }
+        .deck-item .label {
+            font-size: 0.85rem;
+            color: var(--skorch-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* ── Attack Cards Row ── */
+        .attack-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 1.25rem 0 0.5rem;
+        }
+        .attack-cards img {
+            height: 90px;
+            width: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .attack-cards img:hover {
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        /* ── Special Cards Grid ── */
+        .special-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1.25rem;
+        }
+        .special-card {
+            background: var(--skorch-darkest);
+            border-radius: 0.75rem;
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .special-card:hover {
+            border-color: var(--skorch-red);
+            transform: translateY(-2px);
+        }
+        .special-card img {
+            height: 120px;
+            width: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            margin-bottom: 1rem;
+        }
+        .special-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .special-card .card-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--skorch-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .special-card p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Card-specific accent colors */
+        .special-card.card-skorch h3 { color: var(--skorch-red); }
+        .special-card.card-shield h3 { color: var(--skorch-blue); }
+        .special-card.card-demoter h3 { color: var(--skorch-green); }
+        .special-card.card-elude h3 { color: var(--skorch-yellow); }
+        .special-card.card-undead h3 { color: #a855f7; }
+
+        /* ── Steps ── */
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+        .steps li {
+            padding: 0.75rem 0 0.75rem 3rem;
+            position: relative;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+        }
+        .steps li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0.65rem;
+            width: 2rem;
+            height: 2rem;
+            background: var(--skorch-red);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--skorch-light);
+        }
+        .steps li + li {
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        /* ── Prison Diagram ── */
+        .prison-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+            padding: 1.5rem;
+            background: var(--skorch-darkest);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .prison-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .prison-row-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--skorch-muted);
+            width: 70px;
+            text-align: right;
+        }
+        .prison-cell {
+            width: 48px;
+            height: 68px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .prison-cell.face-up {
+            background: var(--skorch-darker);
+            border: 2px solid var(--skorch-green);
+            color: var(--skorch-green);
+        }
+        .prison-cell.face-down {
+            background: var(--skorch-darker);
+            border: 2px solid var(--skorch-muted);
+            color: var(--skorch-muted);
+        }
+        .prison-cell.locked {
+            background: var(--skorch-darker);
+            border: 2px dashed rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.2);
+        }
+        .prison-legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--skorch-muted);
+        }
+        .prison-legend span {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+        .legend-dot.up { background: var(--skorch-green); }
+        .legend-dot.down { border: 2px solid var(--skorch-muted); }
+        .legend-dot.lock { border: 2px dashed rgba(255,255,255,0.15); }
+
+        /* ── Winning Section ── */
+        .win-banner {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(235,34,40,0.12) 0%, rgba(234,179,8,0.08) 100%);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(235,34,40,0.2);
+            margin-top: 1rem;
+        }
+        .win-banner .trophy { font-size: 3rem; margin-bottom: 0.5rem; }
+        .win-banner p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--skorch-light);
+            margin: 0;
+        }
+
+        /* ── Table of Contents ── */
+        .toc {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .toc a {
+            background: var(--skorch-darkest);
+            color: var(--skorch-light);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .toc a:hover {
+            border-color: var(--skorch-red);
+            background: rgba(235,34,40,0.08);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            color: var(--skorch-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .footer-motto {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--skorch-light);
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .rules-content { padding: 1.5rem 1rem 3rem; }
+            .section { padding: 1.5rem; }
+            .hero { padding: 2.5rem 1.5rem 2rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .nav { padding: 0 1rem; }
+            .nav-links { gap: 1rem; }
+            .nav-links a { font-size: 0.8rem; }
+            .special-cards-grid { grid-template-columns: 1fr 1fr; }
+            .attack-cards img { height: 65px; }
+            .special-card img { height: 100px; }
+            .deck-grid { grid-template-columns: repeat(2, 1fr); }
+            .prison-cell { width: 40px; height: 56px; font-size: 0.7rem; }
+            .prison-row-label { width: 55px; font-size: 0.7rem; }
+            .toc { gap: 0.4rem; }
+            .toc a { font-size: 0.8rem; padding: 0.4rem 0.75rem; }
+        }
+
+        @media (max-width: 480px) {
+            .special-cards-grid { grid-template-columns: 1fr; }
+            .attack-cards img { height: 55px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo-red.png" alt="Skorch">
+        </a>
+        <div class="nav-links">
+            <a href="/rules">Rules</a>
+            <a href="/play">Play</a>
+            <a href="/leaderboard">Leaderboard</a>
+            <a href="#" class="nav-btn" id="nav-auth">Log In</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>How to Play Skorch</h1>
+        <p>Learn the rules, master the cards, and burn your way to victory.</p>
+    </section>
+
+    <!-- Rules -->
+    <main class="rules-content">
+
+        <!-- Table of Contents -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#128220;</span> Quick Navigation</div>
+            <div class="toc">
+                <a href="#overview">Overview</a>
+                <a href="#deck">The Deck</a>
+                <a href="#setup">Setup</a>
+                <a href="#how-to-play">How to Play</a>
+                <a href="#card-types">Card Types</a>
+                <a href="#special-cards">Special Cards</a>
+                <a href="#prison">Prison</a>
+                <a href="#winning">Winning</a>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section" id="overview">
+            <div class="section-title"><span class="icon">&#127183;</span> Overview</div>
+            <p>Skorch is a strategic card game where players battle to empty their hand and prison cards before their opponent. Play attack cards, deploy shields, use special abilities, and burn the discard pile with the powerful <span class="highlight-red">Skorch</span> card.</p>
+            <p>The game is played with a custom 77-card deck and supports 2+ players. Matches are fast, strategic, and full of dramatic reversals.</p>
+        </div>
+
+        <!-- The Deck -->
+        <div class="section" id="deck">
+            <div class="section-title"><span class="icon">&#127136;</span> The Deck</div>
+            <p>Skorch uses a custom deck of <span class="highlight">77 cards</span> total:</p>
+            <div class="deck-grid">
+                <div class="deck-item">
+                    <div class="count">60</div>
+                    <div class="label">Attack Cards (1-10)</div>
+                </div>
+                <div class="deck-item">
+                    <div class="count">4</div>
+                    <div class="label">Elude Cards</div>
+                </div>
+                <div class="deck-item">
+                    <div class="count">4</div>
+                    <div class="label">Shield Cards</div>
+                </div>
+                <div class="deck-item">
+                    <div class="count">4</div>
+                    <div class="label">Demoter Cards</div>
+                </div>
+                <div class="deck-item">
+                    <div class="count">4</div>
+                    <div class="label">Skorch Cards</div>
+                </div>
+                <div class="deck-item">
+                    <div class="count">1</div>
+                    <div class="label">Undead Card</div>
+                </div>
+            </div>
+            <p style="margin-top: 1.25rem;">Attack cards come in values 1 through 10, with 6 copies of each value:</p>
+            <div class="attack-cards">
+                <img src="/assets/cards/1.png" alt="Attack 1">
+                <img src="/assets/cards/2.png" alt="Attack 2">
+                <img src="/assets/cards/3.png" alt="Attack 3">
+                <img src="/assets/cards/4.png" alt="Attack 4">
+                <img src="/assets/cards/5.png" alt="Attack 5">
+                <img src="/assets/cards/6.png" alt="Attack 6">
+                <img src="/assets/cards/7.png" alt="Attack 7">
+                <img src="/assets/cards/8.png" alt="Attack 8">
+                <img src="/assets/cards/9.png" alt="Attack 9">
+                <img src="/assets/cards/10.png" alt="Attack 10">
+            </div>
+        </div>
+
+        <!-- Setup -->
+        <div class="section" id="setup">
+            <div class="section-title"><span class="icon">&#9881;&#65039;</span> Setup</div>
+            <ol class="steps">
+                <li>Shuffle the entire 77-card deck.</li>
+                <li>Deal each player <span class="highlight">10 prison cards</span> — 5 in the front row and 5 in the back row. Cards alternate face-up and face-down.</li>
+                <li>Deal each player <span class="highlight">5 hand cards</span>.</li>
+                <li>Flip the top card of the draw pile to start the <span class="highlight">discard pile</span>.</li>
+                <li>The remaining cards form the draw pile.</li>
+            </ol>
+        </div>
+
+        <!-- How to Play -->
+        <div class="section" id="how-to-play">
+            <div class="section-title"><span class="icon">&#9889;</span> How to Play</div>
+            <p>On your turn, you must do the following:</p>
+            <ol class="steps">
+                <li>Play a card from your hand that is <span class="highlight">equal to or higher</span> than the current discard pile value.</li>
+                <li>Draw one card from the draw pile (if cards remain).</li>
+                <li>If you <strong>cannot play</strong> a valid card, you must <span class="highlight-red">pick up the entire discard pile</span> and add it to your hand.</li>
+            </ol>
+            <p style="margin-top: 1rem;"><strong>Stacking:</strong> You can play <span class="highlight">multiple cards of the same value</span> at once. For example, playing three 7s counts as a single play.</p>
+        </div>
+
+        <!-- Card Types -->
+        <div class="section" id="card-types">
+            <div class="section-title"><span class="icon">&#128171;</span> Card Types</div>
+            <p>There are two main categories of cards in Skorch:</p>
+            <ul>
+                <li><strong>Attack Cards (1-10):</strong> Standard numbered cards. Play them when their value is equal to or greater than the discard pile's current value. Higher numbers are more powerful but harder to beat.</li>
+                <li><strong>Special Cards:</strong> Elude, Shield, Demoter, Skorch, and Undead. Each has a unique ability that can change the flow of the game. See below for full details.</li>
+            </ul>
+        </div>
+
+        <!-- Special Cards -->
+        <div class="section" id="special-cards">
+            <div class="section-title"><span class="icon">&#10024;</span> Special Cards</div>
+            <p>Special cards are game-changers. Use them wisely to gain the upper hand.</p>
+            <div class="special-cards-grid">
+                <div class="special-card card-skorch">
+                    <img src="/assets/cards/Skorch.png" alt="Skorch Card">
+                    <h3>Skorch</h3>
+                    <div class="card-count">4 in deck</div>
+                    <p>Burns the <strong>entire discard pile</strong> — all cards are removed from the game permanently. Say "Skorch!" when you play it. Can be played on any value.</p>
+                </div>
+                <div class="special-card card-shield">
+                    <img src="/assets/cards/Shield.png" alt="Shield Card">
+                    <h3>Shield</h3>
+                    <div class="card-count">4 in deck</div>
+                    <p>Skips your opponent's turn (in 2-player). The discard pile value <strong>stays the same</strong> — the shield just blocks.</p>
+                </div>
+                <div class="special-card card-demoter">
+                    <img src="/assets/cards/demoter.png" alt="Demoter Card">
+                    <h3>Demoter</h3>
+                    <div class="card-count">4 in deck</div>
+                    <p>Resets the discard pile value to <strong>0</strong>. The next player can play any card. Great for clearing high stacks.</p>
+                </div>
+                <div class="special-card card-elude">
+                    <img src="/assets/cards/Elude.png" alt="Elude Card">
+                    <h3>Elude</h3>
+                    <div class="card-count">4 in deck</div>
+                    <p><strong>Mirrors</strong> the current discard pile value. If the pile is empty, Elude has a value of 1. A versatile play at any time.</p>
+                </div>
+                <div class="special-card card-undead">
+                    <img src="/assets/cards/undead.png" alt="Undead Card">
+                    <h3>Undead</h3>
+                    <div class="card-count">1 in deck</div>
+                    <p>Trade one of your <strong>unlocked prison cards</strong> with an opponent's prison card. The only card of its kind — use it wisely.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prison -->
+        <div class="section" id="prison">
+            <div class="section-title"><span class="icon">&#128274;</span> Prison</div>
+            <p>Each player starts with <span class="highlight">10 prison cards</span> arranged in two rows of 5. You can only play from your prison once your hand is completely empty.</p>
+            <div class="prison-diagram">
+                <div class="prison-row">
+                    <span class="prison-row-label">Front Row</span>
+                    <div class="prison-cell face-up">&#9650;</div>
+                    <div class="prison-cell face-down">&#9660;</div>
+                    <div class="prison-cell face-up">&#9650;</div>
+                    <div class="prison-cell face-down">&#9660;</div>
+                    <div class="prison-cell face-up">&#9650;</div>
+                </div>
+                <div class="prison-row">
+                    <span class="prison-row-label">Back Row</span>
+                    <div class="prison-cell locked">&#128274;</div>
+                    <div class="prison-cell locked">&#128274;</div>
+                    <div class="prison-cell locked">&#128274;</div>
+                    <div class="prison-cell locked">&#128274;</div>
+                    <div class="prison-cell locked">&#128274;</div>
+                </div>
+                <div class="prison-legend">
+                    <span><div class="legend-dot up"></div> Face Up</span>
+                    <span><div class="legend-dot down"></div> Face Down</span>
+                    <span><div class="legend-dot lock"></div> Locked</span>
+                </div>
+            </div>
+            <ul>
+                <li>Front row cards alternate between <strong>face-up</strong> and <strong>face-down</strong>.</li>
+                <li>You must play from the <strong>front row first</strong>.</li>
+                <li>Back row cards are <strong>locked</strong> — they unlock when the front card above them is removed.</li>
+                <li>Face-down cards are revealed when you play them. If the card can't beat the discard pile, you must pick up the pile.</li>
+            </ul>
+        </div>
+
+        <!-- Winning -->
+        <div class="section" id="winning">
+            <div class="section-title"><span class="icon">&#127942;</span> Winning</div>
+            <p>The first player to get rid of <strong>all their cards</strong> — both hand cards and all 10 prison cards — wins the game.</p>
+            <div class="win-banner">
+                <div class="trophy">&#128293;</div>
+                <p>Empty your hand. Clear your prison. Skorch your way to victory.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-motto">A Game for the Masses</p>
+        <p>&copy; 2025 Skorch. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ── Check Auth State ──
+        async function checkAuth() {
+            try {
+                const res = await fetch('/server/php/api/profile.php', { credentials: 'include' });
+                if (res.ok) {
+                    const user = await res.json();
+                    if (user && user.username) {
+                        const btn = document.getElementById('nav-auth');
+                        btn.textContent = user.username;
+                        btn.href = '/profile';
+                    }
+                }
+            } catch (e) { /* not logged in */ }
+        }
+        checkAuth();
+    </script>
+
+</body>
+</html>
