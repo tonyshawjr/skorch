@@ -184,47 +184,59 @@ export function render(state, root, handlers) {
         handScroll.appendChild(pickupCard);
     }
 
-    // Render playable cards
+    // Render playable cards with flick-to-play
     playable.forEach(({ card, index }) => {
         const cardEl = createCardElement(card, true);
         cardEl.classList.add('mobile-hand-card');
         if (state.currentTurn === 'player' && !state.gameOver) {
             cardEl.classList.add('selectable');
             cardEl.dataset.index = index;
-            cardEl.addEventListener('click', () => handlers.onCardSelect(index, cardEl));
+
+            let startY = 0, startX = 0, dragging = false;
+
+            cardEl.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                startX = e.touches[0].clientX;
+                dragging = false;
+            }, { passive: true });
+
+            cardEl.addEventListener('touchmove', (e) => {
+                const dy = startY - e.touches[0].clientY;
+                const dx = Math.abs(startX - e.touches[0].clientX);
+                if (dy > 15 && dy > dx) {
+                    dragging = true;
+                    e.preventDefault();
+                    // Visual feedback - move card up
+                    cardEl.style.transform = `translateY(-${Math.min(dy, 50)}px)`;
+                    cardEl.style.opacity = Math.max(0.4, 1 - dy / 100);
+                }
+            }, { passive: false });
+
+            cardEl.addEventListener('touchend', (e) => {
+                cardEl.style.transform = '';
+                cardEl.style.opacity = '';
+                if (dragging) {
+                    const dy = startY - e.changedTouches[0].clientY;
+                    if (dy > 40) {
+                        // Select this card if not already selected, then play
+                        if (!cardEl.classList.contains('selected')) {
+                            handlers.onCardSelect(index, cardEl);
+                        }
+                        setTimeout(() => {
+                            const playBtn = document.getElementById('playSelectedBtn');
+                            if (playBtn && !playBtn.disabled) playBtn.click();
+                        }, 50);
+                    }
+                } else {
+                    // Regular tap - select/deselect
+                    handlers.onCardSelect(index, cardEl);
+                }
+            }, { passive: true });
         }
         handScroll.appendChild(cardEl);
     });
 
     handSection.appendChild(handScroll);
-
-    // Swipe up to play selected cards
-    let flickStartY = 0;
-    let flickStartX = 0;
-    let isFlicking = false;
-    handSection.addEventListener('touchstart', (e) => {
-        flickStartY = e.touches[0].clientY;
-        flickStartX = e.touches[0].clientX;
-        isFlicking = false;
-    }, { passive: true });
-    handSection.addEventListener('touchmove', (e) => {
-        const dy = flickStartY - e.touches[0].clientY;
-        const dx = Math.abs(flickStartX - e.touches[0].clientX);
-        // If moving upward more than horizontal, it's a flick - prevent scroll
-        if (dy > 20 && dy > dx * 1.5) {
-            isFlicking = true;
-            e.preventDefault();
-        }
-    }, { passive: false }); // non-passive so we can preventDefault
-    handSection.addEventListener('touchend', (e) => {
-        if (isFlicking) {
-            const playBtn = document.getElementById('playSelectedBtn');
-            if (playBtn && !playBtn.disabled) {
-                playBtn.click();
-            }
-        }
-        isFlicking = false;
-    }, { passive: true });
 
     root.appendChild(handSection);
 
