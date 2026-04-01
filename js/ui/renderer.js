@@ -20,7 +20,7 @@ const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 
 export function render(state, root, handlers) {
     root.innerHTML = '';
-    root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer, handlers.onAccount));
+    root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer, handlers.onAccount, handlers.onLeaderboard));
 
     if (window.innerWidth <= 1024) {
     // --- MOBILE LAYOUT ---
@@ -350,7 +350,7 @@ export function render(state, root, handlers) {
     }
 }
 
-function createHeader(state, onRestart, onMultiplayer, onAccount) {
+function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard) {
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
@@ -422,6 +422,11 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', () => { drawer.classList.remove('open'); onMultiplayer(); });
         drawerContent.appendChild(mpBtn);
+
+        const lbBtn = el('button', 'drawer-item');
+        lbBtn.textContent = 'Leaderboard';
+        lbBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onLeaderboard) onLeaderboard(); });
+        drawerContent.appendChild(lbBtn);
 
         const restartBtn = el('button', 'drawer-item');
         restartBtn.textContent = 'Restart Game';
@@ -497,6 +502,10 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', onMultiplayer);
         actions.appendChild(mpBtn);
+        const lbBtn2 = el('button', 'btn-multiplayer');
+        lbBtn2.textContent = 'Leaderboard';
+        lbBtn2.addEventListener('click', () => { if (onLeaderboard) onLeaderboard(); });
+        actions.appendChild(lbBtn2);
         const restartBtn = el('button', 'btn-restart');
         restartBtn.textContent = 'Restart Game';
         restartBtn.addEventListener('click', onRestart);

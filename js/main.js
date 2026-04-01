@@ -9,6 +9,7 @@ import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPi
 import { initChat, addMessage, destroyChat } from './ui/chat.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { showAccountModal } from './ui/account.js';
+import { showLeaderboard } from './ui/leaderboard.js';
 import { recordMatch, isLoggedIn, getProfile } from './multiplayer/auth.js';
 
 const SAVE_KEY = 'skorch_game_state';
@@ -57,7 +58,8 @@ function update() {
         onRestart,
         onPrisonClick,
         onMultiplayer,
-        onAccount
+        onAccount,
+        onLeaderboard
     });
 
 }
@@ -444,6 +446,11 @@ function onRestart() {
 // Account handler
 function onAccount() {
     showAccountModal(() => update());
+}
+
+// Leaderboard handler
+function onLeaderboard() {
+    showLeaderboard();
 }
 
 // Multiplayer handler
