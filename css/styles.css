@@ -620,7 +620,7 @@ button { font-family: inherit; }
     #game-root {
         display: flex; flex-direction: column;
         height: 100dvh; overflow: hidden;
-        padding: 0 0.25rem;
+        padding: env(safe-area-inset-top, 0) 0.25rem 0;
     }
 
     /* Sections flex to fill */
