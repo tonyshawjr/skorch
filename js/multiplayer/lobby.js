@@ -77,11 +77,28 @@ export function showLobby(onBack) {
                 <h2 class="lobby-title">Waiting for Opponent</h2>
                 <div class="lobby-room-display">
                     <p>Share this code:</p>
-                    <div class="lobby-code">${code}</div>
+                    <div class="lobby-code" id="room-code-text">${code}</div>
+                    <button class="lobby-copy-btn" id="copy-code-btn">Copy Code</button>
                     <p class="lobby-hint">Waiting for someone to join...</p>
                 </div>
                 <button id="lobby-cancel-btn" class="lobby-btn lobby-btn-back">Cancel</button>
             `;
+            overlay.querySelector('#copy-code-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(code).then(() => {
+                    const btn = overlay.querySelector('#copy-code-btn');
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = 'Copy Code', 2000);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const ta = document.createElement('textarea');
+                    ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    const btn = overlay.querySelector('#copy-code-btn');
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = 'Copy Code', 2000);
+                });
+            });
             overlay.querySelector('#lobby-cancel-btn').addEventListener('click', () => {
                 overlay.classList.remove('visible');
                 setTimeout(() => overlay.remove(), 300);

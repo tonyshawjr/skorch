@@ -1261,6 +1261,14 @@ button { font-family: inherit; }
     margin: 1rem 0;
 }
 .lobby-hint { font-size: 0.875rem; color: #6b7280; }
+.lobby-copy-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: white; padding: 0.5rem 1.5rem; border-radius: 9999px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; margin: 0.75rem auto; display: block;
+    transition: all 0.2s;
+}
+.lobby-copy-btn:active { background: rgba(255,255,255,0.2); }
 .lobby-error {
     background: rgba(235,34,40,0.15); border: 1px solid rgba(235,34,40,0.3);
     color: #f87171; padding: 0.75rem; border-radius: 0.5rem;
