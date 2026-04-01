@@ -116,11 +116,15 @@ export function render(state, root, handlers) {
         handScroll.appendChild(cardEl);
     });
 
-    // Unplayable count
+    // Unplayable cards - shown dimmed inline so player can plan ahead
     if (unplayable.length > 0) {
-        const unplayableInfo = el('div', 'mobile-unplayable-badge');
-        unplayableInfo.textContent = `+${unplayable.length} waiting`;
-        handScroll.appendChild(unplayableInfo);
+        const divider = el('div', 'mobile-hand-divider');
+        handScroll.appendChild(divider);
+        unplayable.forEach(({ card }) => {
+            const cardEl = createCardElement(card, true);
+            cardEl.classList.add('mobile-hand-card', 'mobile-hand-card-dim');
+            handScroll.appendChild(cardEl);
+        });
     }
 
     handSection.appendChild(handScroll);

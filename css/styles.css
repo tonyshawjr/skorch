@@ -395,10 +395,14 @@ button { font-family: inherit; }
     box-shadow: 0 4px 8px rgba(227,30,36,0.3);
 }
 
-.mobile-unplayable-badge {
-    flex-shrink: 0; display: flex; align-items: center;
-    padding: 0 0.75rem; color: #6b7280; font-size: 0.75rem;
-    font-weight: 600; white-space: nowrap;
+.mobile-hand-divider {
+    flex-shrink: 0; width: 2px; height: 80px;
+    background: rgba(255,255,255,0.15); margin: 0 6px;
+    align-self: center; border-radius: 1px;
+}
+.mobile-hand-card-dim {
+    opacity: 0.35 !important;
+    pointer-events: none;
 }
 
 .mobile-prison-section { padding: 0.25rem 0.5rem; }
@@ -469,7 +473,7 @@ button { font-family: inherit; }
 
 /* Hamburger menu */
 .hamburger-btn {
-    background: none; border: none; color: white;
+    background: none; border: none; color: var(--skorch-dark);
     cursor: pointer; padding: 0.25rem; line-height: 0;
 }
 .mobile-drawer {
@@ -766,7 +770,7 @@ button { font-family: inherit; }
     transition: background 200ms ease;
 }
 .announce-overlay.visible {
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.6);
 }
 .announce-overlay.exiting {
     background: rgba(0,0,0,0);
