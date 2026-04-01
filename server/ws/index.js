@@ -105,6 +105,28 @@ io.on('connection', (socket) => {
         console.log(`Room ${code}: game started`);
     });
 
+    // Rejoin room after reconnection
+    socket.on('rejoin-room', ({ code, playerId }) => {
+        if (!validateString(code, 4) || !validateString(playerId, 10)) return;
+        const room = getRoom(code);
+        if (!room) { socket.emit('error', { message: 'Room no longer exists' }); return; }
+
+        // Find the player slot to update
+        const slotIndex = playerId === 'player1' ? 0 : 1;
+        if (room.players[slotIndex]) {
+            room.players[slotIndex].socketId = socket.id;
+            socket.join(code);
+            console.log(`Player rejoined room ${code} as ${playerId}`);
+            // Send current state
+            const who = slotIndex === 0 ? 'player' : 'computer';
+            if (room.state) {
+                socket.emit('state-update', getPlayerView(room.state, who, room));
+            }
+        } else {
+            socket.emit('error', { message: 'Could not rejoin' });
+        }
+    });
+
     // Player makes a move
     socket.on('play-cards', ({ roomCode, indexes }) => {
         if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }

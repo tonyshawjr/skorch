@@ -45,7 +45,11 @@ function initSocket() {
         socket = window.io(SERVER_URL, {
             transports: ['polling', 'websocket'],
             timeout: 15000,
-            forceNew: true
+            forceNew: true,
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
         });
 
         socket.on('connect', () => {
@@ -59,6 +63,13 @@ function initSocket() {
         });
 
         socket.on('disconnect', () => console.log('Disconnected'));
+        socket.on('reconnect', () => {
+            console.log('Reconnected to server');
+            // Rejoin room if we were in one
+            if (roomCode && playerId) {
+                socket.emit('rejoin-room', { code: roomCode, playerId });
+            }
+        });
         socket.on('room-created', (data) => { roomCode = data.code; playerId = data.playerId; if (onRoomCreated) onRoomCreated(data); });
         socket.on('room-joined', (data) => { roomCode = data.code; playerId = data.playerId; if (onRoomJoined) onRoomJoined(data); });
         socket.on('game-start', (view) => { if (onGameStart) onGameStart(view); });

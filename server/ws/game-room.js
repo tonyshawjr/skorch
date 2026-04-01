@@ -56,16 +56,17 @@ function removePlayer(socketId) {
     for (const [code, room] of rooms) {
         const idx = room.players.findIndex(p => p.socketId === socketId);
         if (idx !== -1) {
-            room.players.splice(idx, 1);
-            if (room.players.length === 0) {
-                // Don't delete immediately - keep room alive for 5 minutes
-                // so the other player can still join
-                if (!room.started) {
+            if (room.started && room.state && !room.state.gameOver) {
+                // Game in progress - mark as disconnected, allow 2 min to reconnect
+                room.players[idx].socketId = null;
+                room.players[idx].disconnectedAt = Date.now();
+                // Don't remove from room - rejoin-room will update socketId
+            } else {
+                room.players.splice(idx, 1);
+                if (room.players.length === 0) {
                     room.deleteTimer = setTimeout(() => {
                         rooms.delete(code);
-                    }, 5 * 60 * 1000); // 5 minutes
-                } else {
-                    rooms.delete(code);
+                    }, 5 * 60 * 1000);
                 }
             }
             return room;
