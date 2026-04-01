@@ -11,68 +11,38 @@ export function render(state, root, handlers) {
     root.innerHTML = '';
     root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer));
 
-    // Mobile layout: swipeable panels
+    // Mobile layout: tab toggle
     if (window.innerWidth <= 1024) {
         // Center piles at top (always visible)
         root.appendChild(createCenterSection(state, handlers));
 
-        // Tab indicators
-        const tabs = el('div', 'swipe-tabs');
-        const tab1 = el('button', 'swipe-tab active');
+        // Tab toggle
+        const tabs = el('div', 'mobile-tabs');
+        const tab1 = el('button', 'mobile-tab active');
         tab1.textContent = state._myName || 'Your Hand';
-        const tab2 = el('button', 'swipe-tab');
+        const tab2 = el('button', 'mobile-tab');
         tab2.textContent = state._opponentName || 'Opponent';
         tabs.appendChild(tab1);
         tabs.appendChild(tab2);
         root.appendChild(tabs);
 
-        // Swipeable container for player areas
-        const swipeContainer = el('div', 'swipe-container');
-        const swipeTrack = el('div', 'swipe-track');
+        // Both panels created, one hidden
+        const panel1 = createPlayerArea(state, handlers);
+        const panel2 = createComputerArea(state);
+        panel2.style.display = 'none';
 
-        const panel1 = el('div', 'swipe-panel');
-        panel1.appendChild(createPlayerArea(state, handlers));
+        root.appendChild(panel1);
+        root.appendChild(panel2);
 
-        const panel2 = el('div', 'swipe-panel');
-        panel2.appendChild(createComputerArea(state));
-
-        swipeTrack.appendChild(panel1);
-        swipeTrack.appendChild(panel2);
-        swipeContainer.appendChild(swipeTrack);
-        root.appendChild(swipeContainer);
-
-        // Swipe handling
-        let startX = 0;
-        let currentPanel = 0;
-
-        swipeTrack.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-        }, { passive: true });
-
-        swipeTrack.addEventListener('touchend', (e) => {
-            const diff = startX - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 50) {
-                if (diff > 0 && currentPanel === 0) {
-                    currentPanel = 1;
-                } else if (diff < 0 && currentPanel === 1) {
-                    currentPanel = 0;
-                }
-                swipeTrack.style.transform = `translateX(-${currentPanel * 100}%)`;
-                tab1.classList.toggle('active', currentPanel === 0);
-                tab2.classList.toggle('active', currentPanel === 1);
-            }
-        }, { passive: true });
-
-        // Tab clicks
         tab1.addEventListener('click', () => {
-            currentPanel = 0;
-            swipeTrack.style.transform = 'translateX(0)';
+            panel1.style.display = '';
+            panel2.style.display = 'none';
             tab1.classList.add('active');
             tab2.classList.remove('active');
         });
         tab2.addEventListener('click', () => {
-            currentPanel = 1;
-            swipeTrack.style.transform = 'translateX(-100%)';
+            panel1.style.display = 'none';
+            panel2.style.display = '';
             tab2.classList.add('active');
             tab1.classList.remove('active');
         });
