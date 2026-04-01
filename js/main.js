@@ -79,8 +79,17 @@ async function onPlaySelected() {
     if (state.currentTurn !== 'player' || selectedIndexes.size === 0) return;
     if (isProcessing) return;
     isProcessing = true;
-    logState('BEFORE PLAYER PLAY');
+
     const indexes = Array.from(selectedIndexes).sort((a, b) => a - b);
+
+    // Multiplayer: send to server instead of local engine
+    if (multiplayerMode) {
+        mpPlayCards(indexes);
+        isProcessing = false;
+        return;
+    }
+
+    logState('BEFORE PLAYER PLAY');
     const cardsBeingPlayed = indexes.map(i => state.player.hand[i]);
     const cardsPlayed = cardsBeingPlayed.map(c => c.type === 'attack' ? `Attack ${c.value}` : c.name).join(', ');
     // AI Memory: capture discard pile before play (in case of invalid play pickup)
@@ -199,10 +208,17 @@ async function onPlaySelected() {
 }
 
 function onPickup() {
-    logState('BEFORE PLAYER PICKUP');
     if (state.currentTurn !== 'player' || state.gameOver) return;
     if (isProcessing) return;
     isProcessing = true;
+
+    if (multiplayerMode) {
+        mpPickup();
+        isProcessing = false;
+        return;
+    }
+
+    logState('BEFORE PLAYER PICKUP');
     // AI Memory: player picks up discard pile - we know exactly what they got
     if (state._aiMemory) {
         for (const c of state.discardPile) {
@@ -225,6 +241,13 @@ function onPrisonClick(row, index) {
     if (state.currentTurn !== 'player' || state.player.hand.length > 0 || state.gameOver) return;
     if (isProcessing) return;
     isProcessing = true;
+
+    if (multiplayerMode) {
+        mpPlayPrison(row, index);
+        isProcessing = false;
+        return;
+    }
+
     logState('BEFORE PLAYER PRISON PLAY');
     // AI Memory: capture discard pile + prison card before play (in case of pickup)
     const pileBeforePrison = state._aiMemory ? state.discardPile.map(c => ({ type: c.type, value: c.value, name: c.name, isSpecial: c.isSpecial })) : [];
@@ -373,6 +396,7 @@ async function onMultiplayer() {
                     state.currentTurn = view.currentTurn;
                     state.gameOver = view.gameOver;
                     state.winner = view.winner;
+                    state._roomCode = getRoomCode();
                     state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
                     update();
                 },
@@ -387,6 +411,7 @@ async function onMultiplayer() {
                     state.discardPile = view.discardPile;
                     state.deck = new Array(view.deckCount).fill(null);
                     state.currentTurn = view.currentTurn;
+                    state._roomCode = getRoomCode();
                     state.status = 'Game started!';
                     update();
                     animateDeal();
@@ -434,6 +459,7 @@ async function onMultiplayer() {
                     state.currentTurn = view.currentTurn;
                     state.gameOver = view.gameOver;
                     state.winner = view.winner;
+                    state._roomCode = getRoomCode();
                     state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
                     update();
                 },
@@ -448,6 +474,7 @@ async function onMultiplayer() {
                     state.discardPile = view.discardPile;
                     state.deck = new Array(view.deckCount).fill(null);
                     state.currentTurn = view.currentTurn;
+                    state._roomCode = getRoomCode();
                     state.status = 'Game started!';
                     update();
                     animateDeal();

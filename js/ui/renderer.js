@@ -28,11 +28,18 @@ function createHeader(state, onRestart, onMultiplayer) {
     logo.appendChild(img);
     header.appendChild(logo);
 
+    // Room code (if multiplayer)
+    if (state._roomCode) {
+        const roomBadge = el('div', 'room-code-badge');
+        roomBadge.textContent = `Room: ${state._roomCode}`;
+        header.appendChild(roomBadge);
+    }
+
     // Turn indicator in center of header
     const indicator = el('div', `turn-indicator${state.currentTurn === 'player' ? ' your-turn' : ''}`);
     indicator.textContent = state.gameOver
         ? (state.winner === 'player' ? 'You Win!' : 'Computer Wins!')
-        : (state.currentTurn === 'player' ? 'Your Turn' : "Computer's Turn");
+        : (state.currentTurn === 'player' ? 'Your Turn' : "Opponent's Turn");
     header.appendChild(indicator);
 
     const actions = el('div', 'header-actions');

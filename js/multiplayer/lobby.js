@@ -5,6 +5,7 @@ export function showLobby(onBack) {
     overlay.className = 'lobby-overlay';
     overlay.innerHTML = `
         <div class="lobby-content">
+            <button id="lobby-close-x" class="lobby-close-x">&times;</button>
             <h2 class="lobby-title">Multiplayer</h2>
 
             <div class="lobby-section">
@@ -42,6 +43,12 @@ export function showLobby(onBack) {
     });
 
     overlay.querySelector('#lobby-back-btn').addEventListener('click', () => {
+        overlay.classList.remove('visible');
+        setTimeout(() => overlay.remove(), 300);
+        if (onBack) onBack();
+    });
+
+    overlay.querySelector('#lobby-close-x').addEventListener('click', () => {
         overlay.classList.remove('visible');
         setTimeout(() => overlay.remove(), 300);
         if (onBack) onBack();

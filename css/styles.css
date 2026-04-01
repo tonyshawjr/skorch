@@ -678,3 +678,16 @@ button { font-family: inherit; }
     transition: all 0.2s;
 }
 .btn-multiplayer:hover { background: #2563eb; }
+.lobby-close-x {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: none; color: #6b7280;
+    font-size: 1.75rem; cursor: pointer; line-height: 1;
+    padding: 0.25rem 0.5rem; transition: color 0.2s;
+}
+.lobby-close-x:hover { color: white; }
+.lobby-content { position: relative; }
+.room-code-badge {
+    background: rgba(255,255,255,0.1); color: var(--skorch-yellow);
+    padding: 0.4rem 0.75rem; border-radius: 0.5rem;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
+}
