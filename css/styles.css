@@ -205,8 +205,9 @@ button { font-family: inherit; }
 .stacked-cards .sk-card {
     margin-left: -55px; flex-shrink: 0;
     transform-origin: center bottom;
-    transition: transform 0.2s ease;
-    opacity: 0.5;
+    opacity: 0.45 !important;
+    filter: grayscale(30%);
+    pointer-events: none;
 }
 .stacked-cards .sk-card:first-child { margin-left: 0; }
 .stacked-cards .sk-card:nth-child(1) { transform: rotate(14deg); z-index: 1; }
@@ -218,9 +219,7 @@ button { font-family: inherit; }
 .stacked-cards .sk-card:nth-child(7) { transform: rotate(-5deg); z-index: 7; }
 .stacked-cards .sk-card:nth-child(8) { transform: rotate(-8deg); z-index: 8; }
 .stacked-cards .sk-card:hover {
-    transform: translateY(-15px) rotate(0deg) !important;
-    z-index: 10; opacity: 1;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    opacity: 0.6;
 }
 .stack-count {
     display: flex; align-items: center; justify-content: center;
