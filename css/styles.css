@@ -318,6 +318,126 @@ button { font-family: inherit; }
 @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes cardFlip { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(180deg); } }
 
+/* ========== MOBILE LAYOUT ========== */
+.mobile-discard-area {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1.5rem; padding: 1rem 0.5rem;
+}
+.mobile-discard { position: relative; text-align: center; }
+.mobile-discard-card {
+    width: 110px !important; height: 154px !important;
+    background-size: cover !important;
+    border-radius: 8px;
+}
+.mobile-discard .sk-placeholder {
+    width: 110px !important; height: 154px !important;
+}
+.mobile-pile-count {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--skorch-blue); color: white;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+}
+.mobile-draw-info {
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+}
+.mobile-draw-label { font-size: 0.7rem; color: #6b7280; }
+.mobile-draw-count {
+    background: rgba(255,255,255,0.1); color: white;
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700;
+}
+
+.mobile-actions {
+    display: flex; gap: 0.5rem; padding: 0 0.5rem 0.5rem;
+}
+.mobile-play-btn, .mobile-pickup-btn {
+    flex: 1; padding: 0.6rem; border: none; border-radius: 9999px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all 0.2s;
+}
+.mobile-play-btn {
+    background: rgba(16,185,129,0.2); color: rgba(255,255,255,0.5);
+    border: 2px solid rgba(16,185,129,0.3);
+}
+.mobile-play-btn.active { background: var(--skorch-red); color: white; border-color: var(--skorch-red); }
+.mobile-pickup-btn { background: var(--skorch-yellow); color: #1f2937; }
+.mobile-play-btn:disabled, .mobile-pickup-btn:disabled {
+    background: #374151; color: #6b7280; border-color: #374151; cursor: not-allowed;
+}
+
+.mobile-section-label {
+    font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; padding: 0.25rem 0.5rem;
+}
+
+.mobile-hand-section { padding: 0.25rem 0; }
+.mobile-hand-scroll {
+    display: flex; overflow-x: auto; gap: 0; padding: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.mobile-hand-scroll::-webkit-scrollbar { display: none; }
+.mobile-hand-card {
+    width: 75px !important; height: 105px !important;
+    background-size: cover !important;
+    flex-shrink: 0; margin-left: -15px;
+    border-radius: 6px;
+}
+.mobile-hand-card:first-child { margin-left: 0; }
+.mobile-hand-card.selectable { cursor: pointer; }
+.mobile-hand-card.selectable:hover { transform: translateY(-4px); }
+.mobile-hand-card.selected {
+    border: 3px solid var(--skorch-red);
+    transform: translateY(-6px);
+    box-shadow: 0 4px 8px rgba(227,30,36,0.3);
+}
+
+.mobile-unplayable-badge {
+    flex-shrink: 0; display: flex; align-items: center;
+    padding: 0 0.75rem; color: #6b7280; font-size: 0.75rem;
+    font-weight: 600; white-space: nowrap;
+}
+
+.mobile-prison-section { padding: 0.25rem 0.5rem; }
+.mobile-prison-row {
+    display: flex; justify-content: center; gap: 3px; margin-bottom: 3px;
+}
+.mobile-prison-card {
+    width: 55px !important; height: 77px !important;
+    background-size: cover !important;
+    border-radius: 5px; flex-shrink: 1; min-width: 0;
+}
+
+.mobile-opponent-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.6rem 1rem; margin-top: 0.5rem;
+    background: var(--skorch-darker);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+}
+.mobile-opp-info { color: #9ca3af; font-size: 0.85rem; font-weight: 500; }
+.mobile-peek-btn {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: white; padding: 0.4rem 0.6rem; border-radius: 0.5rem;
+    cursor: pointer; line-height: 0;
+}
+
+.mobile-peek-sheet {
+    position: fixed; inset: 0; z-index: 4000;
+    background: rgba(0,0,0,0.8);
+    display: flex; align-items: flex-end; justify-content: center;
+}
+.mobile-peek-content {
+    background: var(--skorch-darker);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1rem 1rem 0 0;
+    padding: 1.5rem; width: 100%;
+    max-height: 60vh; overflow-y: auto;
+}
+
 /* ========== RESPONSIVE ========== */
 
 /* Mobile tab toggle */

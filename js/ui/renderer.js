@@ -11,43 +11,202 @@ export function render(state, root, handlers) {
     root.innerHTML = '';
     root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer));
 
-    // Mobile layout: tab toggle
     if (window.innerWidth <= 1024) {
-        // Center piles at top (always visible)
-        root.appendChild(createCenterSection(state, handlers));
+    // --- MOBILE LAYOUT ---
 
-        // Tab toggle
-        const tabs = el('div', 'mobile-tabs');
-        const tab1 = el('button', 'mobile-tab active');
-        tab1.textContent = state._myName || 'Your Hand';
-        const tab2 = el('button', 'mobile-tab');
-        tab2.textContent = state._opponentName || 'Opponent';
-        tabs.appendChild(tab1);
-        tabs.appendChild(tab2);
-        root.appendChild(tabs);
+    // 1. Discard area (hero section)
+    const discardArea = el('div', 'mobile-discard-area');
 
-        // Both panels created, one hidden
-        const panel1 = createPlayerArea(state, handlers);
-        const panel2 = createComputerArea(state);
-        panel2.style.display = 'none';
+    // Discard pile - large
+    const discardSection = el('div', 'mobile-discard');
+    if (state.discardPile.length > 0) {
+        const topCard = state.discardPile[state.discardPile.length - 1];
+        const discardCard = createCardElement(topCard, true);
+        discardCard.classList.add('mobile-discard-card');
+        discardSection.appendChild(discardCard);
+        const count = el('span', 'mobile-pile-count');
+        count.textContent = state.discardPile.length;
+        discardSection.appendChild(count);
+    } else {
+        const placeholder = el('div', 'sk-card sk-placeholder mobile-discard-card');
+        discardSection.appendChild(placeholder);
+    }
+    discardArea.appendChild(discardSection);
 
-        root.appendChild(panel1);
-        root.appendChild(panel2);
+    // Draw pile count (small, beside discard)
+    if (state.deck.length > 0) {
+        const drawInfo = el('div', 'mobile-draw-info');
+        drawInfo.innerHTML = `<span class="mobile-draw-label">Draw</span><span class="mobile-draw-count">${state.deck.length}</span>`;
+        discardArea.appendChild(drawInfo);
+    }
 
-        tab1.addEventListener('click', () => {
-            panel1.style.display = '';
-            panel2.style.display = 'none';
-            tab1.classList.add('active');
-            tab2.classList.remove('active');
+    root.appendChild(discardArea);
+
+    // 2. Action buttons
+    const actions = el('div', 'mobile-actions');
+    const playBtn = el('button', 'mobile-play-btn');
+    playBtn.id = 'playSelectedBtn';
+    playBtn.textContent = 'Play Selected';
+    playBtn.disabled = true;
+    if (state.currentTurn === 'player' && !state.gameOver) {
+        playBtn.addEventListener('click', handlers.onPlaySelected);
+    }
+    actions.appendChild(playBtn);
+
+    const pickupBtn = el('button', 'mobile-pickup-btn');
+    const canPickup = state.currentTurn === 'player' && !state.gameOver &&
+                      state.player.hand.length > 0 && state.discardPile.length > 0;
+    if (!canPickup) {
+        pickupBtn.disabled = true;
+        if (state.gameOver) pickupBtn.textContent = 'Game Over';
+        else if (state.currentTurn !== 'player') pickupBtn.textContent = 'Waiting...';
+        else if (state.player.hand.length === 0) pickupBtn.textContent = 'Play Prison';
+        else pickupBtn.textContent = 'Pick Up';
+    } else {
+        pickupBtn.textContent = 'Pick Up';
+        pickupBtn.addEventListener('click', handlers.onPickup);
+    }
+    actions.appendChild(pickupBtn);
+    root.appendChild(actions);
+
+    // 3. Your hand (horizontal scroll)
+    const handSection = el('div', 'mobile-hand-section');
+    const handLabel = el('div', 'mobile-section-label');
+    handLabel.textContent = (state._myName || 'Your Hand') + ` (${state.player.hand.length})`;
+    handSection.appendChild(handLabel);
+
+    const handScroll = el('div', 'mobile-hand-scroll');
+
+    // Separate playable from unplayable
+    const effectiveValue = getEffectiveValue(state);
+    const playable = [];
+    const unplayable = [];
+    state.player.hand.forEach((card, index) => {
+        if (!card) return;
+        const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
+        if (isSpecial || state.discardPile.length === 0 ||
+            (card.type === 'attack' && card.value >= effectiveValue) ||
+            (state.discardPile.length > 0 && (
+                state.discardPile[state.discardPile.length - 1].type === 'demoter' ||
+                state.discardPile[state.discardPile.length - 1].type === 'skorch'
+            ))) {
+            playable.push({ card, index });
+        } else {
+            unplayable.push({ card, index });
+        }
+    });
+
+    // Sort playable
+    playable.sort((a, b) => {
+        if (a.card.type === 'attack' && b.card.type === 'attack') return a.card.value - b.card.value;
+        if (a.card.type === 'attack') return -1;
+        if (b.card.type === 'attack') return 1;
+        return 0;
+    });
+
+    // Render playable cards
+    playable.forEach(({ card, index }) => {
+        const cardEl = createCardElement(card, true);
+        cardEl.classList.add('mobile-hand-card');
+        if (state.currentTurn === 'player' && !state.gameOver) {
+            cardEl.classList.add('selectable');
+            cardEl.dataset.index = index;
+            cardEl.addEventListener('click', () => handlers.onCardSelect(index, cardEl));
+        }
+        handScroll.appendChild(cardEl);
+    });
+
+    // Unplayable count
+    if (unplayable.length > 0) {
+        const unplayableInfo = el('div', 'mobile-unplayable-badge');
+        unplayableInfo.textContent = `+${unplayable.length} waiting`;
+        handScroll.appendChild(unplayableInfo);
+    }
+
+    handSection.appendChild(handScroll);
+    root.appendChild(handSection);
+
+    // 4. Your prison
+    const prisonSection = el('div', 'mobile-prison-section');
+    const prisonLabel = el('div', 'mobile-section-label');
+    prisonLabel.textContent = 'Your Prison';
+    prisonSection.appendChild(prisonLabel);
+
+    for (const rowName of ['front', 'back']) {
+        const row = el('div', 'mobile-prison-row');
+        state.player.prison[rowName].forEach((slot, index) => {
+            if (slot.card === null) {
+                row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
+            } else {
+                const cardEl = createCardElement(slot.card, slot.faceUp);
+                cardEl.classList.add('mobile-prison-card');
+                if (!slot.faceUp) {
+                    cardEl.className = 'sk-card sk-face-down mobile-prison-card';
+                    cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
+                }
+                if (state.currentTurn === 'player' && state.player.hand.length === 0 && !state.gameOver) {
+                    cardEl.style.cursor = 'pointer';
+                    cardEl.addEventListener('click', () => handlers.onPrisonClick(rowName, index));
+                }
+                row.appendChild(cardEl);
+            }
         });
-        tab2.addEventListener('click', () => {
-            panel1.style.display = 'none';
-            panel2.style.display = '';
-            tab2.classList.add('active');
-            tab1.classList.remove('active');
-        });
+        prisonSection.appendChild(row);
+    }
+    root.appendChild(prisonSection);
 
-        root.appendChild(createStatusBar(state));
+    // 5. Opponent peek bar
+    const oppBar = el('div', 'mobile-opponent-bar');
+    const oppInfo = el('span', 'mobile-opp-info');
+    oppInfo.textContent = `${state._opponentName || 'Opponent'}: ${state.computer.hand.length} cards`;
+    oppBar.appendChild(oppInfo);
+
+    const peekBtn = el('button', 'mobile-peek-btn');
+    peekBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    peekBtn.addEventListener('click', () => {
+        // Show opponent peek sheet
+        const sheet = el('div', 'mobile-peek-sheet');
+        sheet.addEventListener('click', () => sheet.remove());
+
+        const content = el('div', 'mobile-peek-content');
+        const title = el('h3');
+        title.textContent = `${state._opponentName || 'Opponent'} - ${state.computer.hand.length} cards in hand`;
+        title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+        content.appendChild(title);
+
+        // Show opponent prison
+        for (const rowName of ['front', 'back']) {
+            const row = el('div', 'mobile-prison-row');
+            state.computer.prison[rowName].forEach((slot) => {
+                if (slot.card === null) {
+                    row.appendChild(el('div', 'sk-card sk-placeholder mobile-prison-card'));
+                } else {
+                    const showFace = slot.faceUp;
+                    const cardEl = createCardElement(slot.card, showFace);
+                    cardEl.classList.add('mobile-prison-card');
+                    if (!showFace) {
+                        cardEl.className = 'sk-card sk-face-down mobile-prison-card';
+                        cardEl.style.backgroundImage = `url('${ASSETS_PATH}Card-Back.png')`;
+                    }
+                    row.appendChild(cardEl);
+                }
+            });
+            content.appendChild(row);
+        }
+
+        const hint = el('p');
+        hint.textContent = 'Tap anywhere to close';
+        hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+        content.appendChild(hint);
+
+        sheet.appendChild(content);
+        document.body.appendChild(sheet);
+    });
+    oppBar.appendChild(peekBtn);
+    root.appendChild(oppBar);
+
+    // Status at very bottom
+    root.appendChild(createStatusBar(state));
     } else {
         // Desktop: normal layout
         const board = el('div', 'game-board');
