@@ -65,6 +65,14 @@ export function render(state, root, handlers) {
         document.body.appendChild(sheet);
     });
     oppRow.appendChild(peekLink);
+    if (state._roomCode) {
+        const chatBtn = el('button', 'mobile-chat-btn');
+        chatBtn.innerHTML = 'Chat <span class="chat-badge" style="display:none">0</span>';
+        chatBtn.addEventListener('click', () => {
+            import('./chat.js').then(m => m.toggleChat());
+        });
+        oppRow.appendChild(chatBtn);
+    }
     root.appendChild(oppRow);
 
     // 1. Discard area (hero section)
@@ -444,6 +452,14 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
             loginBtn.textContent = 'Login';
             loginBtn.addEventListener('click', onAccount);
             actions.appendChild(loginBtn);
+        }
+        if (state._roomCode) {
+            const chatBtn = el('button', 'mobile-chat-btn');
+            chatBtn.innerHTML = 'Chat <span class="chat-badge" style="display:none">0</span>';
+            chatBtn.addEventListener('click', () => {
+                import('./chat.js').then(m => m.toggleChat());
+            });
+            actions.appendChild(chatBtn);
         }
         const mpBtn = el('button', 'btn-multiplayer');
         mpBtn.textContent = 'Multiplayer';

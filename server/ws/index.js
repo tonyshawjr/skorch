@@ -223,6 +223,24 @@ io.on('connection', (socket) => {
         broadcastState(room);
     });
 
+    // Chat message
+    socket.on('chat-message', ({ roomCode, message }) => {
+        if (rateLimit(socket.id)) return;
+        if (!validateString(roomCode, 4) || !validateString(message, 500)) return;
+        const room = getRoom(roomCode);
+        if (!room) return;
+        const who = getPlayerRole(room, socket.id);
+        if (!who) return;
+        const playerIndex = who === 'player' ? 0 : 1;
+        const username = room.players[playerIndex]?.username || 'Player';
+        // Broadcast to room
+        io.to(roomCode).emit('chat-message', {
+            from: username,
+            message: message.trim().substring(0, 500),
+            time: Date.now()
+        });
+    });
+
     // Rematch request
     socket.on('rematch', ({ roomCode }) => {
         if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }

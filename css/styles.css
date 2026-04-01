@@ -1341,3 +1341,81 @@ button { font-family: inherit; }
     padding: 0.4rem 0.75rem; border-radius: 0.5rem;
     font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
 }
+
+/* ========== CHAT DRAWER ========== */
+.chat-drawer {
+    position: fixed; right: -300px; top: 0; bottom: 0;
+    width: 300px; max-width: 85vw;
+    background: var(--skorch-darker);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
+    z-index: 4500;
+    transition: right 0.25s ease;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+}
+.chat-drawer.open { right: 0; }
+
+.chat-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: white; font-weight: 600; font-size: 1rem;
+}
+.chat-close {
+    background: none; border: none; color: #6b7280;
+    font-size: 1.5rem; cursor: pointer; line-height: 1;
+}
+.chat-close:hover { color: white; }
+
+.chat-messages {
+    flex: 1; overflow-y: auto; padding: 0.75rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chat-msg {
+    display: flex; flex-direction: column; gap: 0.1rem;
+}
+.chat-msg-name {
+    font-size: 0.7rem; color: var(--skorch-red);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.chat-msg-text {
+    font-size: 0.85rem; color: white; line-height: 1.4;
+    word-break: break-word;
+}
+
+.chat-input-bar {
+    display: flex; gap: 0.5rem; padding: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.chat-input {
+    flex: 1; padding: 0.5rem 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 9999px; color: white;
+    font-size: 0.85rem; font-family: inherit;
+    outline: none;
+}
+.chat-input:focus { border-color: var(--skorch-red); }
+.chat-send {
+    background: var(--skorch-red); color: white;
+    border: none; padding: 0.5rem 1rem;
+    border-radius: 9999px; font-weight: 600;
+    font-size: 0.8rem; cursor: pointer;
+    font-family: inherit;
+}
+
+/* Chat button */
+.mobile-chat-btn {
+    background: none; border: 1px solid rgba(255,255,255,0.15);
+    color: #9ca3af; padding: 0.25rem 0.6rem;
+    border-radius: 9999px; font-size: 0.7rem; font-weight: 600;
+    cursor: pointer; font-family: inherit; position: relative;
+}
+.chat-badge {
+    background: var(--skorch-red); color: white;
+    font-size: 0.6rem; font-weight: 700;
+    padding: 0.1rem 0.35rem; border-radius: 9999px;
+    margin-left: 0.25rem;
+}

@@ -5,7 +5,8 @@ import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
 import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat, playTurnDing } from './ui/sound.js';
-import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected } from './multiplayer/client.js';
+import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected, sendChat } from './multiplayer/client.js';
+import { initChat, addMessage, destroyChat } from './ui/chat.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { showAccountModal } from './ui/account.js';
 import { recordMatch, isLoggedIn, getProfile } from './multiplayer/auth.js';
@@ -447,6 +448,7 @@ async function onMultiplayer() {
     const lobby = showLobby(() => {
         // Back to single player
         multiplayerMode = false;
+        destroyChat();
         disconnect();
     });
 
@@ -488,6 +490,7 @@ async function onMultiplayer() {
                 onGameStart: (view) => {
                     lobby.close();
                     multiplayerMode = true;
+                    initChat((msg) => sendChat(msg));
                     state = createGameState();
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
@@ -518,12 +521,14 @@ async function onMultiplayer() {
                 onOpponentLeft: () => {
                     state.status = 'Opponent disconnected.';
                     state.gameOver = true;
+                    destroyChat();
                     update();
                 },
                 onRematchRequested: () => {
                     state.status = 'Opponent wants a rematch!';
                     update();
                 },
+                onChatMessage: (data) => addMessage(data),
                 onRoomCreated: (data) => lobby.showWaiting(data.code),
                 onRoomJoined: () => {}
             });
@@ -568,6 +573,7 @@ async function onMultiplayer() {
                 onGameStart: (view) => {
                     lobby.close();
                     multiplayerMode = true;
+                    initChat((msg) => sendChat(msg));
                     state = createGameState();
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
@@ -598,12 +604,14 @@ async function onMultiplayer() {
                 onOpponentLeft: () => {
                     state.status = 'Opponent disconnected.';
                     state.gameOver = true;
+                    destroyChat();
                     update();
                 },
                 onRematchRequested: () => {
                     state.status = 'Opponent wants a rematch!';
                     update();
                 },
+                onChatMessage: (data) => addMessage(data),
                 onRoomCreated: () => {},
                 onRoomJoined: () => lobby.showJoining()
             });
