@@ -227,7 +227,7 @@ button { font-family: inherit; }
 .computer-hand { display: flex; justify-content: center; padding-left: 30px; }
 .computer-hand .card-row { display: flex; }
 .computer-hand .sk-card { margin-left: -30px; flex-shrink: 0; }
-.computer-hand .sk-card:hover { transform: translateY(-5px); z-index: 1; }
+.computer-hand .sk-card { pointer-events: none; }
 
 /* Game Controls - no longer needed as separate bar */
 .game-controls { display: none; }
