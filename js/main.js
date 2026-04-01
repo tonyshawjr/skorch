@@ -308,6 +308,18 @@ function onPrisonClick(row, index) {
             isProcessing = false;
             return;
         }
+        // Announce special cards from prison
+        if (['skorch', 'shield', 'demoter', 'elude', 'undead'].includes(result.effect)) {
+            update();
+            announceSpecial(result.effect, 'player', 1200, state).then(() => {
+                if (result.effect === 'shield') { state.status += ' You go again!'; update(); isProcessing = false; return; }
+                nextTurn(state);
+                update();
+                isProcessing = false;
+                if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 1200);
+            });
+            return;
+        }
         if (result.effect === 'shield') { state.status += ' You go again!'; update(); isProcessing = false; return; }
         nextTurn(state);
     } else if (result.effect === 'pickup') {
