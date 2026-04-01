@@ -90,7 +90,9 @@ function createPlayerArea(state, handlers) {
     const unplayable = [];
 
     state.player.hand.forEach((card, index) => {
-        if (card.isSpecial || state.discardPile.length === 0 ||
+        if (!card) return; // Guard against null cards
+        const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
+        if (isSpecial || state.discardPile.length === 0 ||
             (card.type === CardType.ATTACK && card.value >= effectiveValue) ||
             (state.discardPile.length > 0 && (
                 state.discardPile[state.discardPile.length - 1].type === CardType.DEMOTER ||

@@ -213,6 +213,12 @@ function getPlayerRole(room, socketId) {
 
 function getPlayerView(state, who) {
     const opponent = who === 'player' ? 'computer' : 'player';
+    // Map currentTurn relative to this player
+    // If state says 'player' and who is 'player' → it's my turn
+    // If state says 'computer' and who is 'computer' → it's my turn
+    const isMyTurn = state.currentTurn === who;
+    // Map winner relative to this player
+    const didIWin = state.winner === who;
     return {
         myHand: state[who].hand,
         myPrison: state[who].prison,
@@ -220,10 +226,10 @@ function getPlayerView(state, who) {
         opponentPrison: maskPrison(state[opponent].prison),
         discardPile: state.discardPile,
         deckCount: state.deck.length,
-        currentTurn: state.currentTurn,
+        currentTurn: isMyTurn ? 'player' : 'computer',
         effectiveValue: getEffectiveValue(state),
         gameOver: state.gameOver,
-        winner: state.winner,
+        winner: state.winner ? (didIWin ? 'player' : 'computer') : null,
         turnCount: state.turnCount
     };
 }
