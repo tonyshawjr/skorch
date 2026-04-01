@@ -193,9 +193,9 @@ button { font-family: inherit; }
 .playable-cards { display: flex; flex-direction: column; gap: 0.5rem; }
 
 /* Card Selection */
-.sk-card.selectable { cursor: pointer; position: relative; z-index: 1; }
-.sk-card.selectable:hover { transform: translateY(-20px); z-index: 2; box-shadow: 0 8px 12px rgba(0,0,0,0.3); }
-.sk-card.selected { border: 3px solid var(--skorch-red); transform: translateY(-10px); z-index: 3; box-shadow: 0 8px 16px rgba(227,30,36,0.4); }
+.sk-card.selectable { cursor: pointer; position: relative; }
+.sk-card.selectable:hover { transform: translateY(-6px); }
+.sk-card.selected { border: 3px solid var(--skorch-red); transform: translateY(-8px); box-shadow: 0 4px 8px rgba(227,30,36,0.3); }
 
 /* Unplayable Stack - fanned out cards using flex + rotation */
 .unplayable-stack { padding: 0.5rem 0 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); opacity: 0.4; }
