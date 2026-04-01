@@ -157,6 +157,9 @@ export function render(state, root, handlers) {
     handSection.appendChild(handScroll);
     root.appendChild(handSection);
 
+    // Reset scroll to left
+    requestAnimationFrame(() => { handScroll.scrollLeft = 0; });
+
     // 4. Your prison
     const prisonSection = el('div', 'mobile-prison-section');
     const prisonLabel = el('div', 'mobile-section-label');

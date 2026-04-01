@@ -9,7 +9,7 @@ export function generateDeck() {
     }
     const specials = [
         { type: CardType.ELUDE, count: 4 },
-        { type: CardType.SHIELD, count: 4 },
+        { type: CardType.SHIELD, count: 0 }, // Removed from 2-player games
         { type: CardType.DEMOTER, count: 4 },
         { type: CardType.SKORCH, count: 4 },
         { type: CardType.UNDEAD, count: 1 }
