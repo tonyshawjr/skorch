@@ -88,7 +88,7 @@ export function playFromHand(state, who, handIndexes) {
     if (!isValidPlay(cards[0], state)) {
         player.hand = player.hand.concat(state.discardPile);
         state.discardPile = [];
-        return { success: true, message: 'Invalid play! You picked up the discard pile.', effect: 'pickup' };
+        return { success: true, message: 'Not high enough! Picked up the discard pile.', effect: 'pickup' };
     }
     const sortedDesc = [...handIndexes].sort((a, b) => b - a);
     for (const idx of sortedDesc) { player.hand.splice(idx, 1); }
@@ -116,7 +116,7 @@ export function playFromPrison(state, who, row, index) {
             player.hand.push(card);
             state.discardPile = [];
             slot.card = null;
-            return { success: true, message: `Flipped ${card.name} - invalid! Picked up the discard pile.`, effect: 'pickup' };
+            return { success: true, message: `Flipped ${card.name} - not high enough! Picked up the discard pile.`, effect: 'pickup' };
         }
     } else {
         if (!isValidPlay(card, state)) {
@@ -125,7 +125,7 @@ export function playFromPrison(state, who, row, index) {
             player.hand.push(card);
             state.discardPile = [];
             slot.card = null;
-            return { success: true, message: `Played ${card.name} - invalid! Picked up the discard pile.`, effect: 'pickup' };
+            return { success: true, message: `Played ${card.name} - picked up the discard pile.`, effect: 'pickup' };
         }
     }
     slot.card = null;

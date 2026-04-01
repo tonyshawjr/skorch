@@ -166,7 +166,7 @@ async function onPlaySelected() {
                     nextTurn(state);
                     update();
                     isProcessing = false;
-                    computerTurnTimeout = setTimeout(doComputerTurn, 800);
+                    computerTurnTimeout = setTimeout(doComputerTurn, 1200);
                 },
                 () => {
                     state.status = 'Undead - no swap made.';
@@ -176,7 +176,7 @@ async function onPlaySelected() {
                     nextTurn(state);
                     update();
                     isProcessing = false;
-                    computerTurnTimeout = setTimeout(doComputerTurn, 800);
+                    computerTurnTimeout = setTimeout(doComputerTurn, 1200);
                 }
             );
             // isProcessing will be cleared in the modal callbacks
@@ -211,7 +211,7 @@ async function onPlaySelected() {
         nextTurn(state);
         update();
         isProcessing = false;
-        computerTurnTimeout = setTimeout(doComputerTurn, 800);
+        computerTurnTimeout = setTimeout(doComputerTurn, 1200);
     } else if (result.effect === 'pickup') {
         playPickup();
         // AI Memory: invalid play caused pickup — player now has all pile cards
@@ -223,7 +223,7 @@ async function onPlaySelected() {
         nextTurn(state);
         update();
         isProcessing = false;
-        computerTurnTimeout = setTimeout(doComputerTurn, 800);
+        computerTurnTimeout = setTimeout(doComputerTurn, 1200);
     } else {
         update();
         isProcessing = false;
@@ -257,7 +257,7 @@ function onPickup() {
     nextTurn(state);
     update();
     isProcessing = false;
-    computerTurnTimeout = setTimeout(doComputerTurn, 800);
+    computerTurnTimeout = setTimeout(doComputerTurn, 1200);
 }
 
 function onPrisonClick(row, index) {
@@ -316,7 +316,7 @@ function onPrisonClick(row, index) {
     }
     update();
     isProcessing = false;
-    if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 800);
+    if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 1200);
 }
 
 async function doComputerTurn() {
