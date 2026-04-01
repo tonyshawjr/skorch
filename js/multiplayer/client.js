@@ -29,67 +29,44 @@ export function connect(handlers) {
         if (!window.io) {
             const script = document.createElement('script');
             script.src = 'https://cdn.socket.io/4.7.4/socket.io.min.js';
-            script.onload = () => { initSocket(); resolve(); };
+            script.onload = () => { initSocket().then(resolve).catch(reject); };
             script.onerror = () => reject(new Error('Failed to load Socket.io'));
             document.head.appendChild(script);
         } else {
-            initSocket();
-            resolve();
+            initSocket().then(resolve).catch(reject);
         }
     });
 }
 
 function initSocket() {
-    socket = window.io(SERVER_URL, {
-        transports: ['websocket', 'polling']
-    });
+    return new Promise((resolve, reject) => {
+        socket = window.io(SERVER_URL, {
+            transports: ['websocket', 'polling'],
+            timeout: 10000
+        });
 
-    socket.on('connect', () => {
-        console.log('Connected to multiplayer server');
-    });
+        socket.on('connect', () => {
+            console.log('Connected to multiplayer server');
+            resolve();
+        });
 
-    socket.on('disconnect', () => {
-        console.log('Disconnected from multiplayer server');
-    });
+        socket.on('connect_error', (err) => {
+            console.error('Connection error:', err);
+            reject(err);
+        });
 
-    socket.on('room-created', (data) => {
-        roomCode = data.code;
-        playerId = data.playerId;
-        if (onRoomCreated) onRoomCreated(data);
-    });
+        socket.on('disconnect', () => console.log('Disconnected'));
+        socket.on('room-created', (data) => { roomCode = data.code; playerId = data.playerId; if (onRoomCreated) onRoomCreated(data); });
+        socket.on('room-joined', (data) => { roomCode = data.code; playerId = data.playerId; if (onRoomJoined) onRoomJoined(data); });
+        socket.on('game-start', (view) => { if (onGameStart) onGameStart(view); });
+        socket.on('state-update', (view) => { if (onStateUpdate) onStateUpdate(view); });
+        socket.on('game-over', (data) => { if (onGameOver) onGameOver(data); });
+        socket.on('move-result', () => {});
+        socket.on('opponent-left', () => { if (onOpponentLeft) onOpponentLeft(); });
+        socket.on('rematch-requested', () => { if (onRematchRequested) onRematchRequested(); });
+        socket.on('error', (data) => { if (onError) onError(data.message); });
 
-    socket.on('room-joined', (data) => {
-        roomCode = data.code;
-        playerId = data.playerId;
-        if (onRoomJoined) onRoomJoined(data);
-    });
-
-    socket.on('game-start', (view) => {
-        if (onGameStart) onGameStart(view);
-    });
-
-    socket.on('state-update', (view) => {
-        if (onStateUpdate) onStateUpdate(view);
-    });
-
-    socket.on('game-over', (data) => {
-        if (onGameOver) onGameOver(data);
-    });
-
-    socket.on('move-result', (data) => {
-        // Handled by state-update
-    });
-
-    socket.on('opponent-left', () => {
-        if (onOpponentLeft) onOpponentLeft();
-    });
-
-    socket.on('rematch-requested', () => {
-        if (onRematchRequested) onRematchRequested();
-    });
-
-    socket.on('error', (data) => {
-        if (onError) onError(data.message);
+        setTimeout(() => reject(new Error('Connection timeout')), 10000);
     });
 }
 
