@@ -8,13 +8,18 @@ export function showAccountModal(onClose) {
     const user = getUser();
 
     if (user) {
+        const avatarColor = user.avatar_color || '#EB2228';
+        const displayName = user.display_name || user.username;
+        const avatarLetter = displayName.charAt(0).toUpperCase();
+
         // Show profile
         overlay.innerHTML = `
             <div class="account-modal">
                 <button class="account-close">&times;</button>
                 <div class="account-profile">
-                    <div class="profile-avatar">${user.username.charAt(0).toUpperCase()}</div>
-                    <h2 class="profile-name">${user.username}</h2>
+                    <div class="profile-avatar" style="background:${avatarColor}">${avatarLetter}</div>
+                    <h2 class="profile-name">${displayName}</h2>
+                    <p style="color:#6b7280;font-size:0.8rem;margin-top:-0.5rem;margin-bottom:1rem;">@${user.username}</p>
                     <div class="profile-stats">
                         <div class="stat-item">
                             <div class="stat-value">${user.wins || 0}</div>
@@ -33,6 +38,23 @@ export function showAccountModal(onClose) {
                             <div class="stat-label">Best Streak</div>
                         </div>
                     </div>
+
+                    <div class="profile-edit-section">
+                        <h3 style="color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem;">Edit Profile</h3>
+                        <div style="margin-bottom:0.75rem;">
+                            <input type="text" class="account-input" id="edit-display-name" placeholder="Display Name" value="${user.display_name || ''}" maxlength="50">
+                        </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="color:#9ca3af;font-size:0.8rem;display:block;margin-bottom:0.4rem;">Avatar Color</label>
+                            <div class="avatar-colors" id="avatar-colors">
+                                ${['#EB2228','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c =>
+                                    `<button class="avatar-color-btn${c === avatarColor ? ' selected' : ''}" data-color="${c}" style="background:${c}"></button>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <button class="account-btn account-btn-primary" id="save-profile">Save Changes</button>
+                    </div>
+
                     <button class="account-btn account-btn-logout" id="account-logout">Log Out</button>
                 </div>
             </div>
@@ -83,6 +105,34 @@ export function showAccountModal(onClose) {
     });
 
     if (user) {
+        // Avatar color selection
+        let selectedColor = avatarColor;
+        overlay.querySelectorAll('.avatar-color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                overlay.querySelectorAll('.avatar-color-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedColor = btn.dataset.color;
+                overlay.querySelector('.profile-avatar').style.background = selectedColor;
+            });
+        });
+
+        // Save profile
+        overlay.querySelector('#save-profile').addEventListener('click', async () => {
+            const displayName = overlay.querySelector('#edit-display-name').value.trim();
+            const res = await fetch('/server/php/api/update-profile.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ display_name: displayName, avatar_color: selectedColor })
+            });
+            const data = await res.json();
+            if (data.success) {
+                await getProfile(); // Refresh user data
+                overlay.remove();
+                showAccountModal(onClose);
+            }
+        });
+
         // Logout
         overlay.querySelector('#account-logout').addEventListener('click', async () => {
             await logout();
