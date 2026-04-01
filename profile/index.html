@@ -8,8 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --skorch-red: #EB2228;
-            --skorch-red-dark: #c41a1f;
+            --skorch-red: #b11f24;
+            --skorch-red-dark: #8a181c;
             --skorch-dark: #1a3a2a;
             --skorch-darker: #143022;
             --skorch-darkest: #0e2418;
@@ -379,7 +379,7 @@
     <!-- Nav -->
     <nav class="nav">
         <a href="/" class="nav-logo">
-            <img src="/assets/logo-red.png" alt="Skorch">
+            <img src="/assets/logo.svg" alt="Skorch">
         </a>
         <div class="nav-links">
             <a href="/play">Play</a>
@@ -512,7 +512,7 @@
             const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
             const bestStreak = profile.best_streak || 0;
             const displayName = profile.display_name || profile.username;
-            const avatarColor = profile.avatar_color || '#EB2228';
+            const avatarColor = profile.avatar_color || '#b11f24';
             const initial = displayName.charAt(0).toUpperCase();
             const memberSince = profile.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '';
 

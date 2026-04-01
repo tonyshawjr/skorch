@@ -8,7 +8,7 @@ export function showAccountModal(onClose) {
     const user = getUser();
 
     if (user) {
-        const avatarColor = user.avatar_color || '#EB2228';
+        const avatarColor = user.avatar_color || '#b11f24';
         const displayName = user.display_name || user.username;
         const avatarLetter = displayName.charAt(0).toUpperCase();
 
@@ -47,7 +47,7 @@ export function showAccountModal(onClose) {
                         <div style="margin-bottom:0.75rem;">
                             <label style="color:#9ca3af;font-size:0.8rem;display:block;margin-bottom:0.4rem;">Avatar Color</label>
                             <div class="avatar-colors" id="avatar-colors">
-                                ${['#EB2228','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c =>
+                                ${['#b11f24','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c =>
                                     `<button class="avatar-color-btn${c === avatarColor ? ' selected' : ''}" data-color="${c}" style="background:${c}"></button>`
                                 ).join('')}
                             </div>

@@ -42,7 +42,7 @@ export async function showLeaderboard() {
             const rank = index + 1;
             const winRate = player.games_played > 0 ? Math.round((player.wins / player.games_played) * 100) : 0;
             const isKing = rank === 1;
-            const color = player.avatar_color || '#EB2228';
+            const color = player.avatar_color || '#b11f24';
             const displayName = player.display_name || player.username;
             const initial = displayName.charAt(0).toUpperCase();
 

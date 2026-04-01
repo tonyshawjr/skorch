@@ -1,7 +1,7 @@
 // js/ui/announcer.js - Game announcements and overlays
 
 const SPECIAL_CONFIG = {
-    skorch: { text: 'SKORCH!', sub: 'Discard pile burned', color: '#EB2228' },
+    skorch: { text: 'SKORCH!', sub: 'Discard pile burned', color: '#b11f24' },
     shield: { text: 'SHIELD!', sub: 'Turn skipped', color: '#3b82f6' },
     demoter: { text: 'DEMOTER!', sub: 'Value reset to zero', color: '#f59e0b' },
     elude: { text: 'ELUDE!', sub: 'Mirroring value', color: '#8b5cf6' },

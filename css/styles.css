@@ -1,5 +1,5 @@
 :root {
-    --skorch-red: #EB2228;
+    --skorch-red: #b11f24;
     --skorch-dark: #1a3a2a;
     --skorch-darker: #143022;
     --skorch-light: #FFFFFF;
@@ -45,7 +45,7 @@ button { font-family: inherit; }
     display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.btn-restart:hover { background-color: #c41a1f; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+.btn-restart:hover { background-color: #8a181c; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 
 .btn-mute {
     background: none; border: none; cursor: pointer;
@@ -270,7 +270,7 @@ button { font-family: inherit; }
     cursor: not-allowed; transition: all 0.2s ease; min-width: 200px;
 }
 .btn-play.active { background-color: var(--skorch-red); color: white; border-color: var(--skorch-red); cursor: pointer; }
-.btn-play.active:hover { background-color: #c41a1f; transform: translateY(-1px); }
+.btn-play.active:hover { background-color: #8a181c; transform: translateY(-1px); }
 .btn-pickup:disabled, .btn-play:disabled { background-color: #374151; color: #6b7280; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; border-color: #374151; }
 /* buttons sized via center-buttons now */
 
@@ -398,7 +398,7 @@ button { font-family: inherit; }
     cursor: pointer;
 }
 .undead-swap-btn.ready:active {
-    background: #c41a1f;
+    background: #8a181c;
 }
 
 /* Animations */
@@ -608,7 +608,7 @@ button { font-family: inherit; }
     transition: all 0.2s;
 }
 .account-btn-primary { background: var(--skorch-red); color: white; }
-.account-btn-primary:hover { background: #c41a1f; }
+.account-btn-primary:hover { background: #8a181c; }
 .account-btn-logout { background: rgba(255,255,255,0.08); color: #9ca3af; margin-top: 1rem; }
 .account-btn-logout:hover { color: white; }
 .account-error { color: #f87171; font-size: 0.8rem; text-align: center; min-height: 1.2em; }
@@ -646,7 +646,7 @@ button { font-family: inherit; }
     padding: 0.75rem 1.5rem; border-radius: 0.5rem;
     border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
-.btn-login:hover { background: #c41a1f; }
+.btn-login:hover { background: #8a181c; }
 
 /* User menu in header */
 .user-menu-wrap { position: relative; }
@@ -1173,7 +1173,7 @@ button { font-family: inherit; }
     letter-spacing: 1px;
 }
 .gameover-btn:hover {
-    background: #c41a1f;
+    background: #8a181c;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(235,34,40,0.4);
 }
@@ -1288,7 +1288,7 @@ button { font-family: inherit; }
     font-family: inherit;
 }
 .lobby-btn-primary { background: var(--skorch-red); color: white; }
-.lobby-btn-primary:hover { background: #c41a1f; }
+.lobby-btn-primary:hover { background: #8a181c; }
 .lobby-btn-secondary { background: var(--skorch-blue); color: white; }
 .lobby-btn-secondary:hover { background: #2563eb; }
 .lobby-btn-back {

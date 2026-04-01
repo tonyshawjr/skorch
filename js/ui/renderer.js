@@ -366,7 +366,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
-    img.src = '/assets/logo-red.png';
+    img.src = '/assets/logo.svg';
     img.alt = 'Skorch';
     img.className = 'game-logo';
     img.style.cursor = 'pointer';
