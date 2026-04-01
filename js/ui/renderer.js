@@ -326,19 +326,40 @@ function createHeader(state, onRestart, onMultiplayer) {
 function createStatusBar(state) {
     const container = el('div', 'status-container');
     const msg = el('div', 'status-message');
+    const isMobile = window.innerWidth <= 1024;
 
     // Show value to beat
     const value = getEffectiveValue(state);
-    const valueText = state.discardPile.length === 0 ? 'Play anything' : `Beat: ${value}`;
+    const valueText = state.discardPile.length === 0 ? 'Any' : `Beat ${value}`;
     const valueSpan = el('span', 'value-to-beat');
     valueSpan.textContent = valueText;
     msg.appendChild(valueSpan);
 
-    // Status text
-    const statusText = el('span');
-    statusText.textContent = state.status;
-    msg.appendChild(statusText);
+    // Status text - truncate on mobile, tap for full
+    const fullStatus = state.status || '';
+    const statusText = el('span', 'status-text');
 
+    if (isMobile && fullStatus.length > 30) {
+        // Short version
+        const short = fullStatus.substring(0, 28) + '...';
+        statusText.textContent = short;
+        msg.style.cursor = 'pointer';
+        msg.addEventListener('click', () => {
+            const sheet = el('div', 'mobile-peek-sheet');
+            sheet.addEventListener('click', () => sheet.remove());
+            const content = el('div', 'mobile-peek-content');
+            const text = el('p');
+            text.textContent = fullStatus;
+            text.style.cssText = 'color:white;font-size:1rem;text-align:center;line-height:1.6;';
+            content.appendChild(text);
+            sheet.appendChild(content);
+            document.body.appendChild(sheet);
+        });
+    } else {
+        statusText.textContent = fullStatus;
+    }
+
+    msg.appendChild(statusText);
     container.appendChild(msg);
     return container;
 }
