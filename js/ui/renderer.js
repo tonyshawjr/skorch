@@ -86,7 +86,7 @@ function createPlayerArea(state, handlers) {
     const section = el('section', 'area-box');
     const handSection = el('div', 'hand-section');
     const handTitle = el('h3');
-    handTitle.textContent = 'Your Hand ';
+    handTitle.textContent = (state._myName || 'Your Hand') + ' ';
     const countBadge = el('span', `card-count${state.player.hand.length > 7 ? ' warning' : ''}`);
     countBadge.textContent = state.player.hand.length;
     handTitle.appendChild(countBadge);
@@ -183,7 +183,7 @@ function createComputerArea(state) {
     const section = el('section', 'area-box');
     const handSection = el('div', 'hand-section');
     const title = el('h3');
-    title.textContent = 'Opponent Hand ';
+    title.textContent = (state._opponentName || 'Opponent Hand') + ' ';
     if (state.computer.hand.length > 0) {
         const badge = el('span', 'card-count');
         badge.textContent = state.computer.hand.length;

@@ -46,7 +46,7 @@ function getCardImage(card) {
 
 // --- Deck (from deck.js) ---
 
-function generateDeck() {
+function generateDeck(isMultiplayer = false) {
     const deck = [];
     for (let rank = 1; rank <= 10; rank++) {
         for (let i = 0; i < 6; i++) {
@@ -55,7 +55,7 @@ function generateDeck() {
     }
     const specials = [
         { type: CardType.ELUDE, count: 4 },
-        { type: CardType.SHIELD, count: 4 },
+        { type: CardType.SHIELD, count: isMultiplayer ? 0 : 4 },
         { type: CardType.DEMOTER, count: 4 },
         { type: CardType.SKORCH, count: 4 },
         { type: CardType.UNDEAD, count: 1 }
@@ -147,8 +147,8 @@ function swapPrisonCards(prisonA, rowA, indexA, prisonB, rowB, indexB) {
 
 // --- Game (from game.js) ---
 
-function createGameState() {
-    const deck = shuffleDeck(generateDeck());
+function createGameState(isMultiplayer = false) {
+    const deck = shuffleDeck(generateDeck(isMultiplayer));
     const playerPrison = createPrison(deck);
     const computerPrison = createPrison(deck);
     const playerHand = [];

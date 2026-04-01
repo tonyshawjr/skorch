@@ -4,7 +4,7 @@ import { render } from './ui/renderer.js';
 import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
-import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat } from './ui/sound.js';
+import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat, playTurnDing } from './ui/sound.js';
 import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected } from './multiplayer/client.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { recordMatch, isLoggedIn } from './multiplayer/auth.js';
@@ -397,7 +397,10 @@ async function onMultiplayer() {
                     state.gameOver = view.gameOver;
                     state.winner = view.winner;
                     state._roomCode = getRoomCode();
+                    state._myName = view.myName || 'You';
+                    state._opponentName = view.opponentName || 'Opponent';
                     state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    if (view.currentTurn === 'player') playTurnDing();
                     update();
                 },
                 onGameStart: (view) => {
@@ -412,6 +415,8 @@ async function onMultiplayer() {
                     state.deck = new Array(view.deckCount).fill(null);
                     state.currentTurn = view.currentTurn;
                     state._roomCode = getRoomCode();
+                    state._myName = view.myName || 'You';
+                    state._opponentName = view.opponentName || 'Opponent';
                     state.status = 'Game started!';
                     update();
                     animateDeal();
@@ -460,7 +465,10 @@ async function onMultiplayer() {
                     state.gameOver = view.gameOver;
                     state.winner = view.winner;
                     state._roomCode = getRoomCode();
+                    state._myName = view.myName || 'You';
+                    state._opponentName = view.opponentName || 'Opponent';
                     state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    if (view.currentTurn === 'player') playTurnDing();
                     update();
                 },
                 onGameStart: (view) => {
@@ -475,6 +483,8 @@ async function onMultiplayer() {
                     state.deck = new Array(view.deckCount).fill(null);
                     state.currentTurn = view.currentTurn;
                     state._roomCode = getRoomCode();
+                    state._myName = view.myName || 'You';
+                    state._opponentName = view.opponentName || 'Opponent';
                     state.status = 'Game started!';
                     update();
                     animateDeal();

@@ -49,7 +49,7 @@ io.on('connection', (socket) => {
         socket.emit('room-joined', { code, playerId: 'player2' });
 
         // Start the game
-        const state = createGameState();
+        const state = createGameState(true);
         room.state = state;
         room.started = true;
 
@@ -57,8 +57,8 @@ io.on('connection', (socket) => {
         const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
         const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
 
-        if (p1Socket) p1Socket.emit('game-start', getPlayerView(state, 'player'));
-        if (p2Socket) p2Socket.emit('game-start', getPlayerView(state, 'computer'));
+        if (p1Socket) p1Socket.emit('game-start', getPlayerView(state, 'player', room));
+        if (p2Socket) p2Socket.emit('game-start', getPlayerView(state, 'computer', room));
 
         console.log(`Room ${code}: game started`);
     });
@@ -179,14 +179,14 @@ io.on('connection', (socket) => {
 
         if (room.rematchVotes.size >= 2) {
             // Both players want rematch
-            room.state = createGameState();
+            room.state = createGameState(true);
             room.rematchVotes.clear();
             room.started = true;
 
             const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
             const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
-            if (p1Socket) p1Socket.emit('game-start', getPlayerView(room.state, 'player'));
-            if (p2Socket) p2Socket.emit('game-start', getPlayerView(room.state, 'computer'));
+            if (p1Socket) p1Socket.emit('game-start', getPlayerView(room.state, 'player', room));
+            if (p2Socket) p2Socket.emit('game-start', getPlayerView(room.state, 'computer', room));
         } else {
             socket.to(roomCode).emit('rematch-requested');
         }
@@ -211,8 +211,10 @@ function getPlayerRole(room, socketId) {
     return null;
 }
 
-function getPlayerView(state, who) {
+function getPlayerView(state, who, room) {
     const opponent = who === 'player' ? 'computer' : 'player';
+    const myIndex = who === 'player' ? 0 : 1;
+    const oppIndex = who === 'player' ? 1 : 0;
     // Map currentTurn relative to this player
     // If state says 'player' and who is 'player' → it's my turn
     // If state says 'computer' and who is 'computer' → it's my turn
@@ -230,7 +232,9 @@ function getPlayerView(state, who) {
         effectiveValue: getEffectiveValue(state),
         gameOver: state.gameOver,
         winner: state.winner ? (didIWin ? 'player' : 'computer') : null,
-        turnCount: state.turnCount
+        turnCount: state.turnCount,
+        myName: room?.players[myIndex]?.username || 'You',
+        opponentName: room?.players[oppIndex]?.username || 'Opponent'
     };
 }
 
@@ -255,8 +259,8 @@ function broadcastState(room) {
     if (!room.players[0] || !room.players[1]) return;
     const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
     const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
-    if (p1Socket) p1Socket.emit('state-update', getPlayerView(room.state, 'player'));
-    if (p2Socket) p2Socket.emit('state-update', getPlayerView(room.state, 'computer'));
+    if (p1Socket) p1Socket.emit('state-update', getPlayerView(room.state, 'player', room));
+    if (p2Socket) p2Socket.emit('state-update', getPlayerView(room.state, 'computer', room));
 }
 
 const PORT = process.env.PORT || 3001;

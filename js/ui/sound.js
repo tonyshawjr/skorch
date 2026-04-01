@@ -290,6 +290,22 @@ export function playVictory() {
     });
 }
 
+export function playTurnDing() {
+    if (muted) return;
+    ensureResumed();
+    const c = getCtx();
+    const t = c.currentTime;
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+}
+
 export function playDefeat() {
     if (muted) return;
     ensureResumed();
