@@ -480,24 +480,28 @@
         }
 
         // ── Rank Calculation ──
-        function getRank(wins, gamesPlayed) {
+        function getRank(wins, gamesPlayed, leaderboardPosition) {
             if (!gamesPlayed || gamesPlayed === 0) return { name: 'Unranked', icon: '&#9898;', class: 'rank-unranked' };
-            // King is handled separately by leaderboard position - here we use wins thresholds
+            // If we know their leaderboard position, show it
+            if (leaderboardPosition === 1) return { name: 'Skorch King', icon: '&#128081;', class: 'rank-king' };
             if (wins >= 100) return { name: 'Gold', icon: '&#11088;', class: 'rank-gold' };
             if (wins >= 50) return { name: 'Silver', icon: '&#9898;', class: 'rank-silver' };
             if (wins >= 20) return { name: 'Bronze', icon: '&#129352;', class: 'rank-bronze' };
             if (wins >= 5) return { name: 'Iron', icon: '&#128737;', class: 'rank-iron' };
-            return { name: 'Unranked', icon: '&#9898;', class: 'rank-unranked' };
+            // Has played but few wins - show their rank number
+            if (leaderboardPosition) return { name: `Rank #${leaderboardPosition}`, icon: '&#128293;', class: 'rank-iron' };
+            return { name: 'Ranked', icon: '&#128293;', class: 'rank-iron' };
         }
 
-        async function checkIfKing(username) {
+        async function getLeaderboardPosition(username) {
             try {
-                const res = await fetch('/server/php/api/leaderboard.php?sort=elo&limit=1');
-                if (!res.ok) return false;
+                const res = await fetch('/server/php/api/leaderboard.php?sort=wins&limit=100');
+                if (!res.ok) return null;
                 const data = await res.json();
                 const players = data.leaderboard || data;
-                return players.length > 0 && players[0].username === username;
-            } catch (e) { return false; }
+                const idx = players.findIndex(p => p.username === username);
+                return idx >= 0 ? idx + 1 : null;
+            } catch (e) { return null; }
         }
 
         // ── Render Profile ──
@@ -512,14 +516,10 @@
             const initial = displayName.charAt(0).toUpperCase();
             const memberSince = profile.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '';
 
-            // Determine rank
-            const isKing = await checkIfKing(profile.username);
-            let rank;
-            if (isKing) {
-                rank = { name: 'Skorch King', icon: '&#128081;', class: 'rank-king' };
-            } else {
-                rank = getRank(wins, gamesPlayed);
-            }
+            // Determine rank from leaderboard position
+            const position = await getLeaderboardPosition(profile.username);
+            let rank = getRank(wins, gamesPlayed, position);
+            // rank already set above from getRank with position
 
             document.title = `${displayName} - Skorch Profile`;
 
