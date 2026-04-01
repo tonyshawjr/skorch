@@ -39,6 +39,11 @@ function createRoom(socketId, username) {
 function joinRoom(code, socketId, username) {
     const room = rooms.get(code.toUpperCase());
     if (!room) return null;
+    // Cancel any pending delete timer
+    if (room.deleteTimer) {
+        clearTimeout(room.deleteTimer);
+        room.deleteTimer = null;
+    }
     room.players.push({ socketId, username });
     return room;
 }
@@ -53,7 +58,15 @@ function removePlayer(socketId) {
         if (idx !== -1) {
             room.players.splice(idx, 1);
             if (room.players.length === 0) {
-                rooms.delete(code);
+                // Don't delete immediately - keep room alive for 5 minutes
+                // so the other player can still join
+                if (!room.started) {
+                    room.deleteTimer = setTimeout(() => {
+                        rooms.delete(code);
+                    }, 5 * 60 * 1000); // 5 minutes
+                } else {
+                    rooms.delete(code);
+                }
             }
             return room;
         }
