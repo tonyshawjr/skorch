@@ -683,12 +683,13 @@ button { font-family: inherit; }
         --card-overlap: -25px;
     }
 
-    body { padding: 0; margin: 0; overflow-x: hidden; }
+    html, body { padding: 0; margin: 0; overflow: hidden; height: 100%; }
 
-    /* Lock game to viewport */
+    /* Lock game to viewport - no scrolling */
     #game-root {
         display: flex; flex-direction: column;
-        min-height: 100dvh;
+        height: 100dvh;
+        overflow: hidden;
         padding: 0 0.25rem env(safe-area-inset-bottom, 0);
     }
 
