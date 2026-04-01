@@ -377,7 +377,6 @@ button { font-family: inherit; }
 .mobile-hand-section { padding: 0.25rem 0; }
 .mobile-hand-scroll {
     display: flex; overflow-x: auto; gap: 0; padding: 0.5rem;
-    justify-content: center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -411,6 +410,23 @@ button { font-family: inherit; }
     background: rgba(255,255,255,0.1);
     border-color: var(--skorch-yellow);
 }
+
+/* Undead swap visual */
+.swap-visual {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem; padding: 1rem 0;
+}
+.swap-side { text-align: center; }
+.swap-label {
+    font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 0.5rem;
+}
+.swap-card-name {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: white; padding: 0.75rem 1.25rem; border-radius: 0.5rem;
+    font-size: 1rem; font-weight: 600;
+}
+.swap-arrow { color: var(--skorch-red); line-height: 0; }
 
 .mobile-unplayable-badge {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
