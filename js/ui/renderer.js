@@ -251,8 +251,10 @@ function createPrisonSection(state, who, handlers) {
 function createCenterSection(state, handlers) {
     const section = el('div', 'center-piles');
 
-    // Make draggable
-    makeDraggable(section);
+    // Make draggable (desktop only - on mobile, center piles are inline)
+    if (window.innerWidth > 1024) {
+        makeDraggable(section);
+    }
 
     // Discard pile (top)
     const discardPile = el('div', 'pile-section');
