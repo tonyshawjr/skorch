@@ -3,34 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Skorch - A Strategic Card Game</title>
+    <title>Skorch - Play the Strategic Card Game Online</title>
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="description" content="Skorch is a strategic card game of attacks, shields, and special powers. Play against AI or challenge friends online.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --skorch-red: #EB2228;
-            --skorch-red-dark: #c41a1f;
-            --skorch-dark: #1a3a2a;
-            --skorch-darker: #143022;
-            --skorch-darkest: #0e2418;
-            --skorch-light: #FFFFFF;
-            --skorch-gray: #EFEFEF;
-            --skorch-green: #10b981;
-            --skorch-yellow: #eab308;
-            --skorch-blue: #3b82f6;
-            --skorch-muted: rgba(255,255,255,0.5);
-            --nav-height: 64px;
+            --bg: #161718;
+            --bg-card: #1c1d1f;
+            --bg-elevated: #222326;
+            --red: #EB2228;
+            --red-dark: #c41a1f;
+            --red-glow: rgba(235, 34, 40, 0.25);
+            --white: #FFFFFF;
+            --gray-100: rgba(255,255,255,0.87);
+            --gray-200: rgba(255,255,255,0.6);
+            --gray-300: rgba(255,255,255,0.38);
+            --gray-400: rgba(255,255,255,0.12);
+            --gray-500: rgba(255,255,255,0.06);
+            --gold: #F5A623;
+            --gold-glow: rgba(245, 166, 35, 0.2);
+            --green: #34D399;
+            --nav-height: 60px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: var(--skorch-dark);
-            color: var(--skorch-light);
+            background: var(--bg);
+            color: var(--white);
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             min-height: 100vh;
-            line-height: 1.5;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* ── Nav ── */
@@ -38,181 +43,338 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: var(--skorch-gray);
+            background: rgba(22, 23, 24, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             height: var(--nav-height);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-bottom: 1px solid var(--gray-500);
         }
-        .nav-logo img { height: 36px; width: auto; }
-        .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+        .nav-logo img { height: 32px; width: auto; }
+        .nav-links { display: flex; align-items: center; gap: 2rem; }
         .nav-links a {
-            color: var(--skorch-dark);
+            color: var(--gray-200);
             text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: 0.01em;
             transition: color 0.2s;
         }
-        .nav-links a:hover { color: var(--skorch-red); }
+        .nav-links a:hover { color: var(--white); }
         .nav-btn {
-            background: var(--skorch-red);
-            color: var(--skorch-light) !important;
-            padding: 0.5rem 1.25rem;
-            border-radius: 0.5rem;
+            background: var(--red);
+            color: var(--white) !important;
+            padding: 0.45rem 1.2rem;
+            border-radius: 6px;
             font-weight: 600;
-            transition: background 0.2s, transform 0.2s;
+            font-size: 0.875rem;
+            transition: background 0.2s, transform 0.15s;
         }
-        .nav-btn:hover { background: var(--skorch-red-dark); transform: translateY(-1px); }
+        .nav-btn:hover {
+            background: var(--red-dark);
+            transform: translateY(-1px);
+        }
 
         /* ── Hero ── */
         .hero {
-            text-align: center;
-            padding: 4rem 2rem 3rem;
-            background: linear-gradient(180deg, var(--skorch-darker) 0%, var(--skorch-dark) 100%);
             position: relative;
+            text-align: center;
+            padding: 7rem 2rem 6rem;
             overflow: hidden;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .hero::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(ellipse at center, rgba(235,34,40,0.08) 0%, transparent 70%);
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 40%, rgba(235, 34, 40, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 50% at 30% 60%, rgba(235, 34, 40, 0.04) 0%, transparent 60%);
             pointer-events: none;
         }
-        .hero-logo {
-            height: 80px;
-            width: auto;
-            margin-bottom: 1.5rem;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to bottom, transparent, var(--bg));
+            pointer-events: none;
         }
-        .hero-tagline {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--skorch-light);
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
+
+        .hero h1 {
+            font-family: 'Inter Tight', sans-serif;
+            font-weight: 800;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 span { color: var(--red); }
+
         .hero-sub {
-            font-size: 1rem;
-            color: var(--skorch-muted);
-            max-width: 500px;
-            margin: 0 auto 2rem;
+            font-size: 1.125rem;
+            color: var(--gray-200);
+            max-width: 480px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.6;
         }
+
         .hero-cta {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            background: var(--skorch-red);
-            color: var(--skorch-light);
-            padding: 1rem 2.5rem;
-            border-radius: 0.75rem;
+            gap: 0.6rem;
+            background: var(--red);
+            color: var(--white);
+            padding: 0.9rem 2.5rem;
+            border-radius: 8px;
+            font-family: 'Inter Tight', sans-serif;
             font-size: 1.1rem;
             font-weight: 700;
             text-decoration: none;
-            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 16px rgba(235,34,40,0.35);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 24px var(--red-glow);
         }
         .hero-cta:hover {
-            background: var(--skorch-red-dark);
+            background: var(--red-dark);
             transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(235,34,40,0.45);
+            box-shadow: 0 8px 32px var(--red-glow);
+        }
+        .hero-cta svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
         }
 
-        /* ── Content Grid ── */
+        /* ── Floating Cards ── */
+        .floating-cards {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .floating-card {
+            position: absolute;
+            width: 100px;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            opacity: 0.18;
+            transition: opacity 0.3s;
+        }
+        .floating-card:nth-child(1) {
+            top: 15%;
+            left: 8%;
+            transform: rotate(-15deg);
+            animation: float1 6s ease-in-out infinite;
+        }
+        .floating-card:nth-child(2) {
+            top: 25%;
+            right: 10%;
+            transform: rotate(12deg);
+            animation: float2 7s ease-in-out infinite;
+        }
+        .floating-card:nth-child(3) {
+            bottom: 20%;
+            left: 12%;
+            transform: rotate(8deg);
+            animation: float3 5.5s ease-in-out infinite;
+        }
+        .floating-card:nth-child(4) {
+            bottom: 25%;
+            right: 8%;
+            transform: rotate(-10deg);
+            animation: float1 6.5s ease-in-out infinite reverse;
+        }
+        .floating-card:nth-child(5) {
+            top: 10%;
+            left: 25%;
+            transform: rotate(5deg);
+            width: 80px;
+            animation: float2 8s ease-in-out infinite;
+        }
+        .floating-card:nth-child(6) {
+            top: 18%;
+            right: 22%;
+            transform: rotate(-8deg);
+            width: 80px;
+            animation: float3 7.5s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translateY(0) rotate(-15deg); }
+            50% { transform: translateY(-15px) rotate(-12deg); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translateY(0) rotate(12deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+        }
+        @keyframes float3 {
+            0%, 100% { transform: translateY(0) rotate(8deg); }
+            50% { transform: translateY(-12px) rotate(5deg); }
+        }
+
+        /* ── Content ── */
         .content {
-            max-width: 1100px;
+            max-width: 1080px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 3rem 2rem 4rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
-        /* ── Cards (Sections) ── */
+        /* ── Cards ── */
         .card {
-            background: var(--skorch-darker);
-            border-radius: 1rem;
-            padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.75rem;
+            border: 1px solid var(--gray-500);
         }
-        .card-title {
-            font-size: 1.1rem;
+        .card-header {
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 0.8rem;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gray-300);
             margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        .card-title .icon { font-size: 1.25rem; }
+        .card-header .icon { font-size: 1rem; }
 
         /* ── King Spotlight ── */
-        .king-spotlight { grid-column: 1 / -1; text-align: center; padding: 2.5rem 2rem; }
-        .king-crown { font-size: 3rem; margin-bottom: 0.5rem; }
+        .king-spotlight {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2.5rem 2rem;
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245, 166, 35, 0.04) 100%);
+            border: 1px solid rgba(245, 166, 35, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .king-spotlight::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .king-crown {
+            font-size: 2.5rem;
+            margin-bottom: 0.25rem;
+            position: relative;
+        }
+        .king-label {
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
         .king-name {
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--skorch-yellow);
-            text-shadow: 0 2px 8px rgba(234,179,8,0.3);
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--gold);
         }
         .king-stats {
             display: flex;
             justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: var(--skorch-muted);
+            gap: 2.5rem;
+            margin-top: 1.25rem;
+        }
+        .king-stat {
+            text-align: center;
         }
         .king-stat-value {
-            font-weight: 700;
-            color: var(--skorch-light);
-            font-size: 1.1rem;
+            font-family: 'Inter Tight', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--white);
+            display: block;
+        }
+        .king-stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gray-300);
         }
         .king-empty {
-            color: var(--skorch-muted);
+            color: var(--gray-300);
             font-style: italic;
+            font-size: 0.95rem;
         }
 
-        /* ── Leaderboard Table ── */
+        /* ── Leaderboard ── */
         .lb-table { width: 100%; border-collapse: collapse; }
         .lb-table th {
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--skorch-muted);
+            letter-spacing: 0.06em;
+            color: var(--gray-300);
             padding: 0 0 0.75rem;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .lb-table td {
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            font-size: 0.9rem;
+            padding: 0.55rem 0;
+            border-top: 1px solid var(--gray-500);
+            font-size: 0.875rem;
         }
-        .lb-table tr:last-child td { border-bottom: none; }
         .lb-rank {
             width: 2rem;
             font-weight: 700;
-            color: var(--skorch-muted);
+            color: var(--gray-300);
         }
-        .lb-rank-1 { color: var(--skorch-yellow); }
-        .lb-rank-2 { color: #c0c0c0; }
-        .lb-rank-3 { color: #cd7f32; }
+        .lb-rank-1 { color: var(--gold); }
+        .lb-rank-2 { color: #A8A8A8; }
+        .lb-rank-3 { color: #CD7F32; }
         .lb-name { font-weight: 600; }
-        .lb-wins { text-align: right; font-weight: 600; color: var(--skorch-green); }
+        .lb-wins { text-align: right; font-weight: 600; color: var(--green); }
         .lb-elo { text-align: right; font-weight: 600; }
-        .lb-empty { color: var(--skorch-muted); font-style: italic; padding: 1rem 0; text-align: center; }
+        .lb-empty {
+            color: var(--gray-300);
+            font-style: italic;
+            padding: 1.5rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
         .lb-view-all {
             display: block;
             text-align: center;
-            margin-top: 1rem;
-            color: var(--skorch-red);
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-500);
+            color: var(--red);
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            transition: color 0.2s;
         }
-        .lb-view-all:hover { text-decoration: underline; }
+        .lb-view-all:hover { color: var(--white); }
 
         /* ── Quick Play ── */
         .quick-play { grid-column: 1 / -1; }
@@ -221,104 +383,107 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
         }
-        .quick-btn {
+        .quick-card {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
-            padding: 1.5rem 1rem;
-            background: var(--skorch-darkest);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 0.75rem;
-            color: var(--skorch-light);
+            gap: 0.75rem;
+            padding: 2rem 1.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--gray-400);
+            border-radius: 12px;
+            color: var(--white);
             text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: border-color 0.2s, transform 0.2s, background 0.2s;
+            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
             cursor: pointer;
+            text-align: center;
         }
-        .quick-btn:hover {
-            border-color: var(--skorch-red);
-            transform: translateY(-2px);
-            background: rgba(235,34,40,0.08);
+        .quick-card:hover {
+            border-color: var(--red);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
-        .quick-btn .qb-icon { font-size: 2rem; }
-        .quick-btn .qb-desc {
-            font-size: 0.8rem;
-            font-weight: 400;
-            color: var(--skorch-muted);
-        }
-
-        /* ── Rooms ── */
-        .rooms-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .room-item {
+        .quick-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
-            background: var(--skorch-darkest);
-            border-radius: 0.5rem;
-            border: 1px solid rgba(255,255,255,0.06);
+            justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(235, 34, 40, 0.1);
+            border: 1px solid rgba(235, 34, 40, 0.2);
         }
-        .room-name { font-weight: 600; font-size: 0.9rem; }
-        .room-players { font-size: 0.8rem; color: var(--skorch-muted); }
-        .room-join {
-            background: var(--skorch-green);
-            color: var(--skorch-darkest);
-            padding: 0.35rem 0.9rem;
-            border-radius: 0.4rem;
+        .quick-card-title {
+            font-family: 'Inter Tight', sans-serif;
             font-weight: 700;
-            font-size: 0.8rem;
-            text-decoration: none;
-            transition: opacity 0.2s;
+            font-size: 1rem;
         }
-        .room-join:hover { opacity: 0.85; }
-        .rooms-empty { color: var(--skorch-muted); font-style: italic; font-size: 0.9rem; padding: 0.5rem 0; }
+        .quick-card-desc {
+            font-size: 0.8rem;
+            color: var(--gray-300);
+            line-height: 1.4;
+        }
 
         /* ── Footer ── */
         .footer {
             text-align: center;
-            padding: 3rem 2rem 2rem;
-            color: var(--skorch-muted);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--gray-500);
         }
         .footer-motto {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--skorch-light);
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--gray-200);
+            letter-spacing: 0.02em;
             margin-bottom: 0.5rem;
         }
+        .footer-copy {
+            font-size: 0.75rem;
+            color: var(--gray-300);
+        }
 
-        /* ── Loading State ── */
+        /* ── Shimmer ── */
         .shimmer {
-            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background: linear-gradient(90deg, var(--gray-500) 25%, var(--gray-400) 50%, var(--gray-500) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
-            border-radius: 0.25rem;
+            border-radius: 4px;
             height: 1rem;
             margin: 0.4rem 0;
         }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
+            .hero {
+                padding: 5rem 1.5rem 4rem;
+                min-height: auto;
+            }
+            .floating-card { display: none; }
             .content {
                 grid-template-columns: 1fr;
-                padding: 1.5rem 1rem;
-                gap: 1.25rem;
+                padding: 2rem 1rem;
+                gap: 1rem;
             }
-            .king-spotlight { grid-column: 1; }
+            .king-spotlight,
             .quick-play { grid-column: 1; }
             .quick-actions { grid-template-columns: 1fr; }
-            .hero { padding: 3rem 1.5rem 2rem; }
-            .hero-tagline { font-size: 1.25rem; }
-            .hero-logo { height: 60px; }
             .nav { padding: 0 1rem; }
-            .nav-links { gap: 1rem; }
+            .nav-links { gap: 1.25rem; }
             .nav-links a { font-size: 0.8rem; }
-            .king-name { font-size: 1.5rem; }
-            .king-stats { flex-direction: column; gap: 0.75rem; }
+            .king-name { font-size: 1.35rem; }
+            .king-stats { gap: 1.5rem; }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links .nav-link-text { display: none; }
+            .hero h1 { font-size: 2rem; }
+            .hero-sub { font-size: 1rem; }
         }
     </style>
 </head>
@@ -332,16 +497,29 @@
         <div class="nav-links">
             <a href="/play">Play</a>
             <a href="/leaderboard">Leaderboard</a>
+            <a href="/rules" class="nav-link-text">Rules</a>
             <a href="#" class="nav-btn" id="nav-auth">Log In</a>
         </div>
     </nav>
 
     <!-- Hero -->
     <section class="hero">
-        <img src="/assets/Logo-x2.png" alt="Skorch" class="hero-logo">
-        <h1 class="hero-tagline">Attack. Defend. Skorch.</h1>
-        <p class="hero-sub">A strategic card game of attacks, shields, and special powers. Play against AI or challenge friends online.</p>
-        <a href="/play" class="hero-cta">Play Now</a>
+        <div class="floating-cards">
+            <img src="/assets/cards/Skorch.png" alt="" class="floating-card">
+            <img src="/assets/cards/Shield.png" alt="" class="floating-card">
+            <img src="/assets/cards/Elude.png" alt="" class="floating-card">
+            <img src="/assets/cards/demoter.png" alt="" class="floating-card">
+            <img src="/assets/cards/7.png" alt="" class="floating-card">
+            <img src="/assets/cards/undead.png" alt="" class="floating-card">
+        </div>
+        <div class="hero-content">
+            <h1>Play <span>Skorch</span> Online</h1>
+            <p class="hero-sub">The strategic card game of attacks, shields, and special powers. Play against AI or challenge friends.</p>
+            <a href="/play" class="hero-cta">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Play Now
+            </a>
+        </div>
     </section>
 
     <!-- Content -->
@@ -350,7 +528,7 @@
         <!-- Skorch King -->
         <div class="card king-spotlight" id="king-section">
             <div class="king-crown">&#128081;</div>
-            <div class="card-title" style="justify-content:center;"><span class="icon">&#9733;</span> The Skorch King</div>
+            <div class="king-label">The Skorch King</div>
             <div id="king-content">
                 <div class="shimmer" style="width:160px;height:1.5rem;margin:0 auto;"></div>
                 <div class="shimmer" style="width:240px;height:1rem;margin:0.5rem auto;"></div>
@@ -359,7 +537,7 @@
 
         <!-- Leaderboard Preview -->
         <div class="card">
-            <div class="card-title"><span class="icon">&#127942;</span> Top Players</div>
+            <div class="card-header"><span class="icon">&#127942;</span> Top Players</div>
             <div id="leaderboard-content">
                 <div class="shimmer"></div>
                 <div class="shimmer"></div>
@@ -370,32 +548,52 @@
             <a href="/leaderboard" class="lb-view-all">View Full Leaderboard &rarr;</a>
         </div>
 
-        <!-- Open Rooms -->
+        <!-- How It Works -->
         <div class="card">
-            <div class="card-title"><span class="icon">&#127918;</span> Open Rooms</div>
-            <div id="rooms-content">
-                <p class="rooms-empty">Checking for games...</p>
+            <div class="card-header"><span class="icon">&#9889;</span> How It Works</div>
+            <div style="display:flex;flex-direction:column;gap:1rem;">
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                    <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">1</span>
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Attack or Defend</div>
+                        <div style="font-size:0.8rem;color:var(--gray-300);">Play number cards to attack or use shields to block incoming damage.</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                    <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">2</span>
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Use Special Powers</div>
+                        <div style="font-size:0.8rem;color:var(--gray-300);">Skorch, Elude, Undead, and Demoter cards change the game instantly.</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                    <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">3</span>
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Reach 21 to Win</div>
+                        <div style="font-size:0.8rem;color:var(--gray-300);">First player to accumulate 21 points of damage on their opponent wins.</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Quick Play -->
         <div class="card quick-play">
-            <div class="card-title"><span class="icon">&#9889;</span> Jump In</div>
+            <div class="card-header"><span class="icon">&#127918;</span> Jump In</div>
             <div class="quick-actions">
-                <a href="/play" class="quick-btn">
-                    <span class="qb-icon">&#129302;</span>
-                    <span>Play vs AI</span>
-                    <span class="qb-desc">Single player game</span>
+                <a href="/play" class="quick-card">
+                    <div class="quick-card-icon">&#129302;</div>
+                    <span class="quick-card-title">Play vs AI</span>
+                    <span class="quick-card-desc">Single player game against the computer</span>
                 </a>
-                <a href="/play#create" class="quick-btn">
-                    <span class="qb-icon">&#10133;</span>
-                    <span>Create Room</span>
-                    <span class="qb-desc">Host a game for friends</span>
+                <a href="/play#create" class="quick-card">
+                    <div class="quick-card-icon">&#10133;</div>
+                    <span class="quick-card-title">Create Room</span>
+                    <span class="quick-card-desc">Host a private game for friends</span>
                 </a>
-                <a href="/play#join" class="quick-btn">
-                    <span class="qb-icon">&#128279;</span>
-                    <span>Join Room</span>
-                    <span class="qb-desc">Enter a room code</span>
+                <a href="/play#join" class="quick-card">
+                    <div class="quick-card-icon">&#128279;</div>
+                    <span class="quick-card-title">Join Room</span>
+                    <span class="quick-card-desc">Enter a room code to join</span>
                 </a>
             </div>
         </div>
@@ -404,15 +602,15 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p class="footer-motto">A Game for the Masses</p>
-        <p>&copy; 2025 Skorch. All rights reserved.</p>
+        <p class="footer-motto">Skorch &mdash; A Game for the Masses</p>
+        <p class="footer-copy">&copy; 2025 Skorch. All rights reserved.</p>
     </footer>
 
     <script>
         // ── Fetch Leaderboard ──
         async function loadLeaderboard() {
             try {
-                const res = await fetch('/server/php/api/leaderboard.php?sort=elo&limit=10');
+                const res = await fetch('/server/php/api/leaderboard.php?sort=elo&limit=5');
                 if (!res.ok) throw new Error('Failed to load');
                 const data = await res.json();
                 const players = data.leaderboard || data;
@@ -428,19 +626,28 @@
                 document.getElementById('king-content').innerHTML = `
                     <div class="king-name">${escapeHtml(king.username)}</div>
                     <div class="king-stats">
-                        <div><span class="king-stat-value">${king.elo || '—'}</span><br>ELO</div>
-                        <div><span class="king-stat-value">${king.wins || 0}</span><br>Wins</div>
-                        <div><span class="king-stat-value">${king.games_played || 0}</span><br>Games</div>
+                        <div class="king-stat">
+                            <span class="king-stat-value">${king.elo || '—'}</span>
+                            <span class="king-stat-label">ELO</span>
+                        </div>
+                        <div class="king-stat">
+                            <span class="king-stat-value">${king.wins || 0}</span>
+                            <span class="king-stat-label">Wins</span>
+                        </div>
+                        <div class="king-stat">
+                            <span class="king-stat-value">${king.games_played || 0}</span>
+                            <span class="king-stat-label">Games</span>
+                        </div>
                     </div>
                 `;
 
-                // Table
+                // Table (top 5)
                 let html = `<table class="lb-table">
                     <thead><tr>
                         <th>#</th><th>Player</th><th style="text-align:right">ELO</th><th style="text-align:right">W</th>
                     </tr></thead><tbody>`;
 
-                players.forEach((p, i) => {
+                players.slice(0, 5).forEach((p, i) => {
                     const rankClass = i < 3 ? ` lb-rank-${i + 1}` : '';
                     html += `<tr>
                         <td class="lb-rank${rankClass}">${i + 1}</td>
@@ -474,13 +681,6 @@
             } catch (e) { /* not logged in */ }
         }
 
-        // ── Rooms Placeholder ──
-        function loadRooms() {
-            // Future: connect to WebSocket server and list open rooms
-            document.getElementById('rooms-content').innerHTML =
-                '<p class="rooms-empty">No public rooms right now. Create one!</p>';
-        }
-
         // ── Helpers ──
         function escapeHtml(str) {
             const div = document.createElement('div');
@@ -491,7 +691,6 @@
         // ── Init ──
         loadLeaderboard();
         checkAuth();
-        loadRooms();
     </script>
 
 </body>
