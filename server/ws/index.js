@@ -86,9 +86,11 @@ io.on('connection', (socket) => {
             return;
         }
 
-        joinRoom(code, socket.id, username);
-        socket.join(code);
-        socket.emit('room-joined', { code, playerId: 'player2' });
+        // Always use the canonical room code (uppercase) for Socket.io rooms
+        const canonicalCode = room.code;
+        joinRoom(canonicalCode, socket.id, username);
+        socket.join(canonicalCode);
+        socket.emit('room-joined', { code: canonicalCode, playerId: 'player2' });
 
         // Start the game
         const state = createGameState(true);
