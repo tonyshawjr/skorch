@@ -552,6 +552,21 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Mobile: flick up anywhere to play selected cards
+let flickGlobalY = 0;
+document.addEventListener('touchstart', (e) => {
+    flickGlobalY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+    if (selectedIndexes.size === 0) return;
+    if (state.currentTurn !== 'player' || state.gameOver) return;
+    const dy = flickGlobalY - e.changedTouches[0].clientY;
+    if (dy > 50) {
+        const playBtn = document.getElementById('playSelectedBtn');
+        if (playBtn && !playBtn.disabled) playBtn.click();
+    }
+}, { passive: true });
+
 // Initial render
 initSound();
 update();

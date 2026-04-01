@@ -184,54 +184,14 @@ export function render(state, root, handlers) {
         handScroll.appendChild(pickupCard);
     }
 
-    // Render playable cards with flick-to-play
+    // Render playable cards
     playable.forEach(({ card, index }) => {
         const cardEl = createCardElement(card, true);
         cardEl.classList.add('mobile-hand-card');
         if (state.currentTurn === 'player' && !state.gameOver) {
             cardEl.classList.add('selectable');
             cardEl.dataset.index = index;
-
-            let startY = 0, startX = 0, dragging = false;
-
-            cardEl.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-                startX = e.touches[0].clientX;
-                dragging = false;
-            }, { passive: true });
-
-            cardEl.addEventListener('touchmove', (e) => {
-                const dy = startY - e.touches[0].clientY;
-                const dx = Math.abs(startX - e.touches[0].clientX);
-                if (dy > 15 && dy > dx) {
-                    dragging = true;
-                    e.preventDefault();
-                    // Visual feedback - move card up
-                    cardEl.style.transform = `translateY(-${Math.min(dy, 50)}px)`;
-                    cardEl.style.opacity = Math.max(0.4, 1 - dy / 100);
-                }
-            }, { passive: false });
-
-            cardEl.addEventListener('touchend', (e) => {
-                cardEl.style.transform = '';
-                cardEl.style.opacity = '';
-                if (dragging) {
-                    const dy = startY - e.changedTouches[0].clientY;
-                    if (dy > 40) {
-                        // Select this card if not already selected, then play
-                        if (!cardEl.classList.contains('selected')) {
-                            handlers.onCardSelect(index, cardEl);
-                        }
-                        setTimeout(() => {
-                            const playBtn = document.getElementById('playSelectedBtn');
-                            if (playBtn && !playBtn.disabled) playBtn.click();
-                        }, 50);
-                    }
-                } else {
-                    // Regular tap - select/deselect
-                    handlers.onCardSelect(index, cardEl);
-                }
-            }, { passive: true });
+            cardEl.addEventListener('click', () => handlers.onCardSelect(index, cardEl));
         }
         handScroll.appendChild(cardEl);
     });
@@ -404,15 +364,52 @@ function createStatusBar(state) {
             const content = el('div', 'mobile-peek-content');
 
             if (isUndeadStatus && swap) {
-                // Show swap with conversational text
-                const msg = el('p');
-                msg.style.cssText = 'color:white;font-size:1.1rem;text-align:center;line-height:1.8;';
-                if (swap.gave) {
-                    msg.innerHTML = `Computer traded their<br><strong style="color:var(--skorch-red)">${swap.gave}</strong><br>for your<br><strong style="color:var(--skorch-green)">${swap.took}</strong>`;
-                } else {
-                    msg.innerHTML = `Computer took your<br><strong style="color:var(--skorch-red)">${swap.took}</strong>`;
+                // Show swap with card images
+                const title = el('h3');
+                title.textContent = 'Undead Swap';
+                title.style.cssText = 'color:white;text-align:center;margin-bottom:1rem;font-size:1.1rem;';
+                content.appendChild(title);
+
+                function nameToImage(name) {
+                    if (!name) return 'Card-Back.png';
+                    const match = name.match(/Attack (\d+)/);
+                    if (match) return match[1] + '.png';
+                    const specials = { Elude: 'Elude.png', Shield: 'Shield.png', Demoter: 'demoter.png', Skorch: 'Skorch.png', Undead: 'undead.png' };
+                    return specials[name] || 'Card-Back.png';
                 }
-                content.appendChild(msg);
+
+                const swapRow = el('div');
+                swapRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:1rem;';
+
+                if (swap.gave) {
+                    const gaveWrap = el('div');
+                    gaveWrap.style.cssText = 'text-align:center;';
+                    const gaveLabel = el('div');
+                    gaveLabel.textContent = 'Gave';
+                    gaveLabel.style.cssText = 'color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;';
+                    const gaveCard = el('div');
+                    gaveCard.style.cssText = `width:70px;height:98px;background:url(assets/cards/${nameToImage(swap.gave)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
+                    gaveWrap.appendChild(gaveLabel);
+                    gaveWrap.appendChild(gaveCard);
+                    swapRow.appendChild(gaveWrap);
+
+                    const arrow = el('div');
+                    arrow.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+                    swapRow.appendChild(arrow);
+                }
+
+                const tookWrap = el('div');
+                tookWrap.style.cssText = 'text-align:center;';
+                const tookLabel = el('div');
+                tookLabel.textContent = swap.gave ? 'Took' : 'Took from you';
+                tookLabel.style.cssText = 'color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;';
+                const tookCard = el('div');
+                tookCard.style.cssText = `width:70px;height:98px;background:url(assets/cards/${nameToImage(swap.took)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
+                tookWrap.appendChild(tookLabel);
+                tookWrap.appendChild(tookCard);
+                swapRow.appendChild(tookWrap);
+
+                content.appendChild(swapRow);
             } else {
                 const text = el('p');
                 text.textContent = fullStatus;
