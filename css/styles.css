@@ -431,7 +431,7 @@ button { font-family: inherit; }
 .mobile-unplayable-badge {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    color: #9ca3af; padding: 0.4rem 0.75rem; margin-right: 10px;
+    color: #9ca3af; padding: 0.4rem 0.75rem; margin-right: 16px;
     border-radius: 0.5rem; font-size: 0.8rem; font-weight: 700;
     cursor: pointer; font-family: inherit; white-space: nowrap;
     position: relative; z-index: 5;
@@ -614,13 +614,27 @@ button { font-family: inherit; }
         --card-overlap: -25px;
     }
 
-    body { padding: 0.25rem; }
+    body { padding: 0; margin: 0; overflow: hidden; }
+
+    /* Lock game to viewport */
+    #game-root {
+        display: flex; flex-direction: column;
+        height: 100dvh; overflow: hidden;
+        padding: 0 0.25rem;
+    }
+
+    /* Sections flex to fill */
+    .mobile-opp-field { flex-shrink: 0; }
+    .mobile-discard-area { flex-shrink: 0; padding: 0.5rem; }
+    .mobile-actions { flex-shrink: 0; }
+    .mobile-hand-section { flex-shrink: 0; }
+    .mobile-prison-section { flex: 1; min-height: 0; overflow-y: auto; }
+    .status-container { flex-shrink: 0; }
 
     .game-header {
-        margin: -0.25rem -0.25rem 0.5rem -0.25rem;
-        width: calc(100% + 0.5rem);
-        padding: 0.5rem 0.75rem;
-        gap: 0.5rem;
+        margin: 0 -0.25rem; width: calc(100% + 0.5rem);
+        padding: 0.4rem 0.75rem; gap: 0.5rem;
+        flex-shrink: 0;
     }
     .game-logo { height: 28px; }
     .btn-restart, .btn-multiplayer {
@@ -670,6 +684,31 @@ button { font-family: inherit; }
     .stacked-cards .sk-card {
         margin-left: -35px;
     }
+
+    /* Discard area compact */
+    .mobile-discard-card {
+        width: 90px !important;
+        height: 126px !important;
+    }
+    .mobile-discard .sk-placeholder {
+        width: 90px !important;
+        height: 126px !important;
+    }
+
+    /* Hand cards */
+    .mobile-hand-card {
+        width: 65px !important;
+        height: 91px !important;
+    }
+
+    /* Prison cards smaller */
+    .mobile-prison-card {
+        width: 50px !important;
+        height: 70px !important;
+    }
+    .mobile-prison-section { padding: 0.15rem 0.25rem; }
+    .mobile-prison-row { gap: 2px; margin-bottom: 2px; }
+    .mobile-section-label { font-size: 0.65rem; padding: 0.15rem 0.5rem; }
 
     /* Center piles: row layout */
     .center-piles {
