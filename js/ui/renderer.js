@@ -1,6 +1,7 @@
 import { getCardImage, CardType } from '../engine/cards.js';
 import { getEffectiveValue } from '../engine/game.js';
 import { toggleMute, isMuted } from './sound.js';
+import { getUser } from '../multiplayer/auth.js';
 
 const ASSETS_PATH = 'assets/cards/';
 
@@ -363,10 +364,28 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
         });
         drawerContent.appendChild(muteBtn);
 
-        const accountBtn = el('button', 'drawer-item');
-        accountBtn.textContent = 'Account';
-        accountBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onAccount) onAccount(); });
-        drawerContent.appendChild(accountBtn);
+        const mobileUser = getUser();
+        if (mobileUser) {
+            const userItem = el('div', 'drawer-user');
+            userItem.innerHTML = `<span class="drawer-user-avatar">${mobileUser.username.charAt(0).toUpperCase()}</span><span>${mobileUser.username}</span>`;
+            drawerContent.appendChild(userItem);
+            const profileBtn = el('button', 'drawer-item');
+            profileBtn.textContent = 'Profile';
+            profileBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onAccount) onAccount(); });
+            drawerContent.appendChild(profileBtn);
+            const logoutBtn = el('button', 'drawer-item drawer-item-danger');
+            logoutBtn.textContent = 'Log Out';
+            logoutBtn.addEventListener('click', () => {
+                drawer.classList.remove('open');
+                import('../multiplayer/auth.js').then(m => m.logout().then(() => location.reload()));
+            });
+            drawerContent.appendChild(logoutBtn);
+        } else {
+            const loginBtn = el('button', 'drawer-item');
+            loginBtn.textContent = 'Login / Sign Up';
+            loginBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onAccount) onAccount(); });
+            drawerContent.appendChild(loginBtn);
+        }
 
         const mpBtn = el('button', 'drawer-item');
         mpBtn.textContent = 'Multiplayer';
@@ -393,10 +412,39 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
             muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
         });
         actions.appendChild(muteBtn);
-        const accountBtn = el('button', 'btn-account');
-        accountBtn.textContent = 'Account';
-        accountBtn.addEventListener('click', onAccount);
-        actions.appendChild(accountBtn);
+        const user = getUser();
+        if (user) {
+            // Logged in - show avatar with dropdown
+            const userWrap = el('div', 'user-menu-wrap');
+            const userBtn = el('button', 'user-menu-btn');
+            userBtn.innerHTML = `<span class="user-avatar-sm">${user.username.charAt(0).toUpperCase()}</span><span class="user-name-sm">${user.username}</span>`;
+            userWrap.appendChild(userBtn);
+            const dropdown = el('div', 'user-dropdown');
+            dropdown.innerHTML = `
+                <button class="user-dropdown-item" data-action="profile">Profile</button>
+                <button class="user-dropdown-item user-dropdown-logout" data-action="logout">Log Out</button>
+            `;
+            dropdown.style.display = 'none';
+            userWrap.appendChild(dropdown);
+            userBtn.addEventListener('click', () => {
+                dropdown.style.display = dropdown.style.display === 'none' ? '' : 'none';
+            });
+            document.addEventListener('click', (e) => {
+                if (!userWrap.contains(e.target)) dropdown.style.display = 'none';
+            });
+            dropdown.querySelector('[data-action="profile"]').addEventListener('click', () => { dropdown.style.display = 'none'; onAccount(); });
+            dropdown.querySelector('[data-action="logout"]').addEventListener('click', () => {
+                dropdown.style.display = 'none';
+                import('../multiplayer/auth.js').then(m => m.logout().then(() => location.reload()));
+            });
+            actions.appendChild(userWrap);
+        } else {
+            // Not logged in - show Login button
+            const loginBtn = el('button', 'btn-login');
+            loginBtn.textContent = 'Login';
+            loginBtn.addEventListener('click', onAccount);
+            actions.appendChild(loginBtn);
+        }
         const mpBtn = el('button', 'btn-multiplayer');
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', onMultiplayer);
