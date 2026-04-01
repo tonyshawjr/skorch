@@ -363,42 +363,15 @@ function createStatusBar(state) {
             const content = el('div', 'mobile-peek-content');
 
             if (isUndeadStatus && swap) {
-                // Show swap visually
-                const title = el('h3');
-                title.textContent = 'Undead Swap';
-                title.style.cssText = 'color:white;text-align:center;margin-bottom:1.25rem;font-size:1.1rem;';
-                content.appendChild(title);
-
-                const swapVisual = el('div', 'swap-visual');
-
-                // What was given
+                // Show swap with conversational text
+                const msg = el('p');
+                msg.style.cssText = 'color:white;font-size:1.1rem;text-align:center;line-height:1.8;';
                 if (swap.gave) {
-                    const gaveSection = el('div', 'swap-side');
-                    const gaveLabel = el('div', 'swap-label');
-                    gaveLabel.textContent = 'Gave away';
-                    gaveSection.appendChild(gaveLabel);
-                    const gaveName = el('div', 'swap-card-name');
-                    gaveName.textContent = swap.gave;
-                    gaveSection.appendChild(gaveName);
-                    swapVisual.appendChild(gaveSection);
+                    msg.innerHTML = `Computer traded their<br><strong style="color:var(--skorch-red)">${swap.gave}</strong><br>for your<br><strong style="color:var(--skorch-green)">${swap.took}</strong>`;
+                } else {
+                    msg.innerHTML = `Computer took your<br><strong style="color:var(--skorch-red)">${swap.took}</strong>`;
                 }
-
-                // Arrow
-                const arrow = el('div', 'swap-arrow');
-                arrow.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16l5-5-5-5"/><path d="M17 8l-5 5 5 5"/></svg>';
-                swapVisual.appendChild(arrow);
-
-                // What was taken
-                const tookSection = el('div', 'swap-side');
-                const tookLabel = el('div', 'swap-label');
-                tookLabel.textContent = swap.gave ? 'Took' : 'Took from you';
-                tookSection.appendChild(tookLabel);
-                const tookName = el('div', 'swap-card-name');
-                tookName.textContent = swap.took;
-                tookSection.appendChild(tookName);
-                swapVisual.appendChild(tookSection);
-
-                content.appendChild(swapVisual);
+                content.appendChild(msg);
             } else {
                 const text = el('p');
                 text.textContent = fullStatus;
