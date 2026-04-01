@@ -19,7 +19,7 @@ const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 
 export function render(state, root, handlers) {
     root.innerHTML = '';
-    root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer));
+    root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer, handlers.onAccount));
 
     if (window.innerWidth <= 1024) {
     // --- MOBILE LAYOUT ---
@@ -320,7 +320,7 @@ export function render(state, root, handlers) {
     }
 }
 
-function createHeader(state, onRestart, onMultiplayer) {
+function createHeader(state, onRestart, onMultiplayer, onAccount) {
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
@@ -363,6 +363,11 @@ function createHeader(state, onRestart, onMultiplayer) {
         });
         drawerContent.appendChild(muteBtn);
 
+        const accountBtn = el('button', 'drawer-item');
+        accountBtn.textContent = 'Account';
+        accountBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onAccount) onAccount(); });
+        drawerContent.appendChild(accountBtn);
+
         const mpBtn = el('button', 'drawer-item');
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', () => { drawer.classList.remove('open'); onMultiplayer(); });
@@ -388,6 +393,10 @@ function createHeader(state, onRestart, onMultiplayer) {
             muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
         });
         actions.appendChild(muteBtn);
+        const accountBtn = el('button', 'btn-account');
+        accountBtn.textContent = 'Account';
+        accountBtn.addEventListener('click', onAccount);
+        actions.appendChild(accountBtn);
         const mpBtn = el('button', 'btn-multiplayer');
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', onMultiplayer);

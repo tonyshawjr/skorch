@@ -564,6 +564,77 @@ button { font-family: inherit; }
     max-height: 60vh; overflow-y: auto;
 }
 
+/* ========== ACCOUNT MODAL ========== */
+.account-overlay {
+    position: fixed; inset: 0; z-index: 5000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0); transition: background 200ms;
+}
+.account-overlay.visible { background: rgba(0,0,0,0.85); }
+.account-modal {
+    background: var(--skorch-darker); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1rem; padding: 2rem; width: 90%; max-width: 360px;
+    position: relative;
+    transform: scale(0.95); opacity: 0; transition: all 200ms;
+}
+.account-overlay.visible .account-modal { transform: scale(1); opacity: 1; }
+.account-close {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    background: none; border: none; color: #6b7280; font-size: 1.5rem;
+    cursor: pointer; line-height: 1; padding: 0.25rem;
+}
+.account-close:hover { color: white; }
+.account-tabs {
+    display: flex; gap: 0; margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.account-tab {
+    flex: 1; background: none; border: none; color: #6b7280;
+    padding: 0.75rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+}
+.account-tab.active { color: white; border-bottom-color: var(--skorch-red); }
+.account-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.account-input {
+    width: 100%; padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.5rem; color: white; font-size: 1rem; font-family: inherit;
+}
+.account-input:focus { border-color: var(--skorch-red); outline: none; }
+.account-btn {
+    width: 100%; padding: 0.75rem; border: none; border-radius: 9999px;
+    font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.2s;
+}
+.account-btn-primary { background: var(--skorch-red); color: white; }
+.account-btn-primary:hover { background: #c41a1f; }
+.account-btn-logout { background: rgba(255,255,255,0.08); color: #9ca3af; margin-top: 1rem; }
+.account-btn-logout:hover { color: white; }
+.account-error { color: #f87171; font-size: 0.8rem; text-align: center; min-height: 1.2em; }
+
+/* Profile */
+.account-profile { text-align: center; }
+.profile-avatar {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--skorch-red); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 700; margin: 0 auto 0.75rem;
+}
+.profile-name { color: white; font-size: 1.25rem; margin-bottom: 1.25rem; }
+.profile-stats { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.stat-item { flex: 1; text-align: center; }
+.stat-value { font-size: 1.25rem; font-weight: 700; color: white; }
+.stat-label { font-size: 0.65rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Account button in desktop header */
+.btn-account {
+    background: rgba(255,255,255,0.1); color: white;
+    padding: 0.75rem 1.5rem; border-radius: 0.5rem;
+    border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-account:hover { background: rgba(255,255,255,0.2); }
+
 /* ========== RESPONSIVE ========== */
 
 /* Mobile tab toggle */
@@ -725,7 +796,7 @@ button { font-family: inherit; }
         flex-shrink: 0;
     }
     .game-logo { height: 28px; }
-    .btn-restart, .btn-multiplayer {
+    .btn-restart, .btn-multiplayer, .btn-account {
         padding: 0.4rem 0.6rem;
         font-size: 0.7rem;
         border-radius: 0.4rem;

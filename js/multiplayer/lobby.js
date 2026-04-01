@@ -5,7 +5,7 @@ export function showLobby(onBack) {
     overlay.className = 'lobby-overlay';
     overlay.innerHTML = `
         <div class="lobby-content">
-            <button id="lobby-close-x" class="lobby-close-x">&times;</button>
+            <button id="lobby-close-x" class="account-close">&times;</button>
             <h2 class="lobby-title">Multiplayer</h2>
 
             <div class="lobby-section">

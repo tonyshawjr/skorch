@@ -7,7 +7,8 @@ import { announceSpecial, showGameOver } from './ui/announcer.js';
 import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat, playTurnDing } from './ui/sound.js';
 import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected } from './multiplayer/client.js';
 import { showLobby } from './multiplayer/lobby.js';
-import { recordMatch, isLoggedIn } from './multiplayer/auth.js';
+import { showAccountModal } from './ui/account.js';
+import { recordMatch, isLoggedIn, getProfile } from './multiplayer/auth.js';
 
 const SAVE_KEY = 'skorch_game_state';
 let multiplayerMode = false;
@@ -54,7 +55,8 @@ function update() {
         onPickup,
         onRestart,
         onPrisonClick,
-        onMultiplayer
+        onMultiplayer,
+        onAccount
     });
 
 }
@@ -430,6 +432,11 @@ function onRestart() {
     if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
 }
 
+// Account handler
+function onAccount() {
+    showAccountModal(() => update());
+}
+
 // Multiplayer handler
 async function onMultiplayer() {
     const lobby = showLobby(() => {
@@ -599,6 +606,9 @@ document.addEventListener('touchend', (e) => {
         if (playBtn && !playBtn.disabled) playBtn.click();
     }
 }, { passive: true });
+
+// Silently restore session if already logged in
+getProfile().catch(() => {});
 
 // Initial render
 initSound();
