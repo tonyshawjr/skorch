@@ -30,16 +30,16 @@ export function toggleChat() {
     if (!chatDrawer) createDrawer();
     isOpen = !isOpen;
     chatDrawer.classList.toggle('open', isOpen);
+    if (chatDrawer._backdrop) chatDrawer._backdrop.classList.toggle('open', isOpen);
     if (isOpen) {
         unreadCount = 0;
         updateBadge();
         scrollToBottom();
-        const input = chatDrawer.querySelector('.chat-input');
-        if (input) input.focus();
     }
 }
 
 export function destroyChat() {
+    if (chatDrawer?._backdrop) chatDrawer._backdrop.remove();
     if (chatDrawer) { chatDrawer.remove(); chatDrawer = null; }
     messages = [];
     isOpen = false;
@@ -47,8 +47,15 @@ export function destroyChat() {
 }
 
 function createDrawer() {
+    // Backdrop for click-outside-to-close
+    const backdrop = document.createElement('div');
+    backdrop.className = 'chat-backdrop';
+    backdrop.addEventListener('click', toggleChat);
+    document.body.appendChild(backdrop);
+
     chatDrawer = document.createElement('div');
     chatDrawer.className = 'chat-drawer';
+    chatDrawer._backdrop = backdrop;
     chatDrawer.innerHTML = `
         <div class="chat-header">
             <span>Chat</span>
@@ -56,7 +63,7 @@ function createDrawer() {
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input-bar">
-            <input type="text" class="chat-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
+            <input type="text" class="chat-input" placeholder="Message..." maxlength="500" autocomplete="off" style="font-size:16px;">
             <button class="chat-send">Send</button>
         </div>
     `;

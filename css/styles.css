@@ -1355,6 +1355,15 @@ button { font-family: inherit; }
 }
 .chat-drawer.open { right: 0; }
 
+.chat-backdrop {
+    position: fixed; inset: 0; z-index: 4499;
+    background: rgba(0,0,0,0); pointer-events: none;
+    transition: background 0.25s;
+}
+.chat-backdrop.open {
+    background: rgba(0,0,0,0.5); pointer-events: all;
+}
+
 .chat-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0.75rem 1rem;
@@ -1394,7 +1403,7 @@ button { font-family: inherit; }
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 9999px; color: white;
-    font-size: 0.85rem; font-family: inherit;
+    font-size: 16px; font-family: inherit; /* 16px prevents iOS zoom */
     outline: none;
 }
 .chat-input:focus { border-color: var(--skorch-red); }
