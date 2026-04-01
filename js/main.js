@@ -274,7 +274,6 @@ async function doComputerTurn() {
     if (state.currentTurn !== 'computer') return; // Guard: don't play on player's turn
     const result = computerTurn(state);
     state.status = `Computer: ${result.message}`;
-    playCardSnap();
     // Brief pause so player can see what happened
     await wait(300);
     const discardList = state.discardPile.map(c => c.type === 'attack' ? `A${c.value}` : c.name.substring(0,3)).join(', ');
