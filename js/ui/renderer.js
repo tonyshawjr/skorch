@@ -28,7 +28,20 @@ export function render(state, root, handlers) {
     // 0. Opponent info bar (top of playing field)
     const oppRow = el('div', 'mobile-opp-field');
     const oppLabel = el('span', 'mobile-opp-field-label');
-    oppLabel.textContent = `${state._opponentName || 'Opponent'}: ${state.computer.hand.length} cards`;
+    const oppHandCount = state.computer.hand.length;
+    let oppPrisonCount = 0;
+    for (const row of ['front', 'back']) {
+        for (const slot of state.computer.prison[row]) {
+            if (slot.card !== null) oppPrisonCount++;
+        }
+    }
+    let oppText = `${state._opponentName || 'Opponent'}: ${oppHandCount} cards`;
+    if (oppHandCount === 0 && oppPrisonCount > 0) {
+        oppText = `${state._opponentName || 'Opponent'}: PRISON (${oppPrisonCount} left)`;
+    } else if (oppPrisonCount > 0) {
+        oppText += ` + ${oppPrisonCount} prison`;
+    }
+    oppLabel.textContent = oppText;
     oppRow.appendChild(oppLabel);
     const peekLink = el('button', 'mobile-opp-field-peek');
     peekLink.textContent = 'View Prison';

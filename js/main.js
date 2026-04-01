@@ -216,6 +216,7 @@ async function onPlaySelected() {
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             playVictory();
+            recordMatch(true, multiplayerMode ? 'pvp' : 'ai').catch(() => {});
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -331,6 +332,7 @@ function onPrisonClick(row, index) {
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             playVictory();
+            recordMatch(true, multiplayerMode ? 'pvp' : 'ai').catch(() => {});
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -379,6 +381,7 @@ async function doComputerTurn() {
 
     if (state.gameOver) {
         playDefeat();
+        recordMatch(false, 'ai').catch(() => {});
         update();
         showGameOver(state.winner, onRestart);
         return;
@@ -510,6 +513,7 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
+                    recordMatch(won, 'pvp').catch(() => {});
                     showGameOver(data.winner, () => {
                         requestRematch();
                         state.status = 'Rematch requested...';
@@ -595,6 +599,7 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
+                    recordMatch(won, 'pvp').catch(() => {});
                     showGameOver(won ? 'player' : 'computer', () => {
                         requestRematch();
                         state.status = 'Rematch requested...';
