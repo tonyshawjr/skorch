@@ -298,13 +298,41 @@ async function doComputerTurn() {
     update();
 }
 
+async function animateDeal() {
+    // Animate prison cards appearing (staggered)
+    const prisonCards = root.querySelectorAll('.prison-section .sk-card:not(.sk-placeholder)');
+    prisonCards.forEach((card, i) => {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.5) translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 200ms ease-out, transform 200ms ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1) translateY(0)';
+        }, 50 + i * 40);
+    });
+
+    // Animate hand cards appearing (after prison)
+    const handCards = root.querySelectorAll('.hand-section .sk-card');
+    const prisonDelay = prisonCards.length * 40 + 100;
+    handCards.forEach((card, i) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 250ms ease-out, transform 250ms ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, prisonDelay + i * 60);
+    });
+}
+
 function onRestart() {
     if (computerTurnTimeout) clearTimeout(computerTurnTimeout);
     isProcessing = false;
     localStorage.removeItem(SAVE_KEY);
     state = createGameState();
     update();
-    if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 1000);
+    animateDeal();
+    if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
 }
 
 // Keyboard shortcuts
@@ -316,4 +344,5 @@ document.addEventListener('keydown', (e) => {
 
 // Initial render
 update();
-if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 1000);
+animateDeal();
+if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);

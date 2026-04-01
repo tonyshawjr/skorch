@@ -116,6 +116,19 @@ function generateMoves(state) {
         }
     }
 
+    // Also generate partial stacks (play N-1 of N matching cards)
+    for (const [value, indexes] of Object.entries(groups)) {
+        if (indexes.length >= 3) {
+            // Play all but one (keep one in reserve)
+            moves.push({
+                type: 'stack',
+                indexes: indexes.slice(0, -1),
+                card: hand[indexes[0]],
+                description: `${indexes.length - 1}x Attack ${value} (keep 1)`
+            });
+        }
+    }
+
     // Pickup is always an option when there's a discard pile
     if (state.discardPile.length > 0) {
         moves.push({
@@ -642,6 +655,8 @@ function computerPlayPrison(state, thoughts) {
                 // Shield from prison - only if can't play attacks
                 if (card.type === CardType.SHIELD && hasAttacks) score -= 20;
             }
+            // Add strategic scoring (same as hand plays)
+            score += scoreStrategic({ card: a.card, type: 'single', indexes: [] }, state, counting);
             a.score = score;
             thoughts.push(`  Prison ${card.name} (${a.row}[${a.index}]): ${score} pts`);
         }
