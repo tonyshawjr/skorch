@@ -1,6 +1,6 @@
 import { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, executeUndeadSwap, executeUndeadTake } from './engine/game.js';
 import { computerTurn } from './ai/computer.js';
-import { render } from './ui/renderer.js';
+import { render, markPlayerPlayed, resetRenderCache } from './ui/renderer.js';
 import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
@@ -403,6 +403,7 @@ function onRestart() {
     if (computerTurnTimeout) clearTimeout(computerTurnTimeout);
     isProcessing = false;
     localStorage.removeItem(SAVE_KEY);
+    resetRenderCache();
     state = createGameState();
     update();
     animateDeal();

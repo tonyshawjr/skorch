@@ -4,8 +4,15 @@ import { toggleMute, isMuted } from './sound.js';
 
 const ASSETS_PATH = 'assets/cards/';
 
-// Cache the last playable/unplayable split so we don't recalculate during opponent's turn
+// Cache: only recalculate hand split when turn transitions TO player
 let lastPlayableSplit = null;
+let lastRenderedTurn = null;
+let playerJustPlayed = false;
+
+// Call this from main.js before update() after player plays
+export function markPlayerPlayed() { playerJustPlayed = true; }
+// Call on game restart to clear cached split
+export function resetRenderCache() { lastPlayableSplit = null; lastRenderedTurn = null; }
 
 const SVG_SOUND = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>';
 const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
@@ -148,14 +155,17 @@ export function render(state, root, handlers) {
     const handScroll = el('div', 'mobile-hand-scroll');
 
     // Separate playable from unplayable
-    // ONLY recalculate when it becomes player's turn to prevent visual glitching
+    // ONLY recalculate when turn transitions FROM computer TO player
     const isMyTurn = state.currentTurn === 'player' && !state.gameOver;
+    const turnTransitioned = (lastRenderedTurn === 'computer' || lastRenderedTurn === null) && isMyTurn;
+    lastRenderedTurn = state.currentTurn;
+
     const effectiveValue = getEffectiveValue(state);
     let playable = [];
     let unplayable = [];
 
-    if (isMyTurn) {
-        // Player's turn - calculate and cache the split
+    if (turnTransitioned || !lastPlayableSplit) {
+        // Turn just arrived at player OR first render - calculate fresh
         state.player.hand.forEach((card, index) => {
             if (!card) return;
             const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
