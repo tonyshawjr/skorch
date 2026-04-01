@@ -62,12 +62,37 @@ export function render(state, root, handlers) {
     // 1. Discard area (hero section)
     const discardArea = el('div', 'mobile-discard-area');
 
-    // Discard pile - large
+    // Discard pile - large, tappable to view all
     const discardSection = el('div', 'mobile-discard');
     if (state.discardPile.length > 0) {
         const topCard = state.discardPile[state.discardPile.length - 1];
         const discardCard = createCardElement(topCard, true);
         discardCard.classList.add('mobile-discard-card');
+        discardCard.style.cursor = 'pointer';
+        discardCard.addEventListener('click', () => {
+            const sheet = el('div', 'mobile-peek-sheet');
+            sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
+            const content = el('div', 'mobile-peek-content');
+            const title = el('h3');
+            title.textContent = `Discard Pile (${state.discardPile.length} cards)`;
+            title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+            content.appendChild(title);
+            const cardGrid = el('div', 'discard-pile-grid');
+            // Show in reverse order (newest first)
+            for (let i = state.discardPile.length - 1; i >= 0; i--) {
+                const c = state.discardPile[i];
+                const cardEl = createCardElement(c, true);
+                cardEl.classList.add('discard-pile-card');
+                cardGrid.appendChild(cardEl);
+            }
+            content.appendChild(cardGrid);
+            const hint = el('p');
+            hint.textContent = 'Tap outside to close';
+            hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+            content.appendChild(hint);
+            sheet.appendChild(content);
+            document.body.appendChild(sheet);
+        });
         discardSection.appendChild(discardCard);
         const count = el('span', 'mobile-pile-count');
         count.textContent = state.discardPile.length;

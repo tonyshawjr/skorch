@@ -194,10 +194,17 @@ button { font-family: inherit; }
 .hand-container { display: flex; flex-direction: column; gap: 1.5rem; }
 .playable-cards { display: flex; flex-direction: column; gap: 0.5rem; }
 
-/* Card Selection */
+/* Card Selection - desktop */
 .sk-card.selectable { cursor: pointer; position: relative; }
 @media (hover: hover) { .sk-card.selectable:hover { transform: translateY(-6px); } }
 .sk-card.selected { border: 3px solid var(--skorch-red); transform: translateY(-8px); box-shadow: 0 4px 8px rgba(227,30,36,0.3); }
+
+/* Card Selection - mobile: NO transform, border only */
+@media (max-width: 1024px) {
+    .sk-card.selectable:hover { transform: none !important; }
+    .sk-card.selected { transform: none !important; border: 3px solid var(--skorch-red); box-shadow: 0 0 8px rgba(227,30,36,0.4); }
+    .mobile-hand-card.selected { transform: none !important; }
+}
 
 /* Unplayable Stack - fanned out cards using flex + rotation */
 .unplayable-stack { padding: 0.5rem 0 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); opacity: 0.4; }
@@ -352,11 +359,22 @@ button { font-family: inherit; }
 .undead-card-list {
     display: flex; flex-direction: column; gap: 0.5rem;
 }
+/* Discard pile viewer */
+.discard-pile-grid {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+}
+.discard-pile-card {
+    width: 55px !important; height: 77px !important;
+    background-size: cover !important; border-radius: 6px;
+    flex-shrink: 0;
+}
+
 .undead-card {
-    width: 100%; aspect-ratio: 5/7;
-    border-radius: 6px; cursor: pointer;
+    width: 100%; max-width: 80px; aspect-ratio: 5/7;
+    border-radius: 8px; cursor: pointer;
     transition: all 0.15s ease;
     border: 3px solid transparent;
+    margin: 0 auto;
 }
 .undead-card.picked {
     border-color: var(--skorch-red);
