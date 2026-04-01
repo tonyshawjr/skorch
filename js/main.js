@@ -61,13 +61,33 @@ function update() {
 
 function onCardSelect(index, cardEl) {
     if (state.currentTurn !== 'player' || state.gameOver) return;
+
+    const newCard = state.player.hand[index];
+    if (!newCard) return;
+
     if (selectedIndexes.has(index)) {
+        // Deselect this card
         selectedIndexes.delete(index);
         cardEl.classList.remove('selected');
     } else {
+        // Check if this card matches what's already selected
+        if (selectedIndexes.size > 0) {
+            const firstSelectedIndex = selectedIndexes.values().next().value;
+            const firstCard = state.player.hand[firstSelectedIndex];
+            const matches = firstCard && (
+                (newCard.type === 'attack' && firstCard.type === 'attack' && newCard.value === firstCard.value) ||
+                (newCard.type !== 'attack' && firstCard.type !== 'attack' && newCard.type === firstCard.type)
+            );
+            if (!matches) {
+                // Different card type/value - clear all previous selections
+                document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+                selectedIndexes.clear();
+            }
+        }
         selectedIndexes.add(index);
         cardEl.classList.add('selected');
     }
+
     const playBtn = document.getElementById('playSelectedBtn');
     if (playBtn) {
         playBtn.disabled = selectedIndexes.size === 0;
