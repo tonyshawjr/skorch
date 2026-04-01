@@ -1,6 +1,9 @@
 // js/multiplayer/lobby.js - Lobby UI for creating/joining rooms
 
+import { getUser } from './auth.js';
+
 export function showLobby(onBack) {
+    const loggedInUser = getUser();
     const overlay = document.createElement('div');
     overlay.className = 'lobby-overlay';
     overlay.innerHTML = `
@@ -8,11 +11,11 @@ export function showLobby(onBack) {
             <button id="lobby-close-x" class="account-close">&times;</button>
             <h2 class="lobby-title">Multiplayer</h2>
 
+            ${loggedInUser ? `<p style="color:#9ca3af;text-align:center;margin-bottom:1rem;">Playing as <strong style="color:white;">${loggedInUser.username}</strong></p>` : ''}
+
             <div class="lobby-section">
                 <h3>Create a Room</h3>
-                <div class="lobby-field">
-                    <input type="text" id="lobby-username-create" placeholder="Your name" maxlength="20" class="lobby-input" />
-                </div>
+                ${!loggedInUser ? '<div class="lobby-field"><input type="text" id="lobby-username-create" placeholder="Your name" maxlength="20" class="lobby-input" /></div>' : ''}
                 <button id="lobby-create-btn" class="lobby-btn lobby-btn-primary">Create Room</button>
             </div>
 
@@ -20,9 +23,7 @@ export function showLobby(onBack) {
 
             <div class="lobby-section">
                 <h3>Join a Room</h3>
-                <div class="lobby-field">
-                    <input type="text" id="lobby-username-join" placeholder="Your name" maxlength="20" class="lobby-input" />
-                </div>
+                ${!loggedInUser ? '<div class="lobby-field"><input type="text" id="lobby-username-join" placeholder="Your name" maxlength="20" class="lobby-input" /></div>' : ''}
                 <div class="lobby-field">
                     <input type="text" id="lobby-room-code" placeholder="Room code (e.g. FIRE)" maxlength="4" class="lobby-input lobby-code-input" />
                 </div>
@@ -58,14 +59,16 @@ export function showLobby(onBack) {
         overlay,
         onCreateClick(handler) {
             overlay.querySelector('#lobby-create-btn').addEventListener('click', () => {
-                const username = overlay.querySelector('#lobby-username-create').value.trim();
+                const nameInput = overlay.querySelector('#lobby-username-create');
+                const username = loggedInUser ? loggedInUser.username : (nameInput ? nameInput.value.trim() : '');
                 if (!username) { alert('Enter your name'); return; }
                 handler(username);
             });
         },
         onJoinClick(handler) {
             overlay.querySelector('#lobby-join-btn').addEventListener('click', () => {
-                const username = overlay.querySelector('#lobby-username-join').value.trim();
+                const nameInput = overlay.querySelector('#lobby-username-join');
+                const username = loggedInUser ? loggedInUser.username : (nameInput ? nameInput.value.trim() : '');
                 const code = overlay.querySelector('#lobby-room-code').value.trim();
                 if (!username) { alert('Enter your name'); return; }
                 if (code.length !== 4) { alert('Enter a 4-letter room code'); return; }
