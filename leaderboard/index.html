@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Leaderboard - Skorch</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="description" content="Skorch leaderboard - see who reigns as the Skorch King. Top players ranked by wins, win rate, and games played.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --skorch-red: #EB2228;
+            --skorch-red-dark: #c41a1f;
+            --skorch-dark: #1a3a2a;
+            --skorch-darker: #143022;
+            --skorch-darkest: #0e2418;
+            --skorch-light: #FFFFFF;
+            --skorch-gray: #EFEFEF;
+            --skorch-green: #10b981;
+            --skorch-yellow: #eab308;
+            --skorch-blue: #3b82f6;
+            --skorch-muted: rgba(255,255,255,0.5);
+            --nav-height: 64px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--skorch-dark);
+            color: var(--skorch-light);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── Nav ── */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--skorch-gray);
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .nav-logo img { height: 36px; width: auto; }
+        .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+        .nav-links a {
+            color: var(--skorch-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--skorch-red); }
+        .nav-links a.active { color: var(--skorch-red); }
+        .nav-btn {
+            background: var(--skorch-red);
+            color: var(--skorch-light) !important;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .nav-btn:hover { background: var(--skorch-red-dark); transform: translateY(-1px); }
+
+        /* ── Page Header ── */
+        .page-header {
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            background: linear-gradient(180deg, var(--skorch-darker) 0%, var(--skorch-dark) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(235,34,40,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        .page-sub {
+            font-size: 1rem;
+            color: var(--skorch-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* ── Filter Tabs ── */
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        .filter-tab {
+            background: var(--skorch-darkest);
+            color: var(--skorch-muted);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-tab:hover {
+            border-color: rgba(255,255,255,0.2);
+            color: var(--skorch-light);
+        }
+        .filter-tab.active {
+            background: var(--skorch-red);
+            color: var(--skorch-light);
+            border-color: var(--skorch-red);
+        }
+
+        /* ── Content ── */
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* ── King Card ── */
+        .king-card {
+            background: var(--skorch-darker);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid rgba(234,179,8,0.2);
+            box-shadow: 0 4px 24px rgba(234,179,8,0.08), 0 4px 12px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .king-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center top, rgba(234,179,8,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .king-crown { font-size: 3rem; margin-bottom: 0.25rem; }
+        .king-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--skorch-yellow);
+            margin-bottom: 0.25rem;
+        }
+        .king-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--skorch-light);
+            margin: 0.75rem auto;
+            border: 3px solid var(--skorch-yellow);
+            box-shadow: 0 0 16px rgba(234,179,8,0.3);
+        }
+        .king-name {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--skorch-yellow);
+            text-shadow: 0 2px 8px rgba(234,179,8,0.3);
+        }
+        .king-name a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .king-name a:hover { text-decoration: underline; }
+        .king-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--skorch-muted);
+            position: relative;
+            z-index: 1;
+        }
+        .king-stat-value {
+            font-weight: 700;
+            color: var(--skorch-light);
+            font-size: 1.15rem;
+            display: block;
+        }
+        .king-empty {
+            color: var(--skorch-muted);
+            font-style: italic;
+            padding: 1rem 0;
+        }
+
+        /* ── Rankings Table Card ── */
+        .rankings-card {
+            background: var(--skorch-darker);
+            border-radius: 1rem;
+            padding: 1.5rem 2rem;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* ── Rankings Table ── */
+        .rankings-table { width: 100%; border-collapse: collapse; }
+        .rankings-table th {
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--skorch-muted);
+            padding: 0 0 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .rankings-table th.right { text-align: right; }
+        .rankings-table td {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+        .rankings-table tr:last-child td { border-bottom: none; }
+        .rankings-table tbody tr {
+            transition: background 0.15s;
+        }
+        .rankings-table tbody tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* Rank column */
+        .col-rank {
+            width: 3rem;
+            font-weight: 700;
+            color: var(--skorch-muted);
+        }
+        .rank-1 { color: var(--skorch-yellow); }
+        .rank-2 { color: #c0c0c0; }
+        .rank-3 { color: #cd7f32; }
+
+        /* Player column */
+        .col-player { min-width: 160px; }
+        .player-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .player-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--skorch-light);
+            flex-shrink: 0;
+        }
+        .player-info { display: flex; flex-direction: column; }
+        .player-name {
+            font-weight: 600;
+            color: var(--skorch-light);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .player-name:hover { color: var(--skorch-red); }
+        .player-king-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--skorch-yellow);
+            line-height: 1.2;
+        }
+
+        /* Stat columns */
+        .col-record,
+        .col-winrate,
+        .col-games {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .col-record { font-weight: 600; }
+        .col-winrate { font-weight: 600; color: var(--skorch-green); }
+        .col-games { color: var(--skorch-muted); }
+
+        /* Gold row for #1 */
+        .row-king td {
+            background: rgba(234,179,8,0.04);
+        }
+
+        /* ── Loading ── */
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 0.25rem;
+            height: 1rem;
+            margin: 0.4rem 0;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .empty-state {
+            text-align: center;
+            color: var(--skorch-muted);
+            font-style: italic;
+            padding: 3rem 1rem;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            color: var(--skorch-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 3rem;
+        }
+        .footer-motto {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--skorch-light);
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .content { padding: 1.5rem 1rem; }
+            .page-header { padding: 2rem 1.5rem 1.5rem; }
+            .page-title { font-size: 1.5rem; }
+            .nav { padding: 0 1rem; }
+            .nav-links { gap: 1rem; }
+            .nav-links a { font-size: 0.8rem; }
+            .king-name { font-size: 1.35rem; }
+            .king-stats { gap: 1.5rem; }
+            .king-avatar { width: 52px; height: 52px; font-size: 1.4rem; }
+            .rankings-card { padding: 1rem 1.25rem; }
+
+            /* Hide games played column on mobile */
+            .col-games,
+            .th-games { display: none; }
+
+            .player-avatar { width: 30px; height: 30px; font-size: 0.75rem; }
+            .player-cell { gap: 0.5rem; }
+            .col-rank { width: 2rem; }
+        }
+
+        @media (max-width: 480px) {
+            .filter-tabs { gap: 0.25rem; }
+            .filter-tab { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+            .king-stats { flex-direction: column; gap: 0.5rem; }
+
+            /* Also hide win rate on very small screens */
+            .col-winrate,
+            .th-winrate { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-logo">
+            <img src="/assets/logo-red.png" alt="Skorch">
+        </a>
+        <div class="nav-links">
+            <a href="/play">Play</a>
+            <a href="/leaderboard" class="active">Leaderboard</a>
+            <a href="#" class="nav-btn" id="nav-auth">Log In</a>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <h1 class="page-title">&#127942; Leaderboard</h1>
+        <p class="page-sub">The best Skorch players, ranked by wins.</p>
+
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">All Time</button>
+            <button class="filter-tab" data-filter="month">This Month</button>
+            <button class="filter-tab" data-filter="week">This Week</button>
+        </div>
+    </section>
+
+    <!-- Content -->
+    <main class="content">
+
+        <!-- Skorch King Spotlight -->
+        <div class="king-card" id="king-section">
+            <div id="king-content">
+                <div class="king-crown">&#128081;</div>
+                <div class="shimmer" style="width:160px;height:1.5rem;margin:0.5rem auto;"></div>
+                <div class="shimmer" style="width:200px;height:1rem;margin:0.5rem auto;"></div>
+            </div>
+        </div>
+
+        <!-- Rankings Table -->
+        <div class="rankings-card">
+            <div id="rankings-content">
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-motto">A Game for the Masses</p>
+        <p>&copy; 2025 Skorch. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ── Filter Tabs ──
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                // All filters show the same data for now
+                loadLeaderboard();
+            });
+        });
+
+        // ── Fetch Leaderboard ──
+        async function loadLeaderboard() {
+            try {
+                const res = await fetch('/server/php/api/leaderboard.php?sort=wins&limit=50');
+                if (!res.ok) throw new Error('Failed to load');
+                const data = await res.json();
+                const players = data.leaderboard || data;
+
+                if (!players || players.length === 0) {
+                    document.getElementById('king-content').innerHTML =
+                        '<div class="king-crown">&#128081;</div><p class="king-empty">No king yet. Play a game and claim the throne!</p>';
+                    document.getElementById('rankings-content').innerHTML =
+                        '<p class="empty-state">No players yet. Be the first to play!</p>';
+                    return;
+                }
+
+                // ── King Spotlight ──
+                const king = players[0];
+                const kingName = king.display_name || king.username;
+                const kingInitial = kingName.charAt(0).toUpperCase();
+                const kingColor = king.avatar_color || '#eab308';
+                const kingWinRate = king.games_played > 0
+                    ? Math.round((king.wins / king.games_played) * 100)
+                    : 0;
+
+                document.getElementById('king-content').innerHTML = `
+                    <div class="king-crown">&#128081;</div>
+                    <div class="king-label">Skorch King</div>
+                    <div class="king-avatar" style="background:${escapeAttr(kingColor)};">${escapeHtml(kingInitial)}</div>
+                    <div class="king-name"><a href="/profile?u=${encodeURIComponent(king.username)}">${escapeHtml(kingName)}</a></div>
+                    <div class="king-stats">
+                        <div><span class="king-stat-value">${king.wins || 0}</span>Wins</div>
+                        <div><span class="king-stat-value">${king.losses || 0}</span>Losses</div>
+                        <div><span class="king-stat-value">${kingWinRate}%</span>Win Rate</div>
+                        <div><span class="king-stat-value">${king.best_streak || 0}</span>Best Streak</div>
+                    </div>
+                `;
+
+                // ── Rankings Table ──
+                let html = `<table class="rankings-table">
+                    <thead><tr>
+                        <th>#</th>
+                        <th>Player</th>
+                        <th class="right">W / L</th>
+                        <th class="right th-winrate">Win %</th>
+                        <th class="right th-games">Games</th>
+                    </tr></thead><tbody>`;
+
+                players.forEach((p, i) => {
+                    const rank = i + 1;
+                    const name = p.display_name || p.username;
+                    const initial = name.charAt(0).toUpperCase();
+                    const color = p.avatar_color || '#3b82f6';
+                    const winRate = p.games_played > 0
+                        ? Math.round((p.wins / p.games_played) * 100)
+                        : 0;
+
+                    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+                    const rowClass = rank === 1 ? ' row-king' : '';
+                    const kingBadge = rank === 1
+                        ? '<span class="player-king-badge">&#128081; Skorch King</span>'
+                        : '';
+
+                    html += `<tr class="${rowClass}">
+                        <td class="col-rank${rankClass}">${rank === 1 ? '&#128081;' : rank}</td>
+                        <td class="col-player">
+                            <div class="player-cell">
+                                <div class="player-avatar" style="background:${escapeAttr(color)};">${escapeHtml(initial)}</div>
+                                <div class="player-info">
+                                    <a href="/profile?u=${encodeURIComponent(p.username)}" class="player-name">${escapeHtml(name)}</a>
+                                    ${kingBadge}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-record">${p.wins || 0} / ${p.losses || 0}</td>
+                        <td class="col-winrate th-winrate">${winRate}%</td>
+                        <td class="col-games th-games">${p.games_played || 0}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('rankings-content').innerHTML = html;
+
+            } catch (e) {
+                document.getElementById('king-content').innerHTML =
+                    '<div class="king-crown">&#128081;</div><p class="king-empty">Could not load leaderboard data.</p>';
+                document.getElementById('rankings-content').innerHTML =
+                    '<p class="empty-state">Could not load rankings. Please try again later.</p>';
+            }
+        }
+
+        // ── Check Auth State ──
+        async function checkAuth() {
+            try {
+                const res = await fetch('/server/php/api/profile.php', { credentials: 'include' });
+                if (res.ok) {
+                    const user = await res.json();
+                    if (user && user.username) {
+                        const btn = document.getElementById('nav-auth');
+                        btn.textContent = user.username;
+                        btn.href = '/profile';
+                    }
+                }
+            } catch (e) { /* not logged in */ }
+        }
+
+        // ── Helpers ──
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function escapeAttr(str) {
+            return str.replace(/[&"'<>]/g, c => ({
+                '&': '&amp;', '"': '&quot;', "'": '&#39;', '<': '&lt;', '>': '&gt;'
+            })[c]);
+        }
+
+        // ── Init ──
+        loadLeaderboard();
+        checkAuth();
+    </script>
+
+</body>
+</html>
