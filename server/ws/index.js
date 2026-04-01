@@ -1,0 +1,259 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const { createRoom, joinRoom, getRoom, removePlayer, listRooms } = require('./game-room');
+const { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, getEffectiveValue, isValidPlay, isValidStack, executeUndeadSwap, executeUndeadTake } = require('./game-engine');
+
+const app = express();
+app.use(cors());
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+// Health check
+app.get('/', (req, res) => {
+    res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length });
+});
+
+io.on('connection', (socket) => {
+    console.log(`Player connected: ${socket.id}`);
+
+    // Create a new game room
+    socket.on('create-room', ({ username }) => {
+        const room = createRoom(socket.id, username);
+        socket.join(room.code);
+        socket.emit('room-created', { code: room.code, playerId: 'player1' });
+        console.log(`Room ${room.code} created by ${username}`);
+    });
+
+    // Join existing room
+    socket.on('join-room', ({ code, username }) => {
+        const room = getRoom(code);
+        if (!room) {
+            socket.emit('error', { message: 'Room not found' });
+            return;
+        }
+        if (room.players.length >= 2) {
+            socket.emit('error', { message: 'Room is full' });
+            return;
+        }
+
+        joinRoom(code, socket.id, username);
+        socket.join(code);
+        socket.emit('room-joined', { code, playerId: 'player2' });
+
+        // Start the game
+        const state = createGameState();
+        room.state = state;
+        room.started = true;
+
+        // Send each player their view
+        const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
+        const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
+
+        if (p1Socket) p1Socket.emit('game-start', getPlayerView(state, 'player'));
+        if (p2Socket) p2Socket.emit('game-start', getPlayerView(state, 'computer'));
+
+        console.log(`Room ${code}: game started`);
+    });
+
+    // Player makes a move
+    socket.on('play-cards', ({ roomCode, indexes }) => {
+        const room = getRoom(roomCode);
+        if (!room || !room.state) return;
+
+        const who = getPlayerRole(room, socket.id);
+        if (!who || room.state.currentTurn !== who) {
+            socket.emit('error', { message: 'Not your turn' });
+            return;
+        }
+
+        const result = playFromHand(room.state, who, indexes);
+        if (result.success) {
+            if (result.effect !== 'pickup') {
+                drawCard(room.state, who);
+            }
+
+            // Check win
+            if (checkWin(room.state, who)) {
+                room.state.gameOver = true;
+                room.state.winner = who;
+                broadcastState(room);
+                io.to(roomCode).emit('game-over', { winner: who });
+                return;
+            }
+
+            // Handle shield (same player goes again)
+            if (result.effect !== 'shield') {
+                nextTurn(room.state);
+            }
+        }
+
+        broadcastState(room);
+        io.to(roomCode).emit('move-result', { who, result });
+    });
+
+    // Player picks up discard pile
+    socket.on('pickup', ({ roomCode }) => {
+        const room = getRoom(roomCode);
+        if (!room || !room.state) return;
+
+        const who = getPlayerRole(room, socket.id);
+        if (!who || room.state.currentTurn !== who) {
+            socket.emit('error', { message: 'Not your turn' });
+            return;
+        }
+
+        pickupDiscardPile(room.state, who);
+        drawCard(room.state, who);
+        nextTurn(room.state);
+
+        broadcastState(room);
+        io.to(roomCode).emit('move-result', { who, result: { message: 'Picked up discard pile', effect: 'pickup' } });
+    });
+
+    // Player plays from prison
+    socket.on('play-prison', ({ roomCode, row, index }) => {
+        const room = getRoom(roomCode);
+        if (!room || !room.state) return;
+
+        const who = getPlayerRole(room, socket.id);
+        if (!who || room.state.currentTurn !== who) {
+            socket.emit('error', { message: 'Not your turn' });
+            return;
+        }
+
+        const result = playFromPrison(room.state, who, row, index);
+        if (result.success && result.effect !== 'pickup') {
+            drawCard(room.state, who);
+
+            if (checkWin(room.state, who)) {
+                room.state.gameOver = true;
+                room.state.winner = who;
+                broadcastState(room);
+                io.to(roomCode).emit('game-over', { winner: who });
+                return;
+            }
+
+            if (result.effect !== 'shield') {
+                nextTurn(room.state);
+            }
+        } else if (result.effect === 'pickup') {
+            nextTurn(room.state);
+        }
+
+        broadcastState(room);
+        io.to(roomCode).emit('move-result', { who, result });
+    });
+
+    // Undead swap
+    socket.on('undead-swap', ({ roomCode, myCard, theirCard }) => {
+        const room = getRoom(roomCode);
+        if (!room || !room.state) return;
+
+        const who = getPlayerRole(room, socket.id);
+        if (!who) return;
+
+        if (myCard) {
+            executeUndeadSwap(room.state, who, myCard, theirCard);
+        } else {
+            executeUndeadTake(room.state, who, theirCard);
+        }
+
+        broadcastState(room);
+    });
+
+    // Rematch request
+    socket.on('rematch', ({ roomCode }) => {
+        const room = getRoom(roomCode);
+        if (!room) return;
+
+        if (!room.rematchVotes) room.rematchVotes = new Set();
+        room.rematchVotes.add(socket.id);
+
+        if (room.rematchVotes.size >= 2) {
+            // Both players want rematch
+            room.state = createGameState();
+            room.rematchVotes.clear();
+            room.started = true;
+
+            const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
+            const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
+            if (p1Socket) p1Socket.emit('game-start', getPlayerView(room.state, 'player'));
+            if (p2Socket) p2Socket.emit('game-start', getPlayerView(room.state, 'computer'));
+        } else {
+            socket.to(roomCode).emit('rematch-requested');
+        }
+    });
+
+    // Disconnect
+    socket.on('disconnect', () => {
+        const room = removePlayer(socket.id);
+        if (room) {
+            io.to(room.code).emit('opponent-left');
+            console.log(`Player left room ${room.code}`);
+        }
+        console.log(`Player disconnected: ${socket.id}`);
+    });
+});
+
+// --- HELPERS ---
+
+function getPlayerRole(room, socketId) {
+    if (room.players[0]?.socketId === socketId) return 'player';
+    if (room.players[1]?.socketId === socketId) return 'computer'; // player2 uses 'computer' slot in state
+    return null;
+}
+
+function getPlayerView(state, who) {
+    const opponent = who === 'player' ? 'computer' : 'player';
+    return {
+        myHand: state[who].hand,
+        myPrison: state[who].prison,
+        opponentHandCount: state[opponent].hand.length,
+        opponentPrison: maskPrison(state[opponent].prison),
+        discardPile: state.discardPile,
+        deckCount: state.deck.length,
+        currentTurn: state.currentTurn,
+        effectiveValue: getEffectiveValue(state),
+        gameOver: state.gameOver,
+        winner: state.winner,
+        turnCount: state.turnCount
+    };
+}
+
+function maskPrison(prison) {
+    // Show face-up cards, hide face-down
+    const masked = { front: [], back: [] };
+    for (const row of ['front', 'back']) {
+        for (const slot of prison[row]) {
+            if (slot.card === null) {
+                masked[row].push({ card: null, faceUp: false });
+            } else if (slot.faceUp) {
+                masked[row].push({ card: slot.card, faceUp: true });
+            } else {
+                masked[row].push({ card: { type: 'unknown' }, faceUp: false });
+            }
+        }
+    }
+    return masked;
+}
+
+function broadcastState(room) {
+    if (!room.players[0] || !room.players[1]) return;
+    const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
+    const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
+    if (p1Socket) p1Socket.emit('state-update', getPlayerView(room.state, 'player'));
+    if (p2Socket) p2Socket.emit('state-update', getPlayerView(room.state, 'computer'));
+}
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+    console.log(`Skorch multiplayer server running on port ${PORT}`);
+});
