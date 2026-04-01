@@ -198,14 +198,13 @@ button { font-family: inherit; }
 .sk-card.selected { border: 3px solid var(--skorch-red); transform: translateY(-10px); z-index: 3; box-shadow: 0 8px 16px rgba(227,30,36,0.4); }
 
 /* Unplayable Stack - fanned out cards using flex + rotation */
-.unplayable-stack { padding: 0.5rem 0 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.unplayable-stack { padding: 0.5rem 0 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); opacity: 0.4; }
 .stacked-cards {
     display: flex; justify-content: center; padding: 0 10px;
 }
 .stacked-cards .sk-card {
     margin-left: -60px; flex-shrink: 0;
     transform-origin: center bottom;
-    opacity: 0.4 !important;
     pointer-events: none;
 }
 .stacked-cards .sk-card:first-child { margin-left: 0; }
