@@ -165,51 +165,50 @@
             inset: 0;
             pointer-events: none;
             z-index: 1;
+            opacity: 0.25;
         }
         .floating-card {
             position: absolute;
-            width: 100px;
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            opacity: 0.18;
-            transition: opacity 0.3s;
+            width: 160px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
         .floating-card:nth-child(1) {
-            top: 15%;
-            left: 8%;
+            top: 10%;
+            left: 5%;
             transform: rotate(-15deg);
             animation: float1 6s ease-in-out infinite;
         }
         .floating-card:nth-child(2) {
-            top: 25%;
-            right: 10%;
+            top: 15%;
+            right: 5%;
             transform: rotate(12deg);
             animation: float2 7s ease-in-out infinite;
         }
         .floating-card:nth-child(3) {
-            bottom: 20%;
-            left: 12%;
+            bottom: 10%;
+            left: 8%;
             transform: rotate(8deg);
             animation: float3 5.5s ease-in-out infinite;
         }
         .floating-card:nth-child(4) {
-            bottom: 25%;
-            right: 8%;
+            bottom: 15%;
+            right: 5%;
             transform: rotate(-10deg);
             animation: float1 6.5s ease-in-out infinite reverse;
         }
         .floating-card:nth-child(5) {
-            top: 10%;
-            left: 25%;
+            top: 5%;
+            left: 28%;
             transform: rotate(5deg);
-            width: 80px;
+            width: 130px;
             animation: float2 8s ease-in-out infinite;
         }
         .floating-card:nth-child(6) {
-            top: 18%;
-            right: 22%;
+            top: 12%;
+            right: 25%;
             transform: rotate(-8deg);
-            width: 80px;
+            width: 130px;
             animation: float3 7.5s ease-in-out infinite;
         }
 
@@ -555,8 +554,8 @@
                 <div style="display:flex;align-items:flex-start;gap:0.75rem;">
                     <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">1</span>
                     <div>
-                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Attack or Defend</div>
-                        <div style="font-size:0.8rem;color:var(--gray-300);">Play number cards to attack or use shields to block incoming damage.</div>
+                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Play Cards</div>
+                        <div style="font-size:0.8rem;color:var(--gray-300);">Play a card equal to or higher than the discard pile. Can't play? Pick up the pile.</div>
                     </div>
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:0.75rem;">
@@ -569,8 +568,8 @@
                 <div style="display:flex;align-items:flex-start;gap:0.75rem;">
                     <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">3</span>
                     <div>
-                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Reach 21 to Win</div>
-                        <div style="font-size:0.8rem;color:var(--gray-300);">First player to accumulate 21 points of damage on their opponent wins.</div>
+                        <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Empty Your Hand</div>
+                        <div style="font-size:0.8rem;color:var(--gray-300);">First player to play all their cards — hand and prison — wins the game.</div>
                     </div>
                 </div>
             </div>
