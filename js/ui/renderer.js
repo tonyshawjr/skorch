@@ -347,6 +347,18 @@ export function render(state, root, handlers) {
         board.appendChild(createCenterSection(state, handlers));
         root.appendChild(board);
         root.appendChild(createStatusBar(state));
+
+        // Floating chat tab on desktop (multiplayer only)
+        if (state._roomCode) {
+            const existing = document.querySelector('.chat-float-tab');
+            if (existing) existing.remove();
+            const chatTab = el('button', 'chat-float-tab');
+            chatTab.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span class="chat-float-badge" style="display:none">0</span>';
+            chatTab.addEventListener('click', () => {
+                import('./chat.js').then(m => m.toggleChat());
+            });
+            document.body.appendChild(chatTab);
+        }
     }
 }
 
