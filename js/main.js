@@ -383,6 +383,7 @@ async function onMultiplayer() {
     });
 
     lobby.onCreateClick(async (username) => {
+        lobby.showError('Connecting to server...');
         try {
             await connect({
                 onStateUpdate: (view) => {
@@ -447,11 +448,12 @@ async function onMultiplayer() {
             });
             createRoom(username);
         } catch (e) {
-            lobby.showError('Could not connect to server');
+            lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
         }
     });
 
     lobby.onJoinClick(async (username, code) => {
+        lobby.showError('Connecting to server...');
         try {
             await connect({
                 onStateUpdate: (view) => {
@@ -515,7 +517,7 @@ async function onMultiplayer() {
             });
             joinRoom(code, username);
         } catch (e) {
-            lobby.showError('Could not connect to server');
+            lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
         }
     });
 }
