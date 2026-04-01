@@ -12,6 +12,7 @@ let onRematchRequested = null;
 let onRoomCreated = null;
 let onRoomJoined = null;
 let onChatMessage = null;
+let onMoveResult = null;
 
 const SERVER_URL = 'https://skorch-multiplayer.onrender.com';
 
@@ -25,6 +26,7 @@ export function connect(handlers) {
     onRoomCreated = handlers.onRoomCreated;
     onRoomJoined = handlers.onRoomJoined;
     onChatMessage = handlers.onChatMessage;
+    onMoveResult = handlers.onMoveResult;
 
     return new Promise((resolve, reject) => {
         // Load Socket.io from CDN
@@ -75,7 +77,7 @@ function initSocket() {
         socket.on('game-start', (view) => { if (onGameStart) onGameStart(view); });
         socket.on('state-update', (view) => { if (onStateUpdate) onStateUpdate(view); });
         socket.on('game-over', (data) => { if (onGameOver) onGameOver(data); });
-        socket.on('move-result', () => {});
+        socket.on('move-result', (data) => { if (onMoveResult) onMoveResult(data); });
         socket.on('opponent-left', () => { if (onOpponentLeft) onOpponentLeft(); });
         socket.on('rematch-requested', () => { if (onRematchRequested) onRematchRequested(); });
         socket.on('error', (data) => { if (onError) onError(data.message); });

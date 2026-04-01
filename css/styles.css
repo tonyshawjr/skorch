@@ -1417,11 +1417,27 @@ button { font-family: inherit; }
 }
 
 /* Chat button */
-.mobile-chat-btn {
-    background: none; border: 1px solid rgba(255,255,255,0.15);
-    color: #9ca3af; padding: 0.25rem 0.6rem;
-    border-radius: 9999px; font-size: 0.7rem; font-weight: 600;
-    cursor: pointer; font-family: inherit; position: relative;
+/* Floating chat tab */
+.chat-float-tab {
+    position: fixed; bottom: 3.5rem; right: 0.75rem;
+    z-index: 4000;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--skorch-darker); color: white;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    line-height: 0;
+}
+.chat-float-tab:active { background: rgba(255,255,255,0.1); }
+.chat-float-badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--skorch-red); color: white;
+    font-size: 0.55rem; font-weight: 700;
+    min-width: 16px; height: 16px; line-height: 16px;
+    text-align: center; border-radius: 50%;
+    padding: 0 3px;
 }
 .chat-badge {
     background: var(--skorch-red); color: white;

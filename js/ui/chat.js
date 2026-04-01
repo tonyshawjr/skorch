@@ -112,9 +112,9 @@ function scrollToBottom() {
 }
 
 function updateBadge() {
-    const badge = document.querySelector('.chat-badge');
-    if (badge) {
+    // Update all badge instances (header + floating tab)
+    document.querySelectorAll('.chat-badge, .chat-float-badge').forEach(badge => {
         badge.textContent = unreadCount;
         badge.style.display = unreadCount > 0 ? '' : 'none';
-    }
+    });
 }

@@ -481,7 +481,8 @@ async function onMultiplayer() {
                     state._roomCode = getRoomCode();
                     state._myName = view.myName || 'You';
                     state._opponentName = view.opponentName || 'Opponent';
-                    state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    if (!state._lastMoveStatus) state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    else { state.status = state._lastMoveStatus; state._lastMoveStatus = null; }
                     if (view.currentTurn === 'player') playTurnDing();
                     update();
                 },
@@ -527,6 +528,9 @@ async function onMultiplayer() {
                     update();
                 },
                 onChatMessage: (data) => addMessage(data),
+                onMoveResult: (data) => {
+                    if (data.result?.message) state._lastMoveStatus = data.result.message;
+                },
                 onRoomCreated: (data) => lobby.showWaiting(data.code),
                 onRoomJoined: () => {}
             });
@@ -562,7 +566,8 @@ async function onMultiplayer() {
                     state._roomCode = getRoomCode();
                     state._myName = view.myName || 'You';
                     state._opponentName = view.opponentName || 'Opponent';
-                    state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    if (!state._lastMoveStatus) state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    else { state.status = state._lastMoveStatus; state._lastMoveStatus = null; }
                     if (view.currentTurn === 'player') playTurnDing();
                     update();
                 },
@@ -608,6 +613,9 @@ async function onMultiplayer() {
                     update();
                 },
                 onChatMessage: (data) => addMessage(data),
+                onMoveResult: (data) => {
+                    if (data.result?.message) state._lastMoveStatus = data.result.message;
+                },
                 onRoomCreated: () => {},
                 onRoomJoined: () => lobby.showJoining()
             });

@@ -66,12 +66,6 @@ export function render(state, root, handlers) {
     });
     oppRow.appendChild(peekLink);
     if (state._roomCode) {
-        const chatBtn = el('button', 'mobile-chat-btn');
-        chatBtn.innerHTML = 'Chat <span class="chat-badge" style="display:none">0</span>';
-        chatBtn.addEventListener('click', () => {
-            import('./chat.js').then(m => m.toggleChat());
-        });
-        oppRow.appendChild(chatBtn);
     }
     root.appendChild(oppRow);
 
@@ -318,6 +312,20 @@ export function render(state, root, handlers) {
 
     // Status at very bottom
     root.appendChild(createStatusBar(state));
+
+    // Floating chat tab (multiplayer only)
+    if (state._roomCode) {
+        // Remove existing tab if any
+        const existing = document.querySelector('.chat-float-tab');
+        if (existing) existing.remove();
+        const chatTab = el('button', 'chat-float-tab');
+        chatTab.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span class="chat-float-badge" style="display:none">0</span>';
+        chatTab.addEventListener('click', () => {
+            import('./chat.js').then(m => m.toggleChat());
+        });
+        document.body.appendChild(chatTab);
+    }
+
     } else {
         // Desktop: normal layout
         const board = el('div', 'game-board');
@@ -471,12 +479,6 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
             actions.appendChild(loginBtn);
         }
         if (state._roomCode) {
-            const chatBtn = el('button', 'mobile-chat-btn');
-            chatBtn.innerHTML = 'Chat <span class="chat-badge" style="display:none">0</span>';
-            chatBtn.addEventListener('click', () => {
-                import('./chat.js').then(m => m.toggleChat());
-            });
-            actions.appendChild(chatBtn);
         }
         const mpBtn = el('button', 'btn-multiplayer');
         mpBtn.textContent = 'Multiplayer';
