@@ -92,6 +92,9 @@ io.on('connection', (socket) => {
         socket.join(canonicalCode);
         socket.emit('room-joined', { code: canonicalCode, playerId: 'player2' });
 
+        console.log(`Room ${canonicalCode}: ${username} joined (input code: "${code}")`);
+        console.log(`Room ${canonicalCode}: players = [${room.players.map(p => p.username + ':' + p.socketId).join(', ')}]`);
+
         // Start the game
         const state = createGameState(true);
         room.state = state;
@@ -101,10 +104,12 @@ io.on('connection', (socket) => {
         const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
         const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
 
+        console.log(`Room ${canonicalCode}: p1Socket exists = ${!!p1Socket}, p2Socket exists = ${!!p2Socket}`);
+
         if (p1Socket) p1Socket.emit('game-start', getPlayerView(state, 'player', room));
         if (p2Socket) p2Socket.emit('game-start', getPlayerView(state, 'computer', room));
 
-        console.log(`Room ${code}: game started`);
+        console.log(`Room ${canonicalCode}: game started`);
     });
 
     // Rejoin room after reconnection
