@@ -86,9 +86,9 @@ function createModalCard(card, faceUp = true) {
     const div = document.createElement('div');
     div.className = 'undead-card';
     if (faceUp) {
-        div.style.backgroundImage = `url('assets/cards/${getCardImage(card)}')`;
+        div.style.backgroundImage = `url('/assets/cards/${getCardImage(card)}')`;
     } else {
-        div.style.backgroundImage = `url('assets/cards/Card-Back.png')`;
+        div.style.backgroundImage = `url('/assets/cards/Card-Back.png')`;
     }
     div.style.backgroundSize = 'cover';
     div.style.backgroundPosition = 'center';

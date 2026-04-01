@@ -3,7 +3,7 @@ import { getEffectiveValue } from '../engine/game.js';
 import { toggleMute, isMuted } from './sound.js';
 import { getUser } from '../multiplayer/auth.js';
 
-const ASSETS_PATH = 'assets/cards/';
+const ASSETS_PATH = '/assets/cards/';
 
 // Cache: only recalculate hand split when turn transitions TO player
 let lastPlayableSplit = null;
@@ -366,7 +366,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
-    img.src = 'assets/logo-red.png';
+    img.src = '/assets/logo-red.png';
     img.alt = 'Skorch';
     img.className = 'game-logo';
     img.style.cursor = 'pointer';
@@ -589,7 +589,7 @@ function createStatusBar(state) {
                     gaveLabel.textContent = 'Gave';
                     gaveLabel.style.cssText = 'color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;';
                     const gaveCard = el('div');
-                    gaveCard.style.cssText = `width:70px;height:98px;background:url(assets/cards/${nameToImage(swap.gave)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
+                    gaveCard.style.cssText = `width:70px;height:98px;background:url(/assets/cards/${nameToImage(swap.gave)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
                     gaveWrap.appendChild(gaveLabel);
                     gaveWrap.appendChild(gaveCard);
                     swapRow.appendChild(gaveWrap);
@@ -605,7 +605,7 @@ function createStatusBar(state) {
                 tookLabel.textContent = swap.gave ? 'Took' : 'Took from you';
                 tookLabel.style.cssText = 'color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;';
                 const tookCard = el('div');
-                tookCard.style.cssText = `width:70px;height:98px;background:url(assets/cards/${nameToImage(swap.took)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
+                tookCard.style.cssText = `width:70px;height:98px;background:url(/assets/cards/${nameToImage(swap.took)}) center/cover no-repeat;border-radius:6px;margin:0 auto;`;
                 tookWrap.appendChild(tookLabel);
                 tookWrap.appendChild(tookCard);
                 swapRow.appendChild(tookWrap);
