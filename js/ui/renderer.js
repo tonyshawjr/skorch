@@ -4,6 +4,9 @@ import { toggleMute, isMuted } from './sound.js';
 
 const ASSETS_PATH = 'assets/cards/';
 
+// Cache the last playable/unplayable split so we don't recalculate during opponent's turn
+let lastPlayableSplit = null;
+
 const SVG_SOUND = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>';
 const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
 
@@ -119,30 +122,53 @@ export function render(state, root, handlers) {
 
     const handScroll = el('div', 'mobile-hand-scroll');
 
-    // Separate playable from unplayable - only split on player's turn
+    // Separate playable from unplayable
+    // ONLY recalculate when it becomes player's turn to prevent visual glitching
     const isMyTurn = state.currentTurn === 'player' && !state.gameOver;
     const effectiveValue = getEffectiveValue(state);
-    const playable = [];
-    const unplayable = [];
-    state.player.hand.forEach((card, index) => {
-        if (!card) return;
-        // When it's not our turn, treat all cards as playable (no split, no glitch)
-        if (!isMyTurn) {
-            playable.push({ card, index });
-            return;
-        }
-        const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
-        if (isSpecial || state.discardPile.length === 0 ||
-            (card.type === 'attack' && card.value >= effectiveValue) ||
-            (state.discardPile.length > 0 && (
-                state.discardPile[state.discardPile.length - 1].type === 'demoter' ||
-                state.discardPile[state.discardPile.length - 1].type === 'skorch'
-            ))) {
+    let playable = [];
+    let unplayable = [];
+
+    if (isMyTurn) {
+        // Player's turn - calculate and cache the split
+        state.player.hand.forEach((card, index) => {
+            if (!card) return;
+            const isSpecial = card.isSpecial || (card.type && card.type !== 'attack');
+            if (isSpecial || state.discardPile.length === 0 ||
+                (card.type === 'attack' && card.value >= effectiveValue) ||
+                (state.discardPile.length > 0 && (
+                    state.discardPile[state.discardPile.length - 1].type === 'demoter' ||
+                    state.discardPile[state.discardPile.length - 1].type === 'skorch'
+                ))) {
             playable.push({ card, index });
         } else {
             unplayable.push({ card, index });
         }
     });
+        // Cache the split
+        lastPlayableSplit = { playable: playable.map(p => p.index), unplayable: unplayable.map(u => u.index) };
+    } else {
+        // Not player's turn - use cached split if available, otherwise show all
+        if (lastPlayableSplit) {
+            const pSet = new Set(lastPlayableSplit.playable);
+            state.player.hand.forEach((card, index) => {
+                if (!card) return;
+                // If hand has changed (different size), just show all
+                if (state.player.hand.length !== lastPlayableSplit.playable.length + lastPlayableSplit.unplayable.length) {
+                    playable.push({ card, index });
+                } else if (pSet.has(index)) {
+                    playable.push({ card, index });
+                } else {
+                    unplayable.push({ card, index });
+                }
+            });
+        } else {
+            state.player.hand.forEach((card, index) => {
+                if (!card) return;
+                playable.push({ card, index });
+            });
+        }
+    }
 
     // Sort playable
     playable.sort((a, b) => {
