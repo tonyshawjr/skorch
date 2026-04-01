@@ -106,12 +106,17 @@ async function onPlaySelected() {
 
     // Multiplayer: send to server instead of local engine
     if (multiplayerMode) {
-        // Check if playing Undead - need modal before sending
         const cardsToPlay = indexes.map(i => state.player.hand[i]).filter(Boolean);
-        const isUndead = cardsToPlay.length === 1 && cardsToPlay[0].type === 'undead';
+        const cardType = cardsToPlay.length > 0 ? cardsToPlay[0].type : null;
+
+        // Trigger announcement for special cards
+        if (cardType && cardType !== 'attack') {
+            announceSpecial(cardType, 'player', 1200, state);
+        }
+
+        const isUndead = cardsToPlay.length === 1 && cardType === 'undead';
 
         if (isUndead) {
-            // Send the play first (card goes to discard)
             mpPlayCards(indexes);
             // Then show modal for the swap
             setTimeout(() => {
@@ -450,6 +455,19 @@ async function onMultiplayer() {
         try {
             await connect({
                 onStateUpdate: (view) => {
+                    // Detect opponent special card plays
+                    const oldTopType = state.discardPile.length > 0 ? state.discardPile[state.discardPile.length - 1]?.type : null;
+                    const newTop = view.discardPile.length > 0 ? view.discardPile[view.discardPile.length - 1] : null;
+                    const newTopType = newTop?.type;
+                    const specialTypes = ['skorch', 'demoter', 'elude', 'undead'];
+                    if (newTopType && newTopType !== oldTopType && specialTypes.includes(newTopType)) {
+                        announceSpecial(newTopType, view.currentTurn === 'player' ? 'computer' : 'player', 1200, state);
+                    }
+                    // Detect Skorch (pile went from cards to empty)
+                    if (state.discardPile.length > 2 && view.discardPile.length === 0) {
+                        announceSpecial('skorch', 'computer', 1200, state);
+                    }
+
                     // Update state from server view
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
@@ -520,6 +538,17 @@ async function onMultiplayer() {
         try {
             await connect({
                 onStateUpdate: (view) => {
+                    // Detect opponent special card plays
+                    const oldTopType2 = state.discardPile.length > 0 ? state.discardPile[state.discardPile.length - 1]?.type : null;
+                    const newTop2 = view.discardPile.length > 0 ? view.discardPile[view.discardPile.length - 1] : null;
+                    const newTopType2 = newTop2?.type;
+                    if (newTopType2 && newTopType2 !== oldTopType2 && ['skorch','demoter','elude','undead'].includes(newTopType2)) {
+                        announceSpecial(newTopType2, view.currentTurn === 'player' ? 'computer' : 'player', 1200, state);
+                    }
+                    if (state.discardPile.length > 2 && view.discardPile.length === 0) {
+                        announceSpecial('skorch', 'computer', 1200, state);
+                    }
+
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
                     state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
