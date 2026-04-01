@@ -347,6 +347,36 @@ button { font-family: inherit; }
     border-color: var(--skorch-red);
 }
 
+/* Hamburger menu */
+.hamburger-btn {
+    background: none; border: none; color: white;
+    cursor: pointer; padding: 0.25rem; line-height: 0;
+}
+.mobile-drawer {
+    display: none;
+    position: fixed; inset: 0; z-index: 5000;
+    background: rgba(0,0,0,0.7);
+}
+.mobile-drawer.open { display: flex; justify-content: flex-end; }
+.mobile-drawer-content {
+    background: var(--skorch-darker);
+    width: 220px; height: 100%;
+    padding: 1.5rem 1rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    border-left: 1px solid rgba(255,255,255,0.1);
+}
+.drawer-item {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white; padding: 0.75rem 1rem;
+    border-radius: 0.5rem; font-size: 0.9rem;
+    font-weight: 500; cursor: pointer;
+    text-align: left; font-family: inherit;
+    transition: background 0.2s;
+}
+.drawer-item:hover { background: rgba(255,255,255,0.12); }
+.drawer-item-danger { color: var(--skorch-red); }
+
 /* Tablet and below: stack everything vertical */
 @media (max-width: 1024px) {
     .game-board {

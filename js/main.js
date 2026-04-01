@@ -84,6 +84,29 @@ async function onPlaySelected() {
 
     // Multiplayer: send to server instead of local engine
     if (multiplayerMode) {
+        // Check if playing Undead - need modal before sending
+        const cardsToPlay = indexes.map(i => state.player.hand[i]).filter(Boolean);
+        const isUndead = cardsToPlay.length === 1 && cardsToPlay[0].type === 'undead';
+
+        if (isUndead) {
+            // Send the play first (card goes to discard)
+            mpPlayCards(indexes);
+            // Then show modal for the swap
+            setTimeout(() => {
+                showUndeadModal(state,
+                    (myCard, theirCard) => {
+                        mpUndeadSwap(myCard, theirCard);
+                        isProcessing = false;
+                    },
+                    () => {
+                        // Can't skip undead but just in case
+                        isProcessing = false;
+                    }
+                );
+            }, 500); // Wait for state update from server
+            return;
+        }
+
         mpPlayCards(indexes);
         isProcessing = false;
         return;

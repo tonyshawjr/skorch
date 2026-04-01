@@ -83,23 +83,61 @@ function createHeader(state, onRestart, onMultiplayer) {
         : (state.currentTurn === 'player' ? 'Your Turn' : "Opponent's Turn");
     header.appendChild(indicator);
 
-    const actions = el('div', 'header-actions');
-    const muteBtn = el('button', 'btn-mute');
-    muteBtn.innerHTML = isMuted() ? SVG_MUTED : SVG_SOUND;
-    muteBtn.addEventListener('click', () => {
-        const nowMuted = toggleMute();
-        muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
-    });
-    actions.appendChild(muteBtn);
-    const mpBtn = el('button', 'btn-multiplayer');
-    mpBtn.textContent = 'Multiplayer';
-    mpBtn.addEventListener('click', onMultiplayer);
-    actions.appendChild(mpBtn);
-    const restartBtn = el('button', 'btn-restart');
-    restartBtn.textContent = 'Restart Game';
-    restartBtn.addEventListener('click', onRestart);
-    actions.appendChild(restartBtn);
-    header.appendChild(actions);
+    const isMobile = window.innerWidth <= 1024;
+
+    if (isMobile) {
+        // Hamburger menu for mobile
+        const hamburger = el('button', 'hamburger-btn');
+        hamburger.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+        header.appendChild(hamburger);
+
+        const drawer = el('div', 'mobile-drawer');
+        const drawerContent = el('div', 'mobile-drawer-content');
+
+        const muteBtn = el('button', 'drawer-item');
+        muteBtn.innerHTML = (isMuted() ? 'Unmute Sound' : 'Mute Sound');
+        muteBtn.addEventListener('click', () => {
+            const nowMuted = toggleMute();
+            muteBtn.textContent = nowMuted ? 'Unmute Sound' : 'Mute Sound';
+        });
+        drawerContent.appendChild(muteBtn);
+
+        const mpBtn = el('button', 'drawer-item');
+        mpBtn.textContent = 'Multiplayer';
+        mpBtn.addEventListener('click', () => { drawer.classList.remove('open'); onMultiplayer(); });
+        drawerContent.appendChild(mpBtn);
+
+        const restartBtn = el('button', 'drawer-item drawer-item-danger');
+        restartBtn.textContent = 'Restart Game';
+        restartBtn.addEventListener('click', () => { drawer.classList.remove('open'); onRestart(); });
+        drawerContent.appendChild(restartBtn);
+
+        drawer.appendChild(drawerContent);
+        drawer.addEventListener('click', (e) => { if (e.target === drawer) drawer.classList.remove('open'); });
+        header.appendChild(drawer);
+
+        hamburger.addEventListener('click', () => drawer.classList.toggle('open'));
+    } else {
+        // Desktop: normal actions row
+        const actions = el('div', 'header-actions');
+        const muteBtn = el('button', 'btn-mute');
+        muteBtn.innerHTML = isMuted() ? SVG_MUTED : SVG_SOUND;
+        muteBtn.addEventListener('click', () => {
+            const nowMuted = toggleMute();
+            muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
+        });
+        actions.appendChild(muteBtn);
+        const mpBtn = el('button', 'btn-multiplayer');
+        mpBtn.textContent = 'Multiplayer';
+        mpBtn.addEventListener('click', onMultiplayer);
+        actions.appendChild(mpBtn);
+        const restartBtn = el('button', 'btn-restart');
+        restartBtn.textContent = 'Restart Game';
+        restartBtn.addEventListener('click', onRestart);
+        actions.appendChild(restartBtn);
+        header.appendChild(actions);
+    }
+
     return header;
 }
 
