@@ -1409,9 +1409,11 @@ button { font-family: inherit; }
 }
 
 .chat-input-bar {
-    display: flex; gap: 0.5rem; padding: 0.75rem;
+    display: flex; gap: 0.5rem; padding: 0.5rem;
     border-top: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
 }
+.chat-send { flex-shrink: 0; }
 .chat-input {
     flex: 1; padding: 0.5rem 0.75rem;
     background: rgba(255,255,255,0.05);

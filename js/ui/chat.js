@@ -35,6 +35,13 @@ export function toggleChat() {
         unreadCount = 0;
         updateBadge();
         scrollToBottom();
+        // Auto-focus input on desktop
+        if (window.innerWidth > 1024) {
+            setTimeout(() => {
+                const input = chatDrawer?.querySelector('.chat-input');
+                if (input) input.focus();
+            }, 300);
+        }
     }
 }
 
