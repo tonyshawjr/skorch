@@ -30,7 +30,6 @@ export function showUndeadModal(state, onSwap, onCancel) {
         </div>
         <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">
             <button class="btn-play" id="swap-btn" disabled>Swap</button>
-            <button class="btn-pickup" id="cancel-btn">Skip</button>
         </div>
     `;
     overlay.appendChild(content);
@@ -78,10 +77,6 @@ export function showUndeadModal(state, onSwap, onCancel) {
     content.querySelector('#swap-btn').addEventListener('click', () => {
         document.body.removeChild(overlay);
         onSwap(selectedMy, selectedTheir);
-    });
-    content.querySelector('#cancel-btn').addEventListener('click', () => {
-        document.body.removeChild(overlay);
-        onCancel();
     });
 }
 
