@@ -175,9 +175,30 @@ export function executeUndeadSwap(state, who, myCard, theirCard) {
 
 export function executeUndeadTake(state, who, theirCard) {
     const opponent = who === 'player' ? 'computer' : 'player';
-    const card = removePrisonCard(state[opponent].prison, theirCard.row, theirCard.index);
-    if (card) state[who].hand.push(card);
-    return { success: true, message: `Took ${card?.name || 'a card'} from opponent's prison.` };
+    const takenCard = removePrisonCard(state[opponent].prison, theirCard.row, theirCard.index);
+    if (!takenCard) return { success: false, message: 'No card to take.' };
+
+    // Place taken card into an empty prison slot (front row first, then back)
+    const prison = state[who].prison;
+    let placed = false;
+    for (const row of ['front', 'back']) {
+        for (let i = 0; i < prison[row].length; i++) {
+            if (prison[row][i].card === null) {
+                prison[row][i].card = takenCard;
+                prison[row][i].faceUp = true; // You know what you took
+                placed = true;
+                break;
+            }
+        }
+        if (placed) break;
+    }
+
+    // If no empty prison slot, goes to hand as fallback
+    if (!placed) {
+        state[who].hand.push(takenCard);
+    }
+
+    return { success: true, message: `Took ${takenCard.name} from opponent's prison.` };
 }
 
 export function nextTurn(state) {
