@@ -5,8 +5,12 @@ import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
 import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat } from './ui/sound.js';
+import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected } from './multiplayer/client.js';
+import { showLobby } from './multiplayer/lobby.js';
+import { recordMatch, isLoggedIn } from './multiplayer/auth.js';
 
 const SAVE_KEY = 'skorch_game_state';
+let multiplayerMode = false;
 
 function saveState() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
@@ -49,7 +53,8 @@ function update() {
         onPlaySelected,
         onPickup,
         onRestart,
-        onPrisonClick
+        onPrisonClick,
+        onMultiplayer
     });
 
 }
@@ -344,6 +349,138 @@ function onRestart() {
     update();
     animateDeal();
     if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
+}
+
+// Multiplayer handler
+async function onMultiplayer() {
+    const lobby = showLobby(() => {
+        // Back to single player
+        multiplayerMode = false;
+        disconnect();
+    });
+
+    lobby.onCreateClick(async (username) => {
+        try {
+            await connect({
+                onStateUpdate: (view) => {
+                    // Update state from server view
+                    state.player.hand = view.myHand;
+                    state.player.prison = view.myPrison;
+                    state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                    state.computer.prison = view.opponentPrison;
+                    state.discardPile = view.discardPile;
+                    state.deck = new Array(view.deckCount).fill(null);
+                    state.currentTurn = view.currentTurn;
+                    state.gameOver = view.gameOver;
+                    state.winner = view.winner;
+                    state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    update();
+                },
+                onGameStart: (view) => {
+                    lobby.close();
+                    multiplayerMode = true;
+                    state = createGameState();
+                    state.player.hand = view.myHand;
+                    state.player.prison = view.myPrison;
+                    state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                    state.computer.prison = view.opponentPrison;
+                    state.discardPile = view.discardPile;
+                    state.deck = new Array(view.deckCount).fill(null);
+                    state.currentTurn = view.currentTurn;
+                    state.status = 'Game started!';
+                    update();
+                    animateDeal();
+                },
+                onGameOver: (data) => {
+                    const won = data.winner === 'player';
+                    state.gameOver = true;
+                    state.winner = data.winner;
+                    if (won) playVictory(); else playDefeat();
+                    showGameOver(data.winner, () => {
+                        requestRematch();
+                        state.status = 'Rematch requested...';
+                        update();
+                    });
+                },
+                onError: (msg) => lobby.showError(msg),
+                onOpponentLeft: () => {
+                    state.status = 'Opponent disconnected.';
+                    state.gameOver = true;
+                    update();
+                },
+                onRematchRequested: () => {
+                    state.status = 'Opponent wants a rematch!';
+                    update();
+                },
+                onRoomCreated: (data) => lobby.showWaiting(data.code),
+                onRoomJoined: () => {}
+            });
+            createRoom(username);
+        } catch (e) {
+            lobby.showError('Could not connect to server');
+        }
+    });
+
+    lobby.onJoinClick(async (username, code) => {
+        try {
+            await connect({
+                onStateUpdate: (view) => {
+                    state.player.hand = view.myHand;
+                    state.player.prison = view.myPrison;
+                    state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                    state.computer.prison = view.opponentPrison;
+                    state.discardPile = view.discardPile;
+                    state.deck = new Array(view.deckCount).fill(null);
+                    state.currentTurn = view.currentTurn;
+                    state.gameOver = view.gameOver;
+                    state.winner = view.winner;
+                    state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                    update();
+                },
+                onGameStart: (view) => {
+                    lobby.close();
+                    multiplayerMode = true;
+                    state = createGameState();
+                    state.player.hand = view.myHand;
+                    state.player.prison = view.myPrison;
+                    state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                    state.computer.prison = view.opponentPrison;
+                    state.discardPile = view.discardPile;
+                    state.deck = new Array(view.deckCount).fill(null);
+                    state.currentTurn = view.currentTurn;
+                    state.status = 'Game started!';
+                    update();
+                    animateDeal();
+                },
+                onGameOver: (data) => {
+                    const won = data.winner === 'computer'; // player2 is 'computer' in state
+                    state.gameOver = true;
+                    state.winner = data.winner;
+                    if (won) playVictory(); else playDefeat();
+                    showGameOver(won ? 'player' : 'computer', () => {
+                        requestRematch();
+                        state.status = 'Rematch requested...';
+                        update();
+                    });
+                },
+                onError: (msg) => lobby.showError(msg),
+                onOpponentLeft: () => {
+                    state.status = 'Opponent disconnected.';
+                    state.gameOver = true;
+                    update();
+                },
+                onRematchRequested: () => {
+                    state.status = 'Opponent wants a rematch!';
+                    update();
+                },
+                onRoomCreated: () => {},
+                onRoomJoined: () => lobby.showJoining()
+            });
+            joinRoom(code, username);
+        } catch (e) {
+            lobby.showError('Could not connect to server');
+        }
+    });
 }
 
 // Keyboard shortcuts
