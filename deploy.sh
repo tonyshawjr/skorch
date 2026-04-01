@@ -1,0 +1,36 @@
+#!/bin/bash
+# Skorch deployment script - NEVER deletes the database
+# Usage: bash deploy.sh
+
+HOST="u1045-zotpfpmgzcoh@ssh.skorchthegame.com"
+PORT="18765"
+REMOTE_PATH="~/www/play.skorchthegame.com/public_html"
+LOCAL_PATH="$(dirname "$0")"
+
+echo "=== Skorch Deploy ==="
+
+# 1. Backup database first
+echo "Backing up database..."
+mkdir -p "$LOCAL_PATH/server/php/db-backups"
+ssh -p $PORT $HOST "cat $REMOTE_PATH/server/php/db/skorch.db" > "$LOCAL_PATH/server/php/db-backups/skorch-$(date +%Y%m%d-%H%M%S).db"
+echo "Database backed up locally"
+
+# 2. Deploy frontend (CSS, JS, HTML) - safe to delete and replace
+echo "Deploying frontend..."
+ssh -p $PORT $HOST "rm -rf $REMOTE_PATH/css $REMOTE_PATH/js"
+scp -P $PORT -r "$LOCAL_PATH/css" "$LOCAL_PATH/js" "$LOCAL_PATH/index.html" $HOST:$REMOTE_PATH/
+
+# 3. Cache bypass for client.js
+ssh -p $PORT $HOST "cp $REMOTE_PATH/js/multiplayer/client.js $REMOTE_PATH/js/multiplayer/client2.js && sed -i 's|multiplayer/client.js|multiplayer/client2.js|g' $REMOTE_PATH/js/main.js"
+
+# 4. Deploy PHP API files ONLY (NOT the db folder)
+echo "Deploying PHP API..."
+ssh -p $PORT $HOST "mkdir -p $REMOTE_PATH/server/php/api $REMOTE_PATH/server/php/middleware $REMOTE_PATH/server/php/db"
+scp -P $PORT "$LOCAL_PATH/server/php/config.php" $HOST:$REMOTE_PATH/server/php/
+scp -P $PORT "$LOCAL_PATH/server/php/init.php" $HOST:$REMOTE_PATH/server/php/
+scp -P $PORT -r "$LOCAL_PATH/server/php/api/"* $HOST:$REMOTE_PATH/server/php/api/
+scp -P $PORT -r "$LOCAL_PATH/server/php/middleware/"* $HOST:$REMOTE_PATH/server/php/middleware/
+# Deploy .htaccess for db protection
+scp -P $PORT "$LOCAL_PATH/server/php/db/.htaccess" $HOST:$REMOTE_PATH/server/php/db/
+
+echo "=== Deploy complete ==="
