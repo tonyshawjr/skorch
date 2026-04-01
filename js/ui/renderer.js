@@ -197,6 +197,26 @@ export function render(state, root, handlers) {
     });
 
     handSection.appendChild(handScroll);
+
+    // Swipe up to play selected cards
+    let touchStartY = 0;
+    let touchStartX = 0;
+    handScroll.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    handScroll.addEventListener('touchend', (e) => {
+        const dy = touchStartY - e.changedTouches[0].clientY;
+        const dx = Math.abs(touchStartX - e.changedTouches[0].clientX);
+        // Upward flick: vertical movement > 60px, more vertical than horizontal
+        if (dy > 60 && dy > dx) {
+            const playBtn = document.getElementById('playSelectedBtn');
+            if (playBtn && !playBtn.disabled) {
+                playBtn.click();
+            }
+        }
+    }, { passive: true });
+
     root.appendChild(handSection);
 
     // Center if not scrollable, scroll to left if scrollable
