@@ -397,6 +397,21 @@ button { font-family: inherit; }
     box-shadow: 0 4px 8px rgba(227,30,36,0.3);
 }
 
+.mobile-pickup-card {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 75px; height: 105px;
+    border: 2px dashed rgba(255,255,255,0.25); border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    color: var(--skorch-yellow); font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    text-transform: uppercase; letter-spacing: 1px;
+    transition: all 0.2s;
+}
+.mobile-pickup-card:active {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--skorch-yellow);
+}
+
 .mobile-unplayable-badge {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);

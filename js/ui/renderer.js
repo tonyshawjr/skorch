@@ -104,6 +104,14 @@ export function render(state, root, handlers) {
         return 0;
     });
 
+    // No playable cards - show pickup card
+    if (playable.length === 0 && state.currentTurn === 'player' && !state.gameOver && state.discardPile.length > 0) {
+        const pickupCard = el('div', 'mobile-pickup-card');
+        pickupCard.textContent = 'Pick Up';
+        pickupCard.addEventListener('click', handlers.onPickup);
+        handScroll.appendChild(pickupCard);
+    }
+
     // Render playable cards
     playable.forEach(({ card, index }) => {
         const cardEl = createCardElement(card, true);
