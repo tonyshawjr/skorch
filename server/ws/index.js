@@ -6,15 +6,53 @@ const { createRoom, joinRoom, getRoom, removePlayer, listRooms } = require('./ga
 const { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, getEffectiveValue, isValidPlay, isValidStack, executeUndeadSwap, executeUndeadTake } = require('./game-engine');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: ["https://play.skorchthegame.com", "http://localhost:8080"] }));
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: ["https://play.skorchthegame.com", "http://localhost:8080"],
         methods: ["GET", "POST"]
     }
 });
+
+// --- Input validation helpers ---
+function validateString(val, maxLen = 100) {
+    return typeof val === 'string' && val.length <= maxLen;
+}
+function validateInt(val, min = 0, max = 100) {
+    return Number.isInteger(val) && val >= min && val <= max;
+}
+function validateIndexes(arr) {
+    if (!Array.isArray(arr)) return false;
+    if (arr.length === 0 || arr.length > 20) return false;
+    const seen = new Set();
+    for (const i of arr) {
+        if (!Number.isInteger(i) || i < 0 || i > 100) return false;
+        if (seen.has(i)) return false; // No duplicates
+        seen.add(i);
+    }
+    return true;
+}
+
+// --- Rate limiting ---
+const socketRates = new Map();
+function rateLimit(socketId, limit = 30) {
+    const now = Date.now();
+    if (!socketRates.has(socketId)) socketRates.set(socketId, []);
+    const times = socketRates.get(socketId).filter(t => now - t < 10000); // 10 sec window
+    times.push(now);
+    socketRates.set(socketId, times);
+    return times.length > limit; // true = rate limited
+}
+// Clean up periodically
+setInterval(() => {
+    for (const [id, times] of socketRates) {
+        if (times.length === 0 || Date.now() - times[times.length - 1] > 60000) {
+            socketRates.delete(id);
+        }
+    }
+}, 60000);
 
 // Health check
 app.get('/', (req, res) => {
@@ -26,6 +64,8 @@ io.on('connection', (socket) => {
 
     // Create a new game room
     socket.on('create-room', ({ username }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
+        if (!validateString(username, 20)) return;
         const room = createRoom(socket.id, username);
         socket.join(room.code);
         socket.emit('room-created', { code: room.code, playerId: 'player1' });
@@ -34,6 +74,8 @@ io.on('connection', (socket) => {
 
     // Join existing room
     socket.on('join-room', ({ code, username }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
+        if (!validateString(code, 4) || !validateString(username, 20)) return;
         const room = getRoom(code);
         if (!room) {
             socket.emit('error', { message: 'Room not found' });
@@ -65,6 +107,8 @@ io.on('connection', (socket) => {
 
     // Player makes a move
     socket.on('play-cards', ({ roomCode, indexes }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
+        if (!validateIndexes(indexes)) { socket.emit('error', { message: 'Invalid move' }); return; }
         const room = getRoom(roomCode);
         if (!room || !room.state) return;
 
@@ -101,6 +145,8 @@ io.on('connection', (socket) => {
 
     // Player picks up discard pile
     socket.on('pickup', ({ roomCode }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
+        if (!validateString(roomCode, 4)) return;
         const room = getRoom(roomCode);
         if (!room || !room.state) return;
 
@@ -120,6 +166,8 @@ io.on('connection', (socket) => {
 
     // Player plays from prison
     socket.on('play-prison', ({ roomCode, row, index }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
+        if (!['front','back'].includes(row) || !validateInt(index, 0, 4)) return;
         const room = getRoom(roomCode);
         if (!room || !room.state) return;
 
@@ -154,23 +202,30 @@ io.on('connection', (socket) => {
 
     // Undead swap
     socket.on('undead-swap', ({ roomCode, myCard, theirCard }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
         const room = getRoom(roomCode);
         if (!room || !room.state) return;
-
         const who = getPlayerRole(room, socket.id);
         if (!who) return;
-
-        if (myCard) {
-            executeUndeadSwap(room.state, who, myCard, theirCard);
-        } else {
-            executeUndeadTake(room.state, who, theirCard);
-        }
-
+        // SECURITY: Verify an Undead card was actually played (check discard pile top)
+        const topCard = room.state.discardPile[room.state.discardPile.length - 1];
+        if (!topCard || topCard.type !== 'undead') return; // No undead on pile
+        // Validate myCard and theirCard are objects with valid row/index
+        if (theirCard && (typeof theirCard.row !== 'string' || typeof theirCard.index !== 'number')) return;
+        if (myCard && (typeof myCard.row !== 'string' || typeof myCard.index !== 'number')) return;
+        if (theirCard && !['front', 'back'].includes(theirCard.row)) return;
+        if (myCard && !['front', 'back'].includes(myCard.row)) return;
+        if (theirCard && (theirCard.index < 0 || theirCard.index > 4)) return;
+        if (myCard && (myCard.index < 0 || myCard.index > 4)) return;
+        // Execute swap
+        if (myCard) { executeUndeadSwap(room.state, who, myCard, theirCard); }
+        else { executeUndeadTake(room.state, who, theirCard); }
         broadcastState(room);
     });
 
     // Rematch request
     socket.on('rematch', ({ roomCode }) => {
+        if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
         const room = getRoom(roomCode);
         if (!room) return;
 

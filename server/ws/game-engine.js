@@ -241,6 +241,8 @@ function processSpecialEffect(state, who, card) {
 }
 
 function playFromHand(state, who, handIndexes) {
+    // Deduplicate indexes to prevent card duplication exploit
+    handIndexes = [...new Set(handIndexes)];
     const player = state[who];
     const cards = handIndexes.map(i => player.hand[i]).filter(Boolean);
     if (cards.length === 0) return { success: false, message: 'No valid cards selected.' };
