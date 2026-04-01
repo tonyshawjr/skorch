@@ -8,59 +8,60 @@ export function showUndeadModal(state, onSwap, onCancel) {
     if (theirUnlocked.length === 0) { onCancel(); return; }
 
     const overlay = document.createElement('div');
-    overlay.className = 'modal';
-    const content = document.createElement('div');
-    content.className = 'modal-content';
-    content.innerHTML = `
-        <h3 class="modal-title">Undead Swap</h3>
-        <p style="color:#9ca3af;margin-bottom:1rem;">
-            ${myUnlocked.length > 0
-                ? 'Select one of YOUR cards to give, and one of THEIR cards to take.'
-                : 'You have no unlocked cards. Select one of THEIR cards to take.'}
-        </p>
-        <div class="modal-grid">
-            <div>
-                <h4 style="color:#9ca3af;margin-bottom:0.5rem;">Your Cards</h4>
-                <div class="modal-cards" id="my-cards"></div>
+    overlay.className = 'undead-overlay';
+    overlay.innerHTML = `
+        <div class="undead-modal">
+            <div class="undead-header">
+                <h3>Undead Swap</h3>
+                <p>${myUnlocked.length > 0
+                    ? 'Tap one of yours to give, one of theirs to take.'
+                    : 'Tap one of their cards to take.'}</p>
             </div>
-            <div>
-                <h4 style="color:#9ca3af;margin-bottom:0.5rem;">Their Cards</h4>
-                <div class="modal-cards" id="their-cards"></div>
+            <div class="undead-cards-scroll">
+                <div class="undead-columns">
+                    <div class="undead-column">
+                        <h4>Yours</h4>
+                        <div class="undead-card-list" id="my-cards"></div>
+                    </div>
+                    <div class="undead-column">
+                        <h4>Theirs</h4>
+                        <div class="undead-card-list" id="their-cards"></div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;">
-            <button class="btn-play" id="swap-btn" disabled>Swap</button>
+            <div class="undead-footer">
+                <button class="undead-swap-btn" id="swap-btn" disabled>Swap</button>
+            </div>
         </div>
     `;
-    overlay.appendChild(content);
+
     document.body.appendChild(overlay);
 
     let selectedMy = null;
     let selectedTheir = null;
 
-    const myContainer = content.querySelector('#my-cards');
+    const myContainer = overlay.querySelector('#my-cards');
     if (myUnlocked.length > 0) {
         myUnlocked.forEach(u => {
             const card = createModalCard(u.card, u.faceUp);
             card.addEventListener('click', () => {
-                myContainer.querySelectorAll('.sk-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
+                myContainer.querySelectorAll('.undead-card').forEach(c => c.classList.remove('picked'));
+                card.classList.add('picked');
                 selectedMy = { row: u.row, index: u.index };
                 updateBtn();
             });
             myContainer.appendChild(card);
         });
     } else {
-        myContainer.innerHTML = '<p style="color:#666;">No unlocked cards</p>';
+        myContainer.innerHTML = '<p style="color:#666;text-align:center;padding:1rem;">No unlocked cards</p>';
     }
 
-    const theirContainer = content.querySelector('#their-cards');
+    const theirContainer = overlay.querySelector('#their-cards');
     theirUnlocked.forEach(u => {
-        // Always show opponent cards as face-up so you can see what you're taking
         const card = createModalCard(u.card, u.faceUp);
         card.addEventListener('click', () => {
-            theirContainer.querySelectorAll('.sk-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
+            theirContainer.querySelectorAll('.undead-card').forEach(c => c.classList.remove('picked'));
+            card.classList.add('picked');
             selectedTheir = { row: u.row, index: u.index };
             updateBtn();
         });
@@ -68,29 +69,29 @@ export function showUndeadModal(state, onSwap, onCancel) {
     });
 
     function updateBtn() {
-        const btn = content.querySelector('#swap-btn');
+        const btn = overlay.querySelector('#swap-btn');
         const ready = selectedTheir && (selectedMy || myUnlocked.length === 0);
         btn.disabled = !ready;
-        btn.classList.toggle('active', ready);
+        if (ready) btn.classList.add('ready');
+        else btn.classList.remove('ready');
     }
 
-    content.querySelector('#swap-btn').addEventListener('click', () => {
-        document.body.removeChild(overlay);
+    overlay.querySelector('#swap-btn').addEventListener('click', () => {
+        overlay.remove();
         onSwap(selectedMy, selectedTheir);
     });
 }
 
 function createModalCard(card, faceUp = true) {
     const div = document.createElement('div');
+    div.className = 'undead-card';
     if (faceUp) {
-        div.className = 'sk-card sk-face-up';
         div.style.backgroundImage = `url('assets/cards/${getCardImage(card)}')`;
     } else {
-        div.className = 'sk-card sk-face-down';
         div.style.backgroundImage = `url('assets/cards/Card-Back.png')`;
     }
-    div.style.backgroundRepeat = 'no-repeat';
+    div.style.backgroundSize = 'cover';
     div.style.backgroundPosition = 'center';
-    div.style.cursor = 'pointer';
+    div.style.backgroundRepeat = 'no-repeat';
     return div;
 }
