@@ -620,17 +620,21 @@ function handleComputerUndead(state, thoughts) {
         }
     }
     if (bestTake && worstGive) {
+        // What the player sees: if the taken card was face-down, they don't know what it was
+        const tookDisplay = bestTake.faceUp ? bestTake.card.name : 'Unknown card';
+        const gaveDisplay = worstGive.faceUp ? worstGive.card.name : 'Unknown card';
         executeUndeadSwap(state, 'computer', { row: worstGive.row, index: worstGive.index }, { row: bestTake.row, index: bestTake.index });
-        const swapMsg = `Gave ${worstGive.card.name} → Took your ${bestTake.card.name}`;
-        thoughts.push(`Undead: ${swapMsg}`);
-        state._lastUndeadSwap = { gave: worstGive.card.name, took: bestTake.card.name, swapMsg };
+        const swapMsg = `Gave ${gaveDisplay} → Took your ${tookDisplay}`;
+        thoughts.push(`Undead: Gave ${worstGive.card.name} → Took ${bestTake.card.name}`);
+        state._lastUndeadSwap = { gave: gaveDisplay, took: tookDisplay, swapMsg };
     } else if (bestTake && myUnlocked.length === 0) {
+        const tookDisplay = bestTake.faceUp ? bestTake.card.name : 'Unknown card';
         const card = state.player.prison[bestTake.row][bestTake.index].card;
         state.player.prison[bestTake.row][bestTake.index].card = null;
         state.computer.hand.push(card);
-        const swapMsg = `Took your ${bestTake.card.name}`;
-        thoughts.push(`Undead: ${swapMsg}`);
-        state._lastUndeadSwap = { gave: null, took: bestTake.card.name, swapMsg };
+        const swapMsg = `Took your ${tookDisplay}`;
+        thoughts.push(`Undead: Took ${bestTake.card.name}`);
+        state._lastUndeadSwap = { gave: null, took: tookDisplay, swapMsg };
     } else {
         thoughts.push('Undead: no beneficial swap found.');
         state._lastUndeadSwap = null;
