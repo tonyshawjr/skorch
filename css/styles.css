@@ -756,6 +756,7 @@ button { font-family: inherit; }
 }
 .drawer-item:hover { background: rgba(255,255,255,0.12); }
 .drawer-item-danger { color: var(--skorch-red); }
+.drawer-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 0.5rem 0; }
 
 /* Tablet and below: stack everything vertical */
 @media (max-width: 1024px) {

@@ -336,6 +336,8 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
     img.src = 'assets/logo-red.png';
     img.alt = 'Skorch';
     img.className = 'game-logo';
+    img.style.cursor = 'pointer';
+    img.addEventListener('click', () => location.reload());
     logo.appendChild(img);
     header.appendChild(logo);
 
@@ -364,14 +366,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
         const drawer = el('div', 'mobile-drawer');
         const drawerContent = el('div', 'mobile-drawer-content');
 
-        const muteBtn = el('button', 'drawer-item');
-        muteBtn.innerHTML = (isMuted() ? 'Unmute Sound' : 'Mute Sound');
-        muteBtn.addEventListener('click', () => {
-            const nowMuted = toggleMute();
-            muteBtn.textContent = nowMuted ? 'Unmute Sound' : 'Mute Sound';
-        });
-        drawerContent.appendChild(muteBtn);
-
+        // 1. User section (top)
         const mobileUser = getUser();
         if (mobileUser) {
             const userItem = el('div', 'drawer-user');
@@ -381,13 +376,6 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
             profileBtn.textContent = 'Profile';
             profileBtn.addEventListener('click', () => { drawer.classList.remove('open'); if (onAccount) onAccount(); });
             drawerContent.appendChild(profileBtn);
-            const logoutBtn = el('button', 'drawer-item drawer-item-danger');
-            logoutBtn.textContent = 'Log Out';
-            logoutBtn.addEventListener('click', () => {
-                drawer.classList.remove('open');
-                import('../multiplayer/auth.js').then(m => m.logout().then(() => location.reload()));
-            });
-            drawerContent.appendChild(logoutBtn);
         } else {
             const loginBtn = el('button', 'drawer-item');
             loginBtn.textContent = 'Login / Sign Up';
@@ -395,15 +383,44 @@ function createHeader(state, onRestart, onMultiplayer, onAccount) {
             drawerContent.appendChild(loginBtn);
         }
 
+        // Divider
+        const divider1 = el('div', 'drawer-divider');
+        drawerContent.appendChild(divider1);
+
+        // 2. Game actions (middle)
+        const logoutBtn = mobileUser ? el('button', 'drawer-item drawer-item-danger') : null;
+        if (logoutBtn) {
+            logoutBtn.textContent = 'Log Out';
+            logoutBtn.addEventListener('click', () => {
+                drawer.classList.remove('open');
+                import('../multiplayer/auth.js').then(m => m.logout().then(() => location.reload()));
+            });
+        }
+
         const mpBtn = el('button', 'drawer-item');
         mpBtn.textContent = 'Multiplayer';
         mpBtn.addEventListener('click', () => { drawer.classList.remove('open'); onMultiplayer(); });
         drawerContent.appendChild(mpBtn);
 
-        const restartBtn = el('button', 'drawer-item drawer-item-danger');
+        const restartBtn = el('button', 'drawer-item');
         restartBtn.textContent = 'Restart Game';
         restartBtn.addEventListener('click', () => { drawer.classList.remove('open'); onRestart(); });
         drawerContent.appendChild(restartBtn);
+
+        // Divider
+        const divider2 = el('div', 'drawer-divider');
+        drawerContent.appendChild(divider2);
+
+        // 3. Settings (bottom)
+        const muteBtn = el('button', 'drawer-item');
+        muteBtn.innerHTML = (isMuted() ? 'Unmute Sound' : 'Mute Sound');
+        muteBtn.addEventListener('click', () => {
+            const nowMuted = toggleMute();
+            muteBtn.textContent = nowMuted ? 'Unmute Sound' : 'Mute Sound';
+        });
+        drawerContent.appendChild(muteBtn);
+
+        if (logoutBtn) drawerContent.appendChild(logoutBtn);
 
         drawer.appendChild(drawerContent);
         drawer.addEventListener('click', (e) => { if (e.target === drawer) drawer.classList.remove('open'); });

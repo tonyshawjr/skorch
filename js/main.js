@@ -647,8 +647,10 @@ document.addEventListener('touchend', (e) => {
 // Silently restore session if already logged in
 getProfile().catch(() => {});
 
-// Initial render
+// Initial render - restore session first, then render
 initSound();
-update();
-animateDeal();
-if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
+getProfile().catch(() => {}).finally(() => {
+    update();
+    animateDeal();
+    if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
+});
