@@ -214,8 +214,11 @@ function isValidStack(cards) {
     if (cards.length === 0) return false;
     if (cards.length === 1) return true;
     const first = cards[0];
-    if (first.type !== CardType.ATTACK) return false;
-    return cards.every(c => c.type === CardType.ATTACK && c.value === first.value);
+    if (first.type === CardType.SKORCH || first.type === CardType.SHIELD) return false;
+    if (first.type === CardType.ATTACK) {
+        return cards.every(c => c.type === CardType.ATTACK && c.value === first.value);
+    }
+    return cards.every(c => c.type === first.type);
 }
 
 function processSpecialEffect(state, who, card) {

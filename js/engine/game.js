@@ -70,9 +70,14 @@ export function isValidStack(cards) {
     if (cards.length === 0) return false;
     if (cards.length === 1) return true;
     const first = cards[0];
-    // Only attack cards can be stacked, and they must have the same value
-    if (first.type !== CardType.ATTACK) return false;
-    return cards.every(c => c.type === CardType.ATTACK && c.value === first.value);
+    // Skorch and Shield CANNOT be stacked
+    if (first.type === CardType.SKORCH || first.type === CardType.SHIELD) return false;
+    // Attack cards: must all be same value
+    if (first.type === CardType.ATTACK) {
+        return cards.every(c => c.type === CardType.ATTACK && c.value === first.value);
+    }
+    // Demoter, Elude, Undead: can stack multiples of same type
+    return cards.every(c => c.type === first.type);
 }
 
 export function playFromHand(state, who, handIndexes) {
