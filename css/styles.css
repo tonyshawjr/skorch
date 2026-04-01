@@ -577,3 +577,104 @@ button { font-family: inherit; }
 .announce-overlay.visible .flames-container ~ .announce-card {
     filter: drop-shadow(0 0 30px rgba(235,34,40,0.5));
 }
+
+/* ========== LOBBY ========== */
+.lobby-overlay {
+    position: fixed; inset: 0; z-index: 5000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0);
+    transition: background 300ms ease;
+}
+.lobby-overlay.visible { background: rgba(0,0,0,0.9); }
+
+.lobby-content {
+    background: var(--skorch-darker);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    max-width: 400px; width: 90%;
+    transform: scale(0.9); opacity: 0;
+    transition: transform 300ms ease, opacity 200ms ease;
+}
+.lobby-overlay.visible .lobby-content { transform: scale(1); opacity: 1; }
+
+.lobby-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.75rem; font-weight: 800;
+    color: white; text-align: center;
+    margin-bottom: 2rem; letter-spacing: 1px;
+}
+.lobby-section { margin-bottom: 1.5rem; }
+.lobby-section h3 {
+    font-size: 1rem; color: #9ca3af;
+    margin-bottom: 0.75rem; font-weight: 600;
+}
+.lobby-field { margin-bottom: 0.75rem; }
+.lobby-input {
+    width: 100%; padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.5rem; color: white;
+    font-size: 1rem; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+}
+.lobby-input:focus { border-color: var(--skorch-red); }
+.lobby-code-input {
+    text-transform: uppercase;
+    letter-spacing: 4px; text-align: center;
+    font-weight: 700; font-size: 1.25rem;
+}
+.lobby-btn {
+    width: 100%; padding: 0.75rem;
+    border: none; border-radius: 9999px;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+}
+.lobby-btn-primary { background: var(--skorch-red); color: white; }
+.lobby-btn-primary:hover { background: #c41a1f; }
+.lobby-btn-secondary { background: var(--skorch-blue); color: white; }
+.lobby-btn-secondary:hover { background: #2563eb; }
+.lobby-btn-back {
+    background: transparent; color: #6b7280;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-top: 1rem;
+}
+.lobby-btn-back:hover { color: white; border-color: rgba(255,255,255,0.3); }
+
+.lobby-divider {
+    text-align: center; color: #4b5563;
+    margin: 1.5rem 0; position: relative;
+}
+.lobby-divider::before {
+    content: ''; position: absolute;
+    left: 0; right: 0; top: 50%;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.lobby-divider span {
+    background: var(--skorch-darker);
+    padding: 0 1rem; position: relative;
+}
+
+.lobby-room-display { text-align: center; margin: 2rem 0; }
+.lobby-room-display p { color: #9ca3af; margin-bottom: 0.5rem; }
+.lobby-code {
+    font-size: 3rem; font-weight: 800;
+    color: var(--skorch-red); letter-spacing: 8px;
+    margin: 1rem 0;
+}
+.lobby-hint { font-size: 0.875rem; color: #6b7280; }
+.lobby-error {
+    background: rgba(235,34,40,0.15); border: 1px solid rgba(235,34,40,0.3);
+    color: #f87171; padding: 0.75rem; border-radius: 0.5rem;
+    margin-top: 1rem; text-align: center; font-size: 0.875rem;
+}
+
+/* ========== MULTIPLAYER BUTTON ========== */
+.btn-multiplayer {
+    background: var(--skorch-blue); color: white;
+    padding: 0.75rem 1.5rem; border-radius: 0.5rem;
+    border: none; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-multiplayer:hover { background: #2563eb; }

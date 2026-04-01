@@ -9,7 +9,7 @@ const SVG_MUTED = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 
 export function render(state, root, handlers) {
     root.innerHTML = '';
-    root.appendChild(createHeader(state, handlers.onRestart));
+    root.appendChild(createHeader(state, handlers.onRestart, handlers.onMultiplayer));
     const board = el('div', 'game-board');
     board.appendChild(createPlayerArea(state, handlers));
     board.appendChild(createComputerArea(state));
@@ -18,7 +18,7 @@ export function render(state, root, handlers) {
     root.appendChild(createStatusBar(state));
 }
 
-function createHeader(state, onRestart) {
+function createHeader(state, onRestart, onMultiplayer) {
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
     const img = document.createElement('img');
@@ -43,6 +43,10 @@ function createHeader(state, onRestart) {
         muteBtn.innerHTML = nowMuted ? SVG_MUTED : SVG_SOUND;
     });
     actions.appendChild(muteBtn);
+    const mpBtn = el('button', 'btn-multiplayer');
+    mpBtn.textContent = 'Multiplayer';
+    mpBtn.addEventListener('click', onMultiplayer);
+    actions.appendChild(mpBtn);
     const restartBtn = el('button', 'btn-restart');
     restartBtn.textContent = 'Restart Game';
     restartBtn.addEventListener('click', onRestart);
