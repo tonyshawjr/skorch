@@ -466,9 +466,7 @@ async function onMultiplayer() {
                         announceSpecial(newTopType, view.currentTurn === 'player' ? 'computer' : 'player', 1200, state);
                     }
                     // Detect Skorch (pile went from cards to empty)
-                    if (state.discardPile.length > 2 && view.discardPile.length === 0) {
-                        announceSpecial('skorch', 'computer', 1200, state);
-                    }
+                    // Don't auto-detect Skorch from pile going empty - it also happens on pickup
 
                     // Update state from server view
                     state.player.hand = view.myHand;
@@ -550,9 +548,7 @@ async function onMultiplayer() {
                     if (newTopType2 && newTopType2 !== oldTopType2 && ['skorch','demoter','elude','undead'].includes(newTopType2)) {
                         announceSpecial(newTopType2, view.currentTurn === 'player' ? 'computer' : 'player', 1200, state);
                     }
-                    if (state.discardPile.length > 2 && view.discardPile.length === 0) {
-                        announceSpecial('skorch', 'computer', 1200, state);
-                    }
+                    // Don't auto-detect Skorch from pile going empty - it also happens on pickup
 
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
