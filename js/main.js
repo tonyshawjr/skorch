@@ -4,6 +4,7 @@ import { render } from './ui/renderer.js';
 import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
+import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat } from './ui/sound.js';
 
 const SAVE_KEY = 'skorch_game_state';
 
@@ -107,6 +108,14 @@ async function onPlaySelected() {
     state.status = result.message;
 
     if (result.success && result.effect !== 'pickup') {
+        // Sound effects for successful plays
+        if (indexes.length > 1) playCardStack(); else playCardSnap();
+        if (result.effect === 'skorch') playSkorch();
+        else if (result.effect === 'shield') playShield();
+        else if (result.effect === 'demoter') playDemoter();
+        else if (result.effect === 'elude') playElude();
+        else if (result.effect === 'undead') playUndead();
+
         if (result.effect === 'undead') {
             update();
             showUndeadModal(state,
@@ -146,6 +155,7 @@ async function onPlaySelected() {
         if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
+            playVictory();
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -171,6 +181,7 @@ async function onPlaySelected() {
         isProcessing = false;
         computerTurnTimeout = setTimeout(doComputerTurn, 800);
     } else if (result.effect === 'pickup') {
+        playPickup();
         // AI Memory: invalid play caused pickup — player now has all pile cards
         if (state._aiMemory) {
             for (const c of pileBeforePlay) {
@@ -199,6 +210,7 @@ function onPickup() {
         }
     }
     pickupDiscardPile(state, 'player');
+    playPickup();
     drawCard(state, 'player');
     // AI Memory: player drew an unknown card
     if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
@@ -239,10 +251,12 @@ function onPrisonClick(row, index) {
     }
 
     if (result.success && result.effect !== 'pickup') {
+        playCardSnap();
         drawCard(state, 'player');
         if (state._aiMemory) state._aiMemory.unknownOpponentDraws++;
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
+            playVictory();
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -251,6 +265,7 @@ function onPrisonClick(row, index) {
         if (result.effect === 'shield') { state.status += ' You go again!'; update(); isProcessing = false; return; }
         nextTurn(state);
     } else if (result.effect === 'pickup') {
+        playPickup(); playError();
         nextTurn(state);
     }
     update();
@@ -264,6 +279,7 @@ async function doComputerTurn() {
     if (state.currentTurn !== 'computer') return; // Guard: don't play on player's turn
     const result = computerTurn(state);
     state.status = `Computer: ${result.message}`;
+    playCardSnap();
     // Brief pause so player can see what happened
     await wait(300);
     const discardList = state.discardPile.map(c => c.type === 'attack' ? `A${c.value}` : c.name.substring(0,3)).join(', ');
@@ -277,6 +293,7 @@ async function doComputerTurn() {
     console.log('---------------------');
 
     if (state.gameOver) {
+        playDefeat();
         update();
         showGameOver(state.winner, onRestart);
         return;
@@ -343,6 +360,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Initial render
+initSound();
 update();
 animateDeal();
 if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);

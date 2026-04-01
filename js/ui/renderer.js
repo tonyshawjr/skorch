@@ -1,5 +1,6 @@
 import { getCardImage, CardType } from '../engine/cards.js';
 import { getEffectiveValue } from '../engine/game.js';
+import { toggleMute, isMuted } from './sound.js';
 
 const ASSETS_PATH = 'assets/cards/';
 
@@ -32,6 +33,13 @@ function createHeader(state, onRestart) {
     header.appendChild(indicator);
 
     const actions = el('div', 'header-actions');
+    const muteBtn = el('button', 'btn-mute');
+    muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
+    muteBtn.addEventListener('click', () => {
+        const nowMuted = toggleMute();
+        muteBtn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
+    });
+    actions.appendChild(muteBtn);
     const restartBtn = el('button', 'btn-restart');
     restartBtn.textContent = 'Restart Game';
     restartBtn.addEventListener('click', onRestart);
