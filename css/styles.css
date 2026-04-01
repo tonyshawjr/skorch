@@ -320,97 +320,189 @@ button { font-family: inherit; }
 
 /* ========== RESPONSIVE ========== */
 
-/* Tablet: stack game board, inline center piles */
+/* Tablet and below: stack everything vertical */
 @media (max-width: 1024px) {
-    .game-board { grid-template-columns: 1fr; }
+    .game-board {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
     .area-box {
         height: auto;
         overflow: visible;
-        padding: 1rem;
+        padding: 0.75rem;
+        border-radius: 1rem;
     }
+
+    /* Center piles: inline, not floating */
     .center-piles {
         position: relative;
         left: auto; top: auto;
         transform: none;
         width: 100%;
         flex-direction: row;
+        align-items: center;
         justify-content: center;
         gap: 1rem;
         padding: 1rem;
+        border-radius: 1rem;
+        order: -1; /* Put discard/draw FIRST (before player areas) */
     }
+
+    /* Discard card stays large on tablet */
     .center-piles .sk-card {
-        width: var(--card-width);
-        height: var(--card-height);
+        width: 100px;
+        height: 140px;
+        background-size: cover;
     }
     .center-piles .sk-placeholder {
-        width: var(--card-width);
-        height: var(--card-height);
+        width: 100px;
+        height: 140px;
     }
+
     .center-buttons {
         flex-direction: column;
         gap: 0.5rem;
     }
     .center-buttons .btn-play,
     .center-buttons .btn-pickup {
-        padding: 0.5rem 1rem;
-        font-size: 0.75rem;
-        min-width: 120px;
+        padding: 0.6rem 1.25rem;
+        font-size: 0.85rem;
+        min-width: 140px;
     }
+
+    .area-box:first-child { order: 1; } /* Player hand goes last */
+    .area-box:last-of-type { order: 0; } /* Opponent stays middle */
 }
 
-/* Medium screens: scale cards down */
+/* Phone screens */
 @media (max-width: 768px) {
     :root {
-        --card-width: 60px;
-        --card-height: 84px;
-        --card-radius: 6px;
-        --card-overlap: -20px;
+        --card-width: 70px;
+        --card-height: 98px;
+        --card-radius: 7px;
+        --card-overlap: -25px;
     }
-    body { padding: 0.5rem; }
+
+    body { padding: 0.25rem; }
+
     .game-header {
-        margin: -0.5rem -0.5rem 1rem -0.5rem;
-        width: calc(100% + 1rem);
-        padding: 0.5rem 1rem;
-        flex-wrap: wrap;
+        margin: -0.25rem -0.25rem 0.5rem -0.25rem;
+        width: calc(100% + 0.5rem);
+        padding: 0.5rem 0.75rem;
         gap: 0.5rem;
     }
     .game-logo { height: 28px; }
     .btn-restart, .btn-multiplayer {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.7rem;
+        border-radius: 0.4rem;
     }
     .turn-indicator {
-        font-size: 0.75rem;
-        padding: 0.3rem 0.75rem;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.6rem;
     }
+    .room-code-badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Opponent area: compact */
+    .area-box {
+        padding: 0.5rem;
+    }
+    .area-box h3 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Computer hand: show fewer, tighter */
+    .computer-hand { padding-left: 15px; }
+    .computer-hand .sk-card { margin-left: -20px; }
+
+    /* Player hand: readable size, tighter overlap */
     .card-row .sk-card {
-        margin-left: -15px;
+        margin-left: var(--card-overlap);
     }
+
+    /* Prison: always 5 across, smaller */
+    .prison-row .card-container .sk-card {
+        width: 55px;
+        height: 77px;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+    .prison-row { gap: 0.5rem; }
+    .row-label { font-size: 0.6rem; min-width: 30px; }
+    .prison-label { font-size: 0.7rem; }
+
+    /* Unplayable stack tighter */
     .stacked-cards .sk-card {
-        margin-left: -40px;
+        margin-left: -35px;
     }
+
+    /* Center piles: row layout */
+    .center-piles {
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+    .center-piles .sk-card {
+        width: 80px;
+        height: 112px;
+    }
+    .center-piles .sk-placeholder {
+        width: 80px;
+        height: 112px;
+    }
+    .center-piles .pile-label {
+        font-size: 0.7rem;
+    }
+
+    .center-buttons .btn-play,
+    .center-buttons .btn-pickup {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        min-width: 110px;
+    }
+
+    /* Status bar */
     .status-message {
         font-size: 0.8rem;
         padding: 0.5rem 1rem;
     }
     .value-to-beat {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    /* Discard value badge */
+    .discard-value-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.4rem;
     }
 }
 
-/* Small screens: even smaller cards */
-@media (max-width: 480px) {
+/* Very small phones */
+@media (max-width: 400px) {
     :root {
-        --card-width: 50px;
-        --card-height: 70px;
-        --card-radius: 5px;
-        --card-overlap: -15px;
+        --card-width: 60px;
+        --card-height: 84px;
+        --card-overlap: -22px;
     }
+
     .prison-row .card-container .sk-card {
-        width: 45px;
-        height: 63px;
+        width: 48px;
+        height: 67px;
     }
+
+    .center-piles .sk-card,
+    .center-piles .sk-placeholder {
+        width: 70px;
+        height: 98px;
+    }
+
+    .computer-hand .sk-card { margin-left: -25px; }
+    .header-actions { gap: 0.25rem; }
 }
 
 /* ========== ANIMATIONS ========== */

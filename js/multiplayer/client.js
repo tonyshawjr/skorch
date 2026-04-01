@@ -28,7 +28,7 @@ export function connect(handlers) {
         // Load Socket.io from CDN
         if (!window.io) {
             const script = document.createElement('script');
-            script.src = 'js/lib/socket.io.min.js';
+            script.src = '/js/lib/socket.io.min.js';
             script.onload = () => { initSocket().then(resolve).catch(reject); };
             script.onerror = () => reject(new Error('Failed to load Socket.io'));
             document.head.appendChild(script);
