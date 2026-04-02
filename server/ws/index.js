@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const { createRoom, joinRoom, getRoom, removePlayer, listRooms } = require('./game-room');
+const { createRoom, joinRoom, getRoom, removePlayer, listRooms, listPublicRooms } = require('./game-room');
 const { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, getEffectiveValue, isValidPlay, isValidStack, executeUndeadSwap, executeUndeadTake } = require('./game-engine');
 
 const app = express();
@@ -59,17 +59,38 @@ app.get('/', (req, res) => {
     res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length });
 });
 
+// Public rooms endpoint
+app.get('/rooms', (req, res) => {
+    const rooms = listPublicRooms();
+    res.json(rooms.map(r => ({
+        code: r.code,
+        host: r.players[0]?.username || 'Player',
+        createdAt: r.createdAt
+    })));
+});
+
 io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
     // Create a new game room
-    socket.on('create-room', ({ username }) => {
+    socket.on('create-room', ({ username, isPublic }) => {
         if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
         if (!validateString(username, 20)) return;
-        const room = createRoom(socket.id, username);
+        const roomPublic = isPublic !== undefined ? !!isPublic : true;
+        const room = createRoom(socket.id, username, roomPublic);
         socket.join(room.code);
         socket.emit('room-created', { code: room.code, playerId: 'player1' });
-        console.log(`Room ${room.code} created by ${username}`);
+        console.log(`Room ${room.code} created by ${username} (${roomPublic ? 'public' : 'private'})`);
+    });
+
+    // List public rooms
+    socket.on('list-rooms', () => {
+        const rooms = listPublicRooms();
+        socket.emit('room-list', rooms.map(r => ({
+            code: r.code,
+            host: r.players[0]?.username || 'Player',
+            createdAt: r.createdAt
+        })));
     });
 
     // Join existing room

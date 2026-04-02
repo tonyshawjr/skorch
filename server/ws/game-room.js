@@ -14,13 +14,14 @@ function generateCode() {
     return code;
 }
 
-function createRoom(socketId, username) {
+function createRoom(socketId, username, isPublic = true) {
     const code = generateCode();
     const room = {
         code,
         players: [{ socketId, username }],
         state: null,
         started: false,
+        isPublic: isPublic,
         createdAt: Date.now(),
         rematchVotes: new Set()
     };
@@ -83,4 +84,10 @@ function listRooms() {
     }));
 }
 
-module.exports = { createRoom, joinRoom, getRoom, removePlayer, listRooms };
+function listPublicRooms() {
+    return Array.from(rooms.values()).filter(r =>
+        r.isPublic === true && r.started === false && r.players.length < 2
+    );
+}
+
+module.exports = { createRoom, joinRoom, getRoom, removePlayer, listRooms, listPublicRooms };
