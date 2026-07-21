@@ -1,11 +1,248 @@
-import { CardType } from '../engine/cards.js';
+import { CardType, createCard } from '../engine/cards.js';
 import { isValidPlay, getEffectiveValue, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, getPlayableHandCards, executeUndeadSwap } from '../engine/game.js';
 import { isPrisonCardAccessible, getUnlockedCards } from '../engine/prison.js';
 
-// ─── MAIN ENTRY ────────────────────────────────────────────────
+function getCapabilities(difficulty) {
+    switch (difficulty) {
+        case 'easy':
+            return { counting: false, memory: false, lookahead: false, blunderChance: 0.45, specialDepth: 'shallow', search: false };
+        case 'hard':
+            return { counting: true, memory: true, lookahead: true, blunderChance: 0, specialDepth: 'full', search: false };
+        case 'insane':
+            return { counting: true, memory: true, lookahead: false, blunderChance: 0, specialDepth: 'full', search: true };
+        case 'medium':
+        default:
+            return { counting: true, memory: false, lookahead: false, blunderChance: 0.12, specialDepth: 'full', search: false };
+    }
+}
+
+function clonePrison(prison) {
+    const out = { front: [], back: [] };
+    for (const row of ['front', 'back']) {
+        for (const slot of prison[row]) {
+            out[row].push({ card: slot.card ? { ...slot.card } : null, faceUp: slot.faceUp });
+        }
+    }
+    return out;
+}
+
+function cloneState(state) {
+    return {
+        deck: state.deck.map(c => ({ ...c })),
+        discardPile: state.discardPile.map(c => ({ ...c })),
+        burnedCards: (state.burnedCards || []).map(c => ({ ...c })),
+        player: { hand: state.player.hand.map(c => ({ ...c })), prison: clonePrison(state.player.prison) },
+        computer: { hand: state.computer.hand.map(c => ({ ...c })), prison: clonePrison(state.computer.prison) },
+        currentTurn: state.currentTurn,
+        turnCount: state.turnCount,
+        gameOver: state.gameOver,
+        winner: state.winner
+    };
+}
+
+function lookaheadAdjust(move, state) {
+    const clone = cloneState(state);
+    const result = playFromHand(clone, 'computer', move.indexes);
+    if (!result.success || result.effect === 'pickup') return 0;
+    if (checkWin(clone, 'computer')) return 14;
+    drawCard(clone, 'computer');
+    nextTurn(clone);
+    const valueLeft = getEffectiveValue(clone);
+    const counting = countCards(clone);
+    const beatProb = counting.canOpponentBeat(valueLeft > 0 ? valueLeft : 1);
+    return Math.round((0.5 - beatProb) * 10);
+}
+
+function prisonCount(prison) {
+    let n = 0;
+    for (const row of ['front', 'back']) {
+        for (const slot of prison[row]) if (slot.card) n++;
+    }
+    return n;
+}
+
+function evaluatePosition(state) {
+    const myBurden = state.computer.hand.length + prisonCount(state.computer.prison);
+    const oppBurden = state.player.hand.length + prisonCount(state.player.prison);
+    if (myBurden === 0) return 1000;
+    if (oppBurden === 0) return -1000;
+    let score = (oppBurden - myBurden) * 10;
+    const hand = state.computer.hand;
+    const attacks = hand.filter(c => c.type === CardType.ATTACK);
+    const lows = attacks.filter(c => c.value <= 3).length;
+    const highs = attacks.filter(c => c.value >= 8).length;
+    const specials = hand.filter(c => c.isSpecial).length;
+    score += specials * 3;
+    score += lows * 1.5;
+    if (attacks.length >= 3 && lows > 0 && highs > 0) score += 4;
+    if (attacks.length >= 3 && lows === 0) score -= 4;
+    return score;
+}
+
+function sampleOpponentHand(state, counting) {
+    const known = (state._aiMemory && state._aiMemory.knownOpponentCards ? state._aiMemory.knownOpponentCards : [])
+        .slice(0, state.player.hand.length)
+        .map(c => c.type === CardType.ATTACK ? createCard(CardType.ATTACK, c.value) : createCard(c.type, null));
+    const need = state.player.hand.length - known.length;
+    if (need <= 0) return known;
+    const pool = [];
+    const rem = { ...counting.remaining };
+    for (const c of known) {
+        const key = c.type === CardType.ATTACK ? c.value : c.type;
+        if (rem[key] > 0) rem[key]--;
+    }
+    for (const [k, n] of Object.entries(rem)) {
+        const isSpecial = ['elude', 'shield', 'demoter', 'skorch', 'undead'].includes(k);
+        for (let i = 0; i < n; i++) {
+            pool.push(isSpecial ? createCard(k, null) : createCard(CardType.ATTACK, parseInt(k, 10)));
+        }
+    }
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return known.concat(pool.slice(0, need));
+}
+
+function applyOpponentTurn(clone) {
+    const hand = clone.player.hand;
+    if (hand.length > 0) {
+        let best = -1, bestV = 999;
+        for (let i = 0; i < hand.length; i++) {
+            if (isValidPlay(hand[i], clone)) {
+                const v = hand[i].type === CardType.ATTACK ? hand[i].value : 40;
+                if (v < bestV) { bestV = v; best = i; }
+            }
+        }
+        if (best === -1) {
+            clone.player.hand = clone.player.hand.concat(clone.discardPile);
+            clone.discardPile = [];
+            drawCard(clone, 'player');
+            nextTurn(clone);
+            return;
+        }
+        const r = playFromHand(clone, 'player', [best]);
+        if (r.effect !== 'pickup' && r.effect !== 'shield') drawCard(clone, 'player');
+        if (r.effect !== 'shield') nextTurn(clone);
+        return;
+    }
+    let played = false;
+    for (const row of ['front', 'back']) {
+        for (let i = 0; i < clone.player.prison[row].length && !played; i++) {
+            if (isPrisonCardAccessible(clone.player.prison, row, i)) {
+                const slot = clone.player.prison[row][i];
+                if (slot.faceUp && !isValidPlay(slot.card, clone)) continue;
+                playFromPrison(clone, 'player', row, i);
+                played = true;
+            }
+        }
+        if (played) break;
+    }
+    if (!played) { pickupDiscardPile(clone, 'player'); }
+    drawCard(clone, 'player');
+    nextTurn(clone);
+}
+
+const SEARCH_CAPS = { counting: true, memory: true, lookahead: false, blunderChance: 0, specialDepth: 'full', search: false };
+
+function positionValue(state) {
+    const burden = evaluatePosition(state);
+    if (Math.abs(burden) >= 1000) return burden;
+    let greedy = 0;
+    if (state.computer.hand.length > 0 && !state.gameOver) {
+        const moves = generateMoves(state);
+        if (moves.length > 0) {
+            const counting = countCards(state);
+            let bestGreedy = -Infinity;
+            for (const m of moves) {
+                if (m.type === 'pickup') continue;
+                const s = scoreMove(m, state, counting, SEARCH_CAPS);
+                if (s > bestGreedy) bestGreedy = s;
+            }
+            if (bestGreedy > -Infinity) greedy = bestGreedy;
+        }
+    }
+    return greedy + burden * 0.6;
+}
+
+function searchScoreMove(move, state, counting, samples) {
+    let total = 0;
+    for (let s = 0; s < samples; s++) {
+        const clone = cloneState(state);
+        clone._aiMemory = state._aiMemory;
+        clone.player.hand = sampleOpponentHand(state, counting);
+        if (move.type === 'pickup') {
+            pickupDiscardPile(clone, 'computer');
+            drawCard(clone, 'computer');
+            nextTurn(clone);
+            applyOpponentTurn(clone);
+            total += positionValue(clone);
+            continue;
+        }
+        const r = playFromHand(clone, 'computer', move.indexes);
+        if (!r.success) { total += positionValue(clone); continue; }
+        if (checkWin(clone, 'computer')) { total += 1000; continue; }
+        if (r.effect !== 'pickup' && r.effect !== 'shield') drawCard(clone, 'computer');
+        if (r.effect === 'shield') {
+            total += positionValue(clone) + 6;
+            continue;
+        }
+        nextTurn(clone);
+        if (clone.currentTurn === 'player' && !clone.gameOver) applyOpponentTurn(clone);
+        total += positionValue(clone);
+    }
+    return total / samples;
+}
+
+function searchSelectMove(state, moves, counting, thoughts) {
+    const SAMPLES = 12;
+    let best = null, bestScore = -Infinity;
+    for (const move of moves) {
+        const sc = searchScoreMove(move, state, counting, SAMPLES);
+        move.score = Math.round(sc * 10) / 10;
+        thoughts.push(`  ${move.description}: eval ${move.score}`);
+        if (sc > bestScore) { bestScore = sc; best = move; }
+    }
+    thoughts.push(`→ Search best: ${best.description} (eval ${Math.round(bestScore * 10) / 10})`);
+    return best;
+}
+
+function sampleOneUnknown(counting) {
+    const pool = [];
+    for (const [k, n] of Object.entries(counting.remaining)) {
+        const isSpecial = ['elude', 'shield', 'demoter', 'skorch', 'undead'].includes(k);
+        for (let i = 0; i < n; i++) {
+            pool.push(isSpecial ? createCard(k, null) : createCard(CardType.ATTACK, parseInt(k, 10)));
+        }
+    }
+    if (pool.length === 0) return createCard(CardType.ATTACK, 5);
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function searchScorePrison(slot, state, counting, samples) {
+    let total = 0;
+    for (let s = 0; s < samples; s++) {
+        const clone = cloneState(state);
+        clone._aiMemory = state._aiMemory;
+        clone.player.hand = sampleOpponentHand(state, counting);
+        if (!slot.faceUp) {
+            clone.computer.prison[slot.row][slot.index].card = sampleOneUnknown(counting);
+        }
+        const r = playFromPrison(clone, 'computer', slot.row, slot.index);
+        if (!r.success) { total += positionValue(clone); continue; }
+        if (checkWin(clone, 'computer')) { total += 1000; continue; }
+        if (r.effect !== 'pickup' && r.effect !== 'shield') drawCard(clone, 'computer');
+        if (r.effect === 'shield') { total += positionValue(clone) + 6; continue; }
+        nextTurn(clone);
+        if (clone.currentTurn === 'player' && !clone.gameOver) applyOpponentTurn(clone);
+        total += positionValue(clone);
+    }
+    return total / samples;
+}
 
 export function computerTurn(state) {
     const thoughts = [];
+    const caps = getCapabilities(state.difficulty || 'medium');
     const hand = state.computer.hand;
     const handBefore = hand.map(c => c.type === 'attack' ? `Attack ${c.value}` : c.name).join(', ') || '(empty)';
     const effectiveValue = getEffectiveValue(state);
@@ -22,7 +259,7 @@ export function computerTurn(state) {
     }
 
     // Prison phase
-    if (hand.length === 0) return computerPlayPrison(state, thoughts);
+    if (hand.length === 0) return computerPlayPrison(state, thoughts, caps);
 
     // Generate every possible move
     const moves = generateMoves(state);
@@ -38,8 +275,23 @@ export function computerTurn(state) {
 
     // Score every move (with card counting data)
     const counting = countCards(state);
+
+    if (caps.search) {
+        const pick = searchSelectMove(state, moves, counting, thoughts);
+        if (pick.type === 'pickup') {
+            const result = pickupDiscardPile(state, 'computer');
+            drawCard(state, 'computer');
+            nextTurn(state);
+            return { message: result.message, thoughts: thoughts.join('\n'), handBefore };
+        }
+        const result = playFromHand(state, 'computer', pick.indexes);
+        handlePostPlay(state, result, thoughts);
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore };
+    }
+
+    const scoreCounting = caps.counting ? counting : null;
     for (const move of moves) {
-        move.score = scoreMove(move, state, counting);
+        move.score = scoreMove(move, state, scoreCounting, caps);
         thoughts.push(`  ${move.description}: ${move.score} pts`);
     }
 
@@ -54,7 +306,26 @@ export function computerTurn(state) {
 
     // Sort descending by score
     moves.sort((a, b) => b.score - a.score);
-    const best = moves[0];
+
+    if (caps.lookahead) {
+        const topN = moves.filter(m => m.type !== 'pickup').slice(0, 3);
+        for (const m of topN) {
+            const adj = lookaheadAdjust(m, state);
+            m.score += adj;
+            thoughts.push(`  [Lookahead] ${m.description}: ${adj >= 0 ? '+' : ''}${adj}`);
+        }
+        moves.sort((a, b) => b.score - a.score);
+    }
+
+    let best = moves[0];
+
+    if (caps.blunderChance > 0 && moves.length > 1 && Math.random() < caps.blunderChance) {
+        const nonPickup = moves.filter(m => m.type !== 'pickup');
+        if (nonPickup.length > 0) {
+            best = nonPickup[Math.floor(Math.random() * nonPickup.length)];
+            thoughts.push('[Blunder] Played a random legal move.');
+        }
+    }
     thoughts.push(`→ Best: ${best.description} (${best.score} pts)`);
 
     // Execute best move
@@ -213,7 +484,7 @@ function countCards(state) {
 
 // ─── SCORING ENGINE ────────────────────────────────────────────
 
-function scoreMove(move, state, counting) {
+function scoreMove(move, state, counting, caps) {
     // Pickup: heavily penalized, proportional to pile size
     if (move.type === 'pickup') {
         return -10 - state.discardPile.length * 3;
@@ -298,22 +569,31 @@ function scoreMove(move, state, counting) {
 
     // ── 4. Special card scoring ──
     if (card.isSpecial) {
-        score += scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting);
+        score += scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting, caps);
     }
 
     // ── 5. Strategic scoring based on opponent knowledge ──
-    score += scoreStrategic(move, state, counting);
+    score += scoreStrategic(move, state, counting, caps);
 
     return Math.round(score);
 }
 
-function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting) {
+function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, opponentCards, pileSize, counting, caps) {
     let score = 0;
 
     // Count what else we have
     const attacksInHand = hand.filter(c => c.type === CardType.ATTACK);
     const playableAttacks = attacksInHand.filter(c => c.value >= effectiveValue);
     const hasPlayableAttacks = playableAttacks.length > 0;
+
+    if (caps && caps.specialDepth === 'shallow') {
+        if (!hasPlayableAttacks) score += 8;
+        else score -= 6;
+        if (card.type === CardType.SKORCH && pileSize >= 5) score += 10;
+        if (card.type === CardType.SKORCH && pileSize < 2) score -= 10;
+        if (handSizeAfter === 0) score += 12;
+        return score;
+    }
 
     switch (card.type) {
         case CardType.SKORCH: {
@@ -465,13 +745,15 @@ function scoreSpecial(card, move, state, hand, handSizeAfter, effectiveValue, op
 
 // ─── STRATEGIC SCORING (OPPONENT AWARENESS) ───────────────────
 
-function scoreStrategic(move, state, counting) {
+function scoreStrategic(move, state, counting, caps) {
+    if (caps && !caps.memory && !caps.counting) return 0;
     const memory = state._aiMemory;
     if (!memory || !move.card) return 0;
 
     let score = 0;
     const card = move.card;
-    const knownCards = memory.knownOpponentCards || [];
+    const useMemory = !caps || caps.memory;
+    const knownCards = useMemory ? (memory.knownOpponentCards || []) : [];
     const effectiveValue = getEffectiveValue(state);
 
     // Only apply to attack cards
@@ -643,7 +925,7 @@ function handleComputerUndead(state, thoughts) {
 
 // ─── PRISON PLAYS ──────────────────────────────────────────────
 
-function computerPlayPrison(state, thoughts) {
+function computerPlayPrison(state, thoughts, caps) {
     thoughts.push('Hand empty - playing from prison.');
     const accessible = [];
     for (const row of ['front', 'back']) {
@@ -662,63 +944,80 @@ function computerPlayPrison(state, thoughts) {
         return { message: 'Computer picked up the pile.', thoughts: thoughts.join('\n'), handBefore: '(prison)' };
     }
 
-    // Face-up cards: score each one like hand plays
+    const effectiveValue = getEffectiveValue(state);
+    const pileSize = state.discardPile.length;
+
     const faceUpPlayable = accessible.filter(a => a.faceUp && isValidPlay(a.card, state));
-    if (faceUpPlayable.length > 0) {
-        const effectiveValue = getEffectiveValue(state);
-        const pileSize = state.discardPile.length;
-        const opponentCards = state.player.hand.length;
+    const faceDownAccessible = accessible.filter(a => !a.faceUp);
+
+    if (caps && caps.search) {
         const counting = countCards(state);
-
-        // Score each prison card
+        const SAMPLES = 10;
+        const searchCands = [];
         for (const a of faceUpPlayable) {
-            const card = a.card;
-            let score = 0;
-            if (card.type === CardType.ATTACK) {
-                // Play lowest valid attack (conservation)
-                score += (11 - card.value) * 2;
-                // Pressure
-                score += card.value;
-                // Don't overkill
-                if (effectiveValue > 0 && card.value - effectiveValue >= 5) {
-                    score -= (card.value - effectiveValue) * 2;
-                }
-            } else {
-                // Specials from prison: only play if attacks can't handle it
-                const hasAttacks = faceUpPlayable.some(p => p.card.type === CardType.ATTACK);
-                if (hasAttacks) {
-                    score -= 10; // Save specials, play attacks first
-                } else {
-                    score += 5;
-                }
-                // Skorch from prison is great if pile is big
-                if (card.type === CardType.SKORCH && pileSize >= 5) score += 15;
-                // Shield from prison - only if can't play attacks
-                if (card.type === CardType.SHIELD && hasAttacks) score -= 20;
-            }
-            // Add strategic scoring (same as hand plays)
-            score += scoreStrategic({ card: a.card, type: 'single', indexes: [] }, state, counting);
-            a.score = score;
-            thoughts.push(`  Prison ${card.name} (${a.row}[${a.index}]): ${score} pts`);
+            searchCands.push({ slot: a, score: searchScorePrison(a, state, counting, SAMPLES), label: a.card.name });
         }
-
-        faceUpPlayable.sort((a, b) => b.score - a.score);
-        const pick = faceUpPlayable[0];
-        thoughts.push(`→ Best prison: ${pick.card.name} (${pick.score} pts)`);
-        thoughts.push(`Playing prison card: ${pick.card.name} (${pick.row}[${pick.index}])`);
-        const result = playFromPrison(state, 'computer', pick.row, pick.index);
-        handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: '(prison - face up)' };
+        if (faceDownAccessible.length > 0) {
+            const a = faceDownAccessible[0];
+            searchCands.push({ slot: a, score: searchScorePrison(a, state, counting, SAMPLES), label: '(face-down flip)' });
+        }
+        if (searchCands.length > 0) {
+            searchCands.sort((x, y) => y.score - x.score);
+            const pick = searchCands[0];
+            for (const c of searchCands) thoughts.push(`  Prison ${c.label} (${c.slot.row}[${c.slot.index}]): eval ${Math.round(c.score * 10) / 10}`);
+            thoughts.push(`→ Search prison: ${pick.label}`);
+            const result = playFromPrison(state, 'computer', pick.slot.row, pick.slot.index);
+            handlePostPlay(state, result, thoughts);
+            return { message: result.message, thoughts: thoughts.join('\n'), handBefore: pick.slot.faceUp ? '(prison - face up)' : '(prison - face down)' };
+        }
     }
 
-    // Face-down cards: blind flip (no choice, just pick one)
+    const counting = caps && caps.counting ? countCards(state) : null;
+    const hasFaceUpAttacks = faceUpPlayable.some(p => p.card.type === CardType.ATTACK);
+    const candidates = [];
+
+    for (const a of faceUpPlayable) {
+        const card = a.card;
+        let score = 0;
+        if (card.type === CardType.ATTACK) {
+            score += (11 - card.value) * 2 + card.value;
+            if (effectiveValue > 0 && card.value - effectiveValue >= 5) score -= (card.value - effectiveValue) * 2;
+        } else {
+            score += hasFaceUpAttacks ? -10 : 3;
+            if (card.type === CardType.SKORCH) {
+                if (pileSize >= 5) score += 15;
+                else if (pileSize <= 2) score -= 30;
+            }
+            if (card.type === CardType.DEMOTER && effectiveValue === 0) score -= 30;
+            if (card.type === CardType.ELUDE && effectiveValue === 0) score -= 15;
+            if (card.type === CardType.SHIELD && hasFaceUpAttacks) score -= 20;
+        }
+        score += scoreStrategic({ card, type: 'single', indexes: [] }, state, counting, caps);
+        a.score = score;
+        candidates.push({ slot: a, score, label: card.name });
+        thoughts.push(`  Prison ${card.name} (${a.row}[${a.index}]): ${Math.round(score)} pts`);
+    }
+
     const faceDown = accessible.filter(a => !a.faceUp);
     if (faceDown.length > 0) {
-        const pick = faceDown[0];
-        thoughts.push(`Playing face-down prison card (risky): ${pick.row}[${pick.index}]`);
-        const result = playFromPrison(state, 'computer', pick.row, pick.index);
+        const a = faceDown[0];
+        let score = 7;
+        if (effectiveValue > 0) score -= effectiveValue * 1.2;
+        a.score = score;
+        candidates.push({ slot: a, score, label: '(face-down flip)' });
+        thoughts.push(`  Prison face-down flip (${a.row}[${a.index}]): ${Math.round(score)} pts`);
+    }
+
+    if (candidates.length > 0) {
+        candidates.sort((x, y) => y.score - x.score);
+        let pick = candidates[0];
+        if (caps && caps.blunderChance > 0 && candidates.length > 1 && Math.random() < caps.blunderChance) {
+            pick = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+        thoughts.push(`→ Best prison: ${pick.label} (${Math.round(pick.score)} pts)`);
+        const result = playFromPrison(state, 'computer', pick.slot.row, pick.slot.index);
         handlePostPlay(state, result, thoughts);
-        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: '(prison - face down)' };
+        return { message: result.message, thoughts: thoughts.join('\n'), handBefore: pick.slot.faceUp ? '(prison - face up)' : '(prison - face down)' };
     }
 
     // Fallback
