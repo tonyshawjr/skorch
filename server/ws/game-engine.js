@@ -183,18 +183,10 @@ function createGameState(isMultiplayer = false) {
 }
 
 function getEffectiveValue(state) {
-    if (state.discardPile.length === 0) return 0;
-    const topCard = state.discardPile[state.discardPile.length - 1];
-    if (topCard.type === CardType.DEMOTER) return 0;
-    if (topCard.type === CardType.SKORCH) return 0;
     for (let i = state.discardPile.length - 1; i >= 0; i--) {
-        if (state.discardPile[i].type === CardType.ATTACK) {
-            return state.discardPile[i].value;
-        }
-    }
-    if (state.discardPile.length > 0) {
-        const topCard = state.discardPile[state.discardPile.length - 1];
-        if (topCard.type === CardType.ELUDE) return 1;
+        const card = state.discardPile[i];
+        if (card.type === CardType.ATTACK) return card.value;
+        if (card.type === CardType.DEMOTER || card.type === CardType.SKORCH) return 0;
     }
     return 0;
 }
