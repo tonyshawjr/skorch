@@ -70,7 +70,7 @@ setInterval(() => {
 
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length });
+    res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length, build: 'sec1' });
 });
 
 // Public rooms endpoint
