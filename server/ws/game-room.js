@@ -50,7 +50,8 @@ function joinRoom(code, socketId, username) {
 }
 
 function getRoom(code) {
-    return rooms.get(code?.toUpperCase()) || null;
+    if (typeof code !== 'string') return null;
+    return rooms.get(code.toUpperCase()) || null;
 }
 
 function removePlayer(socketId) {
