@@ -22,7 +22,8 @@ CREATE TABLE users (
     city VARCHAR(255) NULL,
     state_region VARCHAR(255) NULL,
     country VARCHAR(255) NULL,
-    is_admin INT DEFAULT 0
+    is_admin INT DEFAULT 0,
+    token_version INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE stats (
@@ -224,6 +225,13 @@ CREATE TABLE clan_invites (
     FOREIGN KEY (clan_id) REFERENCES clans(id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (invited_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE rate_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bucket VARCHAR(190) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_bucket_time (bucket, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

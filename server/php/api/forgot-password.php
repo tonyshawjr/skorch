@@ -15,6 +15,9 @@ if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $db = getDB();
+if (rateLimitHit($db, 'forgot:ip:' . clientIp(), 5, 3600) || rateLimitHit($db, 'forgot:mail:' . strtolower($email), 3, 3600)) {
+    jsonResponse(['success' => true, 'message' => 'If an account with that email exists, a reset link has been sent.']);
+}
 
 
 $stmt = $db->prepare('SELECT id, username, email FROM users WHERE email = :email');
@@ -39,7 +42,7 @@ $stmt->execute();
 
 $stmt = $db->prepare('INSERT INTO password_resets (user_id, token, expires_at) VALUES (:uid, :token, :exp)');
 $stmt->bindValue(':uid', $user['id'], PDO::PARAM_INT);
-$stmt->bindValue(':token', $token, PDO::PARAM_STR);
+$stmt->bindValue(':token', hash('sha256', $token), PDO::PARAM_STR);
 $stmt->bindValue(':exp', $expiresAt, PDO::PARAM_STR);
 $stmt->execute();
 

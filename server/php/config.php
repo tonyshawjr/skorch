@@ -58,3 +58,26 @@ function getInput() {
     $input = json_decode(file_get_contents('php://input'), true);
     return $input ?: $_POST;
 }
+
+function clientIp() {
+    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ($xff !== '') {
+        $parts = explode(',', $xff);
+        $ip = trim($parts[0]);
+        if (filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+function rateLimitHit($db, $bucket, $max, $windowSeconds) {
+    $w = (int)$windowSeconds;
+    $db->exec("DELETE FROM rate_events WHERE created_at < (NOW() - INTERVAL 86400 SECOND)");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM rate_events WHERE bucket = :b AND created_at > (NOW() - INTERVAL $w SECOND)");
+    $stmt->bindValue(':b', $bucket, PDO::PARAM_STR);
+    $stmt->execute();
+    $count = (int)$stmt->fetchColumn();
+    $ins = $db->prepare("INSERT INTO rate_events (bucket) VALUES (:b)");
+    $ins->bindValue(':b', $bucket, PDO::PARAM_STR);
+    $ins->execute();
+    return $count >= $max;
+}

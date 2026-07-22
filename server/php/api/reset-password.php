@@ -17,7 +17,7 @@ if (strlen($password) < 6) { jsonResponse(['error' => 'Password must be 6+ chara
 $db = getDB();
 
 $stmt = $db->prepare("SELECT pr.id, pr.user_id FROM password_resets pr WHERE pr.token = :token AND pr.used = 0 AND pr.expires_at > NOW()");
-$stmt->bindValue(':token', $token, PDO::PARAM_STR);
+$stmt->bindValue(':token', hash('sha256', $token), PDO::PARAM_STR);
 $stmt->execute();
 $reset = $stmt->fetch();
 
@@ -26,7 +26,7 @@ if (!$reset) {
 }
 
 $hash = password_hash($password, PASSWORD_BCRYPT);
-$stmt = $db->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
+$stmt = $db->prepare('UPDATE users SET password_hash = :hash, token_version = token_version + 1 WHERE id = :id');
 $stmt->bindValue(':hash', $hash, PDO::PARAM_STR);
 $stmt->bindValue(':id', $reset['user_id'], PDO::PARAM_INT);
 $stmt->execute();

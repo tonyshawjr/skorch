@@ -1,4 +1,5 @@
 // js/ui/announcer.js - Game announcements and overlays
+import { esc } from './escape.js';
 
 const SPECIAL_CONFIG = {
     skorch: { text: 'SKORCH!', sub: 'Discard pile burned', color: '#b11f24' },
@@ -68,7 +69,7 @@ export function announceSpecial(type, who, duration = 1200, state = null) {
  */
 export function showGameOver(winner, onRestart, opponentName, opponentUsername) {
     const isWin = winner === 'player';
-    const opponent = opponentName || 'The computer';
+    const opponent = esc(opponentName || 'The computer');
     const loseSub = opponentName ? `${opponent} got the best of you.` : 'The computer got the best of you.';
     const isMultiplayer = !!opponentUsername;
 

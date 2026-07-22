@@ -49,6 +49,9 @@ if (!$city || !$stateRegion || !$country) {
 }
 
 $db = getDB();
+if (rateLimitHit($db, 'register:' . clientIp(), 5, 3600)) {
+    jsonResponse(['error' => 'Too many signups from your network. Please wait and try again.'], 429);
+}
 
 
 $stmt = $db->prepare('SELECT id FROM users WHERE username = :u OR email = :e');
@@ -81,7 +84,9 @@ $userId = (int)$db->lastInsertId();
 $db->exec("INSERT INTO stats (user_id) VALUES ($userId)");
 
 
+session_regenerate_id(true);
 $_SESSION['user_id'] = $userId;
 $_SESSION['username'] = $username;
+$_SESSION['token_version'] = 0;
 
 jsonResponse(['success' => true, 'user' => ['id' => $userId, 'username' => $username]]);

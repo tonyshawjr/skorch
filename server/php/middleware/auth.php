@@ -4,7 +4,12 @@ function requireAuth() {
         jsonResponse(['error' => 'Not authenticated'], 401);
     }
     $uid = (int)$_SESSION['user_id'];
-    getDB()->exec("UPDATE users SET last_active = NOW() WHERE id = $uid");
+    $db = getDB();
+    $tv = $db->query("SELECT token_version FROM users WHERE id = $uid")->fetchColumn();
+    if ($tv === false || (int)$tv !== (int)($_SESSION['token_version'] ?? -1)) {
+        jsonResponse(['error' => 'Not authenticated'], 401);
+    }
+    $db->exec("UPDATE users SET last_active = NOW() WHERE id = $uid");
     return $uid;
 }
 

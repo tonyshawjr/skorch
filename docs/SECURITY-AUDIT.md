@@ -4,6 +4,14 @@ Read-only multi-agent audit (9 dimensions, each finding adversarially verified).
 
 Status column: [ ] open. Fixes should be tested on staging before deploy, like all other changes.
 
+## Remediation status
+
+**Bucket 1 — FIXED & deployed (2026-07-22):** login/register/forgot-password rate limiting (per-IP + per-user/email); constant-time login (no user-enumeration timing); complete logout (session + cookie destroyed); password-reset tokens stored as SHA-256; password reset invalidates all other sessions (users.token_version checked in requireAuth); session fixation on register fixed (session_regenerate_id); XSS on the multiplayer game-over screen escaped (announcer.js). Security headers: verified the platform (CloudPanel front nginx) already sends real X-Frame-Options/nosniff/Referrer-Policy on every response, so the "meta-only" finding was moot; db-secrets.php now returns 404 (nginx deny). HSTS + a real CSP remain open (see LOW findings).
+
+**Bucket 1 (Node) — pending a Render deploy:** roomCode validation (DoS crash), rejoin token (seat hijack), undead-swap actor check, IP rate-limit.
+
+**Bucket 2 — CRITICAL, design stage:** server-authoritative match/Firestorm results. Requires an authenticated-identity layer on the multiplayer server first (players currently send an unverified username).
+
 ## [CRITICAL] match.php trusts 100% client-supplied match outcome/stats — unlimited XP/Elo/clan-point farming and unwitting-victim Elo griefing
 - **Area:** abuse  ·  **Location:** `server/php/api/match.php:15-26, 31-37, 55, 59-77, 86-98, 144`  ·  **Status:** [ ] open
 - **Exploit:** requireAuth() (line 12) only confirms a logged-in session; there is no game/match token tying the request to a real game observed by the Node/Socket.io server. won/game_type/skorches/opponent_name are read straight from the JSON body (lines 15-26) with only (bool)/(int) casts and no per-call bounds. An authenticated attacker POSTs directly to /api/match.php with {"won":true,"game_type":"pvp","opponent_name":"<victim>","skorches":999999}. Lines 31-37 resolve the victim's username to opponent_id with zero verification a match occurred. The Elo branch (line 59 requires game_type pvp/multiplayer AND opponentId — both satisfied) raises the attacker's Elo (line 72) and unconditionally decrements the victim's (line 77, floored only at 100), repeatable in a loop with no rate limit or idempotency key — driving any victim's ranked Elo to 100 without them ever playing. The same request credits the attacker's clan season_points/total_points on a win (lines 93-98) and grants XP including skorches*5 (line 144, here ~5,000,000) feeding awardXP (line 147) and stat-based badge thresholds via checkAndAwardBadges (line 151). total_skorches etc. are also inflated via string interpolation of the int-cast values (line 55).
