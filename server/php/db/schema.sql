@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS stats (
     total_skorches INTEGER DEFAULT 0,
     total_shields INTEGER DEFAULT 0,
     total_undeads INTEGER DEFAULT 0,
+    elo_rating INTEGER DEFAULT 1200,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 

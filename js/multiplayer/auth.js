@@ -7,6 +7,14 @@ let currentUser = null;
 export function getUser() { return currentUser; }
 export function isLoggedIn() { return currentUser !== null; }
 
+export function startHeartbeat() {
+    const ping = () => {
+        if (currentUser) fetch(`${API_URL}/ping.php`, { credentials: 'include' }).catch(() => {});
+    };
+    setInterval(ping, 90000);
+    ping();
+}
+
 export async function register(username, email, password) {
     const res = await fetch(`${API_URL}/register.php`, {
         method: 'POST',
@@ -43,7 +51,7 @@ export async function getProfile() {
     return data;
 }
 
-export async function recordMatch(won, gameType = 'ai', duration = 0, stats = {}) {
+export async function recordMatch(won, gameType = 'ai', duration = 0, stats = {}, opponentName = null, difficulty = null) {
     return fetch(`${API_URL}/match.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +61,9 @@ export async function recordMatch(won, gameType = 'ai', duration = 0, stats = {}
             duration,
             skorches: stats.skorches || 0,
             shields: stats.shields || 0,
-            undeads: stats.undeads || 0
+            undeads: stats.undeads || 0,
+            opponent_name: opponentName,
+            difficulty
         }),
         credentials: 'include'
     }).then(r => r.json()).catch(() => null);

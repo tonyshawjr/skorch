@@ -87,8 +87,8 @@ function initSocket() {
     });
 }
 
-export function createRoom(username) {
-    if (socket) socket.emit('create-room', { username });
+export function createRoom(username, isPublic) {
+    if (socket) socket.emit('create-room', { username, isPublic: isPublic !== undefined ? isPublic : true });
 }
 
 export function joinRoom(code, username) {

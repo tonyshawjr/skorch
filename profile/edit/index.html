@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Edit Profile - Skorch</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="/css/styles.css?v=4" rel="stylesheet">
+    <style>
+        .edit-page {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+        .edit-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+        }
+        .edit-header h1 {
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+        .edit-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .edit-section {
+            margin-bottom: 2.5rem;
+        }
+        .avatar-row {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .av-preview {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.75rem; font-weight: 800; color: white;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .av-preview img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .color-row {
+            display: flex; gap: 0.4rem; flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+        .cdot {
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 2px solid transparent; cursor: pointer;
+            transition: border-color 0.15s;
+            padding: 0; background: none;
+        }
+        .cdot:hover, .cdot.on { border-color: white; }
+        .cdot > span {
+            display: block; width: 100%; height: 100%; border-radius: 50%;
+        }
+        .row-2 {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+        }
+        .soc-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+        .soc-label {
+            width: 68px; flex-shrink: 0;
+            font-size: 0.8rem; color: var(--text-muted);
+        }
+        .soc-row .form-input { flex: 1; padding: 0.5rem 0.6rem; font-size: 0.9rem; }
+        .save-row {
+            display: flex; gap: 0.75rem; align-items: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+        #save-status { font-size: 0.85rem; margin-left: auto; }
+        .bio-counter { text-align: right; font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; }
+        .upload-btn {
+            background: none; border: 1px solid var(--border-default);
+            color: var(--text-secondary); padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-sm); font-size: 0.8rem;
+            cursor: pointer; font-family: inherit;
+            transition: border-color 0.15s;
+        }
+        .upload-btn:hover { border-color: var(--text-muted); }
+        .hint { font-size: 0.65rem; color: var(--text-muted); margin-top: 0.2rem; }
+        @media (max-width: 480px) {
+            .edit-page { padding: 1.5rem 1rem 3rem; }
+            .row-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav class="site-nav">
+        <div class="site-nav__inner">
+            <a href="/" class="site-nav__logo"><img src="/assets/logo.svg" alt="Skorch"></a>
+            <div class="site-nav__links">
+                <a href="/play" class="site-nav__link">Play</a>
+                <a href="/leaderboard" class="site-nav__link">Leaderboard</a>
+                <a href="/rules" class="site-nav__link">Rules</a>
+            </div>
+            <div class="site-nav__right">
+                <a href="/login" class="site-nav__auth-btn" id="nav-auth">Log In</a>
+                <button class="site-nav__hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+        <div class="site-nav__mobile" id="mobile-menu">
+            <a href="/play" class="site-nav__mobile-link">Play</a>
+            <a href="/leaderboard" class="site-nav__mobile-link">Leaderboard</a>
+            <a href="/rules" class="site-nav__mobile-link">Rules</a>
+        </div>
+    </nav>
+    <div class="site-nav__overlay" id="nav-overlay"></div>
+
+    <div class="edit-page" id="edit-root">
+        <div class="shimmer" style="width:180px;height:1.5rem;margin-bottom:2rem;"></div>
+        <div class="shimmer" style="height:80px;margin-bottom:1rem;"></div>
+        <div class="shimmer" style="height:120px;"></div>
+    </div>
+
+    <script src="/js/site.js?v=5"></script>
+    <script>
+    (async function() {
+        var res = await fetch('/server/php/api/profile.php', { credentials: 'include' });
+        if (!res.ok) { window.location.href = '/login?return=/profile/edit'; return; }
+        var p = await res.json();
+        if (p.error) { window.location.href = '/login?return=/profile/edit'; return; }
+
+        var sl = p.social_links || {};
+        if (typeof sl === 'string') sl = JSON.parse(sl) || {};
+        var ac = p.avatar_color || '#b11f24';
+        var au = p.avatar_url || null;
+        var ini = (p.display_name || p.username).charAt(0).toUpperCase();
+        var colors = ['#b11f24','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+        var regions = ['','NA-East','NA-West','EU-West','EU-East','Asia','Oceania','South America','Africa','Middle East'];
+        var pstyles = ['','Competitive','Casual','Just for Fun'];
+        var esc = function(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
+
+        document.getElementById('edit-root').innerHTML =
+            '<div class="edit-header"><h1>Edit Profile</h1><a href="/profile" class="btn btn-ghost btn-sm">Back to Profile</a></div>' +
+
+            '<div class="edit-section">' +
+                '<div class="edit-section-label">Avatar</div>' +
+                '<div class="avatar-row">' +
+                    '<div class="av-preview" id="av-prev" style="background:' + ac + ';">' + (au ? '<img src="' + esc(au) + '">' : ini) + '</div>' +
+                    '<div><label class="upload-btn" for="av-file">Upload Photo</label><input type="file" id="av-file" accept="image/*" style="display:none;"><div class="hint">Max 2MB</div></div>' +
+                '</div>' +
+                '<div class="color-row" id="colors">' + colors.map(function(c) {
+                    return '<button class="cdot' + (c===ac?' on':'') + '" data-c="' + c + '"><span style="background:' + c + ';"></span></button>';
+                }).join('') + '</div>' +
+            '</div>' +
+
+            '<div class="edit-section">' +
+                '<div class="edit-section-label">Personal Info</div>' +
+                '<div class="row-2">' +
+                    '<div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="f-first" value="' + esc(p.first_name) + '" placeholder="First name" maxlength="50"></div>' +
+                    '<div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="f-last" value="' + esc(p.last_name) + '" placeholder="Last name" maxlength="50"></div>' +
+                '</div>' +
+                '<div class="form-group" style="max-width:200px;"><label class="form-label">Birthday</label><input class="form-input" type="date" id="f-bday" value="' + esc(p.birthday) + '"></div>' +
+            '</div>' +
+
+            '<div class="edit-section">' +
+                '<div class="edit-section-label">Location</div>' +
+                '<div class="row-2">' +
+                    '<div class="form-group"><label class="form-label">City</label><input class="form-input" id="f-city" value="' + esc(p.city) + '" placeholder="City" maxlength="100"></div>' +
+                    '<div class="form-group"><label class="form-label">State / Region</label><input class="form-input" id="f-state" value="' + esc(p.state_region) + '" placeholder="State" maxlength="100"></div>' +
+                '</div>' +
+                '<div class="form-group" style="max-width:200px;"><label class="form-label">Country</label><input class="form-input" id="f-country" value="' + esc(p.country || 'US') + '" placeholder="Country" maxlength="100"></div>' +
+            '</div>' +
+
+            '<div class="edit-section">' +
+                '<div class="edit-section-label">About You</div>' +
+                '<div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="f-bio" rows="3" maxlength="200" placeholder="What\'s your Skorch story?">' + esc(p.bio) + '</textarea><div class="bio-counter"><span id="bc">' + (p.bio||'').length + '</span>/200</div></div>' +
+                '<div class="row-2">' +
+                    '<div class="form-group"><label class="form-label">Region</label><select class="form-input" id="f-region">' + regions.map(function(r) { return '<option value="' + r + '"' + (r===(p.region||'')?'selected':'') + '>' + (r||'Select...') + '</option>'; }).join('') + '</select></div>' +
+                    '<div class="form-group"><label class="form-label">Play Style</label><select class="form-input" id="f-style">' + pstyles.map(function(s) { return '<option value="' + s + '"' + (s===(p.play_style||'')?'selected':'') + '>' + (s||'Select...') + '</option>'; }).join('') + '</select></div>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="edit-section">' +
+                '<div class="edit-section-label">Socials</div>' +
+                '<div class="soc-row"><span class="soc-label">YouTube</span><input class="form-input" id="s-youtube" value="' + esc(sl.youtube) + '" placeholder="channel"></div>' +
+                '<div class="soc-row"><span class="soc-label">Twitch</span><input class="form-input" id="s-twitch" value="' + esc(sl.twitch) + '" placeholder="username"></div>' +
+                '<div class="soc-row"><span class="soc-label">Instagram</span><input class="form-input" id="s-instagram" value="' + esc(sl.instagram) + '" placeholder="username"></div>' +
+                '<div class="soc-row"><span class="soc-label">Discord</span><input class="form-input" id="s-discord" value="' + esc(sl.discord) + '" placeholder="username"></div>' +
+                '<div class="soc-row"><span class="soc-label">X / Twitter</span><input class="form-input" id="s-twitter" value="' + esc(sl.twitter) + '" placeholder="handle"></div>' +
+                '<div class="soc-row"><span class="soc-label">TikTok</span><input class="form-input" id="s-tiktok" value="' + esc(sl.tiktok) + '" placeholder="username"></div>' +
+            '</div>' +
+
+            '<div class="save-row"><button class="btn btn-primary" id="save-btn">Save Changes</button><a href="/profile" class="btn btn-ghost">Cancel</a><span id="save-status"></span></div>';
+
+        // Bio counter
+        document.getElementById('f-bio').addEventListener('input', function() { document.getElementById('bc').textContent = this.value.length; });
+
+        // Colors
+        var selColor = ac;
+        document.querySelectorAll('.cdot').forEach(function(d) {
+            d.addEventListener('click', function() {
+                document.querySelectorAll('.cdot').forEach(function(x) { x.classList.remove('on'); });
+                d.classList.add('on');
+                selColor = d.dataset.c;
+                var prev = document.getElementById('av-prev');
+                if (!prev.querySelector('img')) prev.style.background = selColor;
+            });
+        });
+
+        // Avatar upload
+        var pendingFile = null;
+        document.getElementById('av-file').addEventListener('change', function() {
+            var f = this.files[0];
+            if (!f) return;
+            if (f.size > 2*1024*1024) { document.getElementById('save-status').textContent = 'Too large'; return; }
+            pendingFile = f;
+            var r = new FileReader();
+            r.onload = function(e) { document.getElementById('av-prev').innerHTML = '<img src="' + e.target.result + '">'; };
+            r.readAsDataURL(f);
+        });
+
+        // Save
+        document.getElementById('save-btn').addEventListener('click', async function() {
+            var st = document.getElementById('save-status');
+            st.textContent = 'Saving...'; st.style.color = 'var(--text-muted)';
+            this.disabled = true;
+
+            if (pendingFile) {
+                var fd = new FormData(); fd.append('avatar', pendingFile);
+                var ar = await fetch('/server/php/api/upload-avatar.php', { method:'POST', credentials:'include', body:fd });
+                var ad = await ar.json();
+                if (!ad.success) { st.textContent = ad.error||'Upload failed'; st.style.color='var(--danger)'; this.disabled=false; return; }
+            }
+
+            var soc = {};
+            ['youtube','twitch','instagram','discord','twitter','tiktok'].forEach(function(x) {
+                var v = document.getElementById('s-'+x).value.trim(); if (v) soc[x] = v;
+            });
+
+            var firstName = document.getElementById('f-first').value.trim();
+            var lastName = document.getElementById('f-last').value.trim();
+            var displayName = firstName && lastName ? firstName + ' ' + lastName : (firstName || lastName || '');
+
+            var ur = await fetch('/server/php/api/update-profile.php', {
+                method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    display_name: displayName,
+                    bio: document.getElementById('f-bio').value.trim(),
+                    avatar_color: selColor,
+                    region: document.getElementById('f-region').value,
+                    play_style: document.getElementById('f-style').value,
+                    birthday: document.getElementById('f-bday').value || null,
+                    city: document.getElementById('f-city').value.trim(),
+                    state_region: document.getElementById('f-state').value.trim(),
+                    country: document.getElementById('f-country').value.trim(),
+                    social_links: soc
+                })
+            });
+            var ud = await ur.json();
+            if (ud.success) { window.location.href = '/profile'; }
+            else { st.textContent='Failed'; st.style.color='var(--danger)'; this.disabled=false; }
+        });
+    })();
+    </script>
+</body>
+</html>

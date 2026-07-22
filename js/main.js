@@ -10,10 +10,25 @@ import { initChat, addMessage, destroyChat } from './ui/chat.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { showAccountModal } from './ui/account.js';
 import { showLeaderboard } from './ui/leaderboard.js';
-import { recordMatch, isLoggedIn, getProfile } from './multiplayer/auth.js';
+import { recordMatch, isLoggedIn, getProfile, startHeartbeat } from './multiplayer/auth.js';
 
 const SAVE_KEY = 'skorch_game_state';
+const DIFFICULTY_KEY = 'skorch_ai_difficulty';
 let multiplayerMode = false;
+
+const DIFFICULTIES = ['easy', 'medium', 'hard', 'insane'];
+
+function getDifficulty() {
+    try {
+        const d = localStorage.getItem(DIFFICULTY_KEY);
+        if (DIFFICULTIES.includes(d)) return d;
+    } catch(e) {}
+    return 'medium';
+}
+
+function setDifficulty(d) {
+    try { localStorage.setItem(DIFFICULTY_KEY, d); } catch(e) {}
+}
 
 function saveState() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
@@ -27,10 +42,20 @@ function loadState() {
     return null;
 }
 
-let state = loadState() || createGameState();
+let state = loadState() || createGameState(getDifficulty());
+if (!state.difficulty) state.difficulty = getDifficulty();
+// Clear stale multiplayer data from localStorage state
+delete state._roomCode;
+delete state._myName;
+delete state._opponentName;
 let selectedIndexes = new Set();
 let isProcessing = false;
 let computerTurnTimeout = null;
+let _firestormMatch = null;
+function reportFirestorm(won) {
+    if (!_firestormMatch) return;
+    fetch('/server/php/api/firestorm.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'report', firestorm_id: _firestormMatch.id, seed: _firestormMatch.seed, won: won }) }).catch(() => {});
+}
 const root = document.getElementById('game-root');
 
 function logHand(who) {
@@ -218,7 +243,7 @@ async function onPlaySelected() {
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             playVictory();
-            recordMatch(true, multiplayerMode ? 'pvp' : 'ai').catch(() => {});
+            recordMatch(true, multiplayerMode ? 'pvp' : 'ai', 0, {}, null, state.difficulty).catch(() => {});
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -297,7 +322,28 @@ function onPrisonClick(row, index) {
     isProcessing = true;
 
     if (multiplayerMode) {
+        // Check if the prison card is an undead
+        const prisonSlot = state.player.prison[row][index];
+        const isUndead = prisonSlot?.card?.type === 'undead';
+
         mpPlayPrison(row, index);
+
+        if (isUndead) {
+            // Show swap modal after server processes the play
+            setTimeout(() => {
+                showUndeadModal(state,
+                    (myCard, theirCard) => {
+                        mpUndeadSwap(myCard, theirCard);
+                        isProcessing = false;
+                    },
+                    () => {
+                        isProcessing = false;
+                    }
+                );
+            }, 500);
+            return;
+        }
+
         isProcessing = false;
         return;
     }
@@ -334,7 +380,7 @@ function onPrisonClick(row, index) {
         if (checkWin(state, 'player')) {
             state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
             playVictory();
-            recordMatch(true, multiplayerMode ? 'pvp' : 'ai').catch(() => {});
+            recordMatch(true, multiplayerMode ? 'pvp' : 'ai', 0, {}, null, state.difficulty).catch(() => {});
             update();
             showGameOver('player', onRestart);
             isProcessing = false;
@@ -344,6 +390,37 @@ function onPrisonClick(row, index) {
         if (['skorch', 'shield', 'demoter', 'elude', 'undead'].includes(result.effect)) {
             update();
             announceSpecial(result.effect, 'player', 1200, state).then(() => {
+                if (result.effect === 'undead') {
+                    update();
+                    showUndeadModal(state,
+                        (myCard, theirCard) => {
+                            if (myCard) executeUndeadSwap(state, 'player', myCard, theirCard);
+                            else executeUndeadTake(state, 'player', theirCard);
+                            state.status = 'Undead swap complete!';
+                            if (checkWin(state, 'player')) {
+                                state.gameOver = true; state.winner = 'player'; state.status = 'You win!';
+                                playVictory();
+                                recordMatch(true, multiplayerMode ? 'pvp' : 'ai', 0, {}, null, state.difficulty).catch(() => {});
+                                update();
+                                showGameOver('player', onRestart);
+                                isProcessing = false;
+                                return;
+                            }
+                            nextTurn(state);
+                            update();
+                            isProcessing = false;
+                            if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 1200);
+                        },
+                        () => {
+                            state.status = 'Undead - no swap made.';
+                            nextTurn(state);
+                            update();
+                            isProcessing = false;
+                            if (state.currentTurn === 'computer' && !state.gameOver) computerTurnTimeout = setTimeout(doComputerTurn, 1200);
+                        }
+                    );
+                    return;
+                }
                 if (result.effect === 'shield') { state.status += ' You go again!'; update(); isProcessing = false; return; }
                 nextTurn(state);
                 update();
@@ -383,7 +460,7 @@ async function doComputerTurn() {
 
     if (state.gameOver) {
         playDefeat();
-        recordMatch(false, 'ai').catch(() => {});
+        recordMatch(false, 'ai', 0, {}, null, state.difficulty).catch(() => {});
         update();
         showGameOver(state.winner, onRestart);
         return;
@@ -432,12 +509,13 @@ async function animateDeal() {
     });
 }
 
-function onRestart() {
+function onRestart(difficulty) {
     if (computerTurnTimeout) clearTimeout(computerTurnTimeout);
     isProcessing = false;
+    if (DIFFICULTIES.includes(difficulty)) setDifficulty(difficulty);
     localStorage.removeItem(SAVE_KEY);
     resetRenderCache();
-    state = createGameState();
+    state = createGameState(getDifficulty());
     update();
     animateDeal();
     if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
@@ -462,7 +540,7 @@ async function onMultiplayer() {
         disconnect();
     });
 
-    lobby.onCreateClick(async (username) => {
+    lobby.onCreateClick(async (username, isPublic) => {
         lobby.showError('Connecting to server...');
         try {
             await connect({
@@ -500,7 +578,7 @@ async function onMultiplayer() {
                     lobby.close();
                     multiplayerMode = true;
                     initChat((msg) => sendChat(msg));
-                    state = createGameState();
+                    state = createGameState(getDifficulty());
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
                     state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
@@ -520,12 +598,13 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
-                    recordMatch(won, 'pvp').catch(() => {});
+                    recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
+                    reportFirestorm(won);
                     showGameOver(data.winner, () => {
                         requestRematch();
                         state.status = 'Rematch requested...';
                         update();
-                    });
+                    }, state._opponentName, state._opponentName);
                 },
                 onError: (msg) => lobby.showError(msg),
                 onOpponentLeft: () => {
@@ -542,10 +621,15 @@ async function onMultiplayer() {
                 onMoveResult: (data) => {
                     if (data.result?.message) state._lastMoveStatus = data.result.message;
                 },
-                onRoomCreated: (data) => lobby.showWaiting(data.code),
+                onRoomCreated: (data) => {
+                    lobby.showWaiting(data.code);
+                    if (_firestormMatch) {
+                        fetch('/server/php/api/firestorm.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'publish_room', firestorm_id: _firestormMatch.id, seed: _firestormMatch.seed, room_code: data.code }) }).catch(() => {});
+                    }
+                },
                 onRoomJoined: () => {}
             });
-            createRoom(username);
+            createRoom(username, isPublic);
         } catch (e) {
             lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
         }
@@ -586,7 +670,7 @@ async function onMultiplayer() {
                     lobby.close();
                     multiplayerMode = true;
                     initChat((msg) => sendChat(msg));
-                    state = createGameState();
+                    state = createGameState(getDifficulty());
                     state.player.hand = view.myHand;
                     state.player.prison = view.myPrison;
                     state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
@@ -606,12 +690,13 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
-                    recordMatch(won, 'pvp').catch(() => {});
+                    recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
+                    reportFirestorm(won);
                     showGameOver(won ? 'player' : 'computer', () => {
                         requestRematch();
                         state.status = 'Rematch requested...';
                         update();
-                    });
+                    }, state._opponentName);
                 },
                 onError: (msg) => lobby.showError(msg),
                 onOpponentLeft: () => {
@@ -638,6 +723,101 @@ async function onMultiplayer() {
     });
 }
 
+// Auto-join with code from URL - direct connection, no lobby modal
+async function onMultiplayerWithCode(code) {
+    const loggedInUser = getUser();
+    const username = loggedInUser ? loggedInUser.username : ('Player' + Math.floor(Math.random() * 9999));
+
+    // Minimal status indicator
+    const status = document.createElement('div');
+    status.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:rgba(0,0,0,0.9);color:white;padding:1.5rem 2rem;border-radius:10px;font-family:Inter,sans-serif;font-size:1rem;font-weight:600;text-align:center;';
+    status.textContent = 'Joining room ' + code + '...';
+    document.body.appendChild(status);
+
+    try {
+        await connect({
+            onStateUpdate: (view) => {
+                const oldTopType2 = state.discardPile.length > 0 ? state.discardPile[state.discardPile.length - 1]?.type : null;
+                const newTop2 = view.discardPile.length > 0 ? view.discardPile[view.discardPile.length - 1] : null;
+                const newTopType2 = newTop2?.type;
+                if (newTopType2 && newTopType2 !== oldTopType2 && ['skorch','demoter','elude','undead'].includes(newTopType2)) {
+                    announceSpecial(newTopType2, view.currentTurn === 'player' ? 'computer' : 'player', 1200, state);
+                }
+                state.player.hand = view.myHand;
+                state.player.prison = view.myPrison;
+                state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                state.computer.prison = view.opponentPrison;
+                state.discardPile = view.discardPile;
+                state.deck = new Array(view.deckCount).fill(null);
+                state.currentTurn = view.currentTurn;
+                state.gameOver = view.gameOver;
+                state.winner = view.winner;
+                state._roomCode = getRoomCode();
+                state._myName = view.myName || 'You';
+                state._opponentName = view.opponentName || 'Opponent';
+                if (!state._lastMoveStatus) state.status = view.currentTurn === 'player' ? 'Your turn' : "Opponent's turn";
+                else { state.status = state._lastMoveStatus; state._lastMoveStatus = null; }
+                if (view.currentTurn === 'player') playTurnDing();
+                update();
+            },
+            onGameStart: (view) => {
+                status.remove();
+                multiplayerMode = true;
+                initChat((msg) => sendChat(msg));
+                state = createGameState(getDifficulty());
+                state.player.hand = view.myHand;
+                state.player.prison = view.myPrison;
+                state.computer.hand = new Array(view.opponentHandCount).fill({ type: 'unknown' });
+                state.computer.prison = view.opponentPrison;
+                state.discardPile = view.discardPile;
+                state.deck = new Array(view.deckCount).fill(null);
+                state.currentTurn = view.currentTurn;
+                state._roomCode = getRoomCode();
+                state._myName = view.myName || 'You';
+                state._opponentName = view.opponentName || 'Opponent';
+                state.status = 'Game started!';
+                update();
+                animateDeal();
+            },
+            onGameOver: (data) => {
+                const won = data.winner === 'computer';
+                state.gameOver = true;
+                state.winner = data.winner;
+                if (won) playVictory(); else playDefeat();
+                recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
+                showGameOver(won ? 'player' : 'computer', () => {
+                    requestRematch();
+                    state.status = 'Rematch requested...';
+                    update();
+                });
+            },
+            onError: (msg) => {
+                status.textContent = msg;
+                status.style.color = '#ef4444';
+                setTimeout(() => status.remove(), 3000);
+            },
+            onOpponentLeft: () => {
+                state.status = 'Opponent disconnected.';
+                state.gameOver = true;
+                destroyChat();
+                update();
+            },
+            onRematchRequested: () => { state.status = 'Opponent wants a rematch!'; update(); },
+            onChatMessage: (data) => addMessage(data),
+            onMoveResult: (data) => { if (data.result?.message) state._lastMoveStatus = data.result.message; },
+            onRoomCreated: () => {},
+            onRoomJoined: () => {
+                status.textContent = 'Connected! Waiting for game...';
+            }
+        });
+        joinRoom(code, username);
+    } catch (e) {
+        status.textContent = 'Could not connect: ' + (e.message || 'Try again');
+        status.style.color = '#ef4444';
+        setTimeout(() => status.remove(), 3000);
+    }
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && selectedIndexes.size > 0 && state.currentTurn === 'player' && !state.gameOver) {
@@ -660,13 +840,61 @@ document.addEventListener('touchend', (e) => {
     }
 }, { passive: true });
 
-// Silently restore session if already logged in
-getProfile().catch(() => {});
-
-// Initial render - restore session first, then render
+// Require a signed-in account to play — no anonymous games
+const _gameRoot = document.getElementById('game-root');
+if (_gameRoot) _gameRoot.style.visibility = 'hidden';
 initSound();
 getProfile().catch(() => {}).finally(() => {
+    if (!isLoggedIn()) {
+        const returnTo = window.location.pathname + window.location.search;
+        window.location.replace('/login?return=' + encodeURIComponent(returnTo));
+        return;
+    }
+    if (_gameRoot) _gameRoot.style.visibility = '';
+    startHeartbeat();
     update();
     animateDeal();
     if (state.currentTurn === 'computer') computerTurnTimeout = setTimeout(doComputerTurn, 2000);
+
+    // Auto-join room if ?join=CODE is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const fsId = urlParams.get('firestorm');
+    const fsSeed = urlParams.get('seed');
+    const fsRole = urlParams.get('role');
+    if (fsId && fsSeed) {
+        _firestormMatch = { id: parseInt(fsId), seed: parseInt(fsSeed) };
+        if (fsRole === 'host') {
+            window.history.replaceState({}, '', '/play');
+            setTimeout(() => {
+                onMultiplayer();
+                setTimeout(() => {
+                    const createBtn = document.querySelector('#lobby-create-btn');
+                    if (createBtn) createBtn.click();
+                }, 400);
+            }, 300);
+        }
+    }
+    const joinCode = urlParams.get('join');
+    if (joinCode && joinCode.length === 4) {
+        // Clean the URL
+        window.history.replaceState({}, '', '/play');
+        // Use the exact same lobby flow that works manually
+        setTimeout(() => {
+            // Open the lobby (hidden)
+            onMultiplayer();
+            // Wait for DOM, fill code, click join
+            setTimeout(() => {
+                const lobbyOverlay = document.querySelector('.lobby-overlay');
+                if (lobbyOverlay) lobbyOverlay.style.opacity = '0';
+                const codeInput = document.querySelector('#lobby-room-code');
+                const joinBtn = document.querySelector('#lobby-join-btn');
+                if (codeInput && joinBtn) {
+                    codeInput.value = joinCode.toUpperCase();
+                    joinBtn.click();
+                }
+                // Show overlay once connecting
+                setTimeout(() => { if (lobbyOverlay) lobbyOverlay.style.opacity = ''; }, 100);
+            }, 400);
+        }, 300);
+    }
 });

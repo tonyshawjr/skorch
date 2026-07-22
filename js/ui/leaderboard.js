@@ -1,5 +1,5 @@
-// js/ui/leaderboard.js
 import { getLeaderboard } from '../multiplayer/auth.js';
+import { esc } from './escape.js';
 
 export async function showLeaderboard() {
     const overlay = document.createElement('div');
@@ -56,10 +56,10 @@ export async function showLeaderboard() {
             row.className = `lb-row${isKing ? ' lb-row-king' : ''}`;
             row.innerHTML = `
                 <div class="${rankClass}">${rankLabel}</div>
-                <div class="lb-avatar" style="background:${color}">${initial}</div>
+                <div class="lb-avatar" style="background:${color}">${esc(initial)}</div>
                 <div class="lb-info">
-                    <div class="lb-name">${displayName}</div>
-                    <div class="lb-username">@${player.username}</div>
+                    <div class="lb-name">${esc(displayName)}</div>
+                    <div class="lb-username">@${esc(player.username)}</div>
                 </div>
                 <div class="lb-stats-col">
                     <div class="lb-wins">${player.wins}W / ${player.losses}L</div>

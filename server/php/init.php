@@ -2,7 +2,7 @@
 require_once __DIR__ . '/config.php';
 
 $db = getDB();
-$schema = file_get_contents(__DIR__ . '/db/schema.sql');
+$schema = file_get_contents(__DIR__ . '/db/schema.mysql.sql');
 $db->exec($schema);
 
 echo "Database initialized successfully.\n";

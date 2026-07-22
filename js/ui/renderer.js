@@ -2,6 +2,8 @@ import { getCardImage, CardType } from '../engine/cards.js';
 import { getEffectiveValue } from '../engine/game.js';
 import { toggleMute, isMuted } from './sound.js';
 import { getUser } from '../multiplayer/auth.js';
+import { showPlayerCard } from './player-card.js';
+import { esc } from './escape.js';
 
 const ASSETS_PATH = '/assets/cards/';
 
@@ -42,6 +44,12 @@ export function render(state, root, handlers) {
         oppText += ` + ${oppPrisonCount} prison`;
     }
     oppLabel.textContent = oppText;
+    if (state._opponentName && state._roomCode) {
+        oppLabel.style.cursor = 'pointer';
+        oppLabel.style.textDecoration = 'underline';
+        oppLabel.style.textDecorationColor = 'rgba(255,255,255,0.3)';
+        oppLabel.addEventListener('click', () => showPlayerCard(state._opponentName));
+    }
     oppRow.appendChild(oppLabel);
     const peekLink = el('button', 'mobile-opp-field-peek');
     peekLink.textContent = 'View Prison';
@@ -92,30 +100,7 @@ export function render(state, root, handlers) {
         const discardCard = createCardElement(topCard, true);
         discardCard.classList.add('mobile-discard-card');
         discardCard.style.cursor = 'pointer';
-        discardCard.addEventListener('click', () => {
-            const sheet = el('div', 'mobile-peek-sheet');
-            sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
-            const content = el('div', 'mobile-peek-content');
-            const title = el('h3');
-            title.textContent = `Discard Pile (${state.discardPile.length} cards)`;
-            title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
-            content.appendChild(title);
-            const cardGrid = el('div', 'discard-pile-grid');
-            // Show in reverse order (newest first)
-            for (let i = state.discardPile.length - 1; i >= 0; i--) {
-                const c = state.discardPile[i];
-                const cardEl = createCardElement(c, true);
-                cardEl.classList.add('discard-pile-card');
-                cardGrid.appendChild(cardEl);
-            }
-            content.appendChild(cardGrid);
-            const hint = el('p');
-            hint.textContent = 'Tap outside to close';
-            hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
-            content.appendChild(hint);
-            sheet.appendChild(content);
-            document.body.appendChild(sheet);
-        });
+        discardCard.addEventListener('click', () => showDiscardModal(state));
         discardSection.appendChild(discardCard);
         const count = el('span', 'mobile-pile-count');
         count.textContent = state.discardPile.length;
@@ -166,6 +151,12 @@ export function render(state, root, handlers) {
     const handSection = el('div', 'mobile-hand-section');
     const handLabel = el('div', 'mobile-section-label');
     handLabel.textContent = (state._myName || 'Your Hand') + ` (${state.player.hand.length})`;
+    if (state._myName && state._roomCode) {
+        handLabel.style.cursor = 'pointer';
+        handLabel.style.textDecoration = 'underline';
+        handLabel.style.textDecorationColor = 'rgba(255,255,255,0.3)';
+        handLabel.addEventListener('click', () => showPlayerCard(state._myName));
+    }
     handSection.appendChild(handLabel);
 
     const handScroll = el('div', 'mobile-hand-scroll');
@@ -362,24 +353,37 @@ export function render(state, root, handlers) {
     }
 }
 
+function buildDifficultySelector(current, onPick, variant) {
+    const wrap = el('div', variant === 'drawer' ? 'diff-selector diff-selector-drawer' : 'diff-selector');
+    const label = el('span', 'diff-label');
+    label.textContent = 'AI';
+    wrap.appendChild(label);
+    for (const level of ['easy', 'medium', 'hard', 'insane']) {
+        const b = el('button', 'diff-btn' + (current === level ? ' active' : '') + (level === 'insane' ? ' diff-btn-insane' : ''));
+        b.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+        b.setAttribute('aria-pressed', current === level ? 'true' : 'false');
+        b.addEventListener('click', () => onPick(level));
+        wrap.appendChild(b);
+    }
+    return wrap;
+}
+
 function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard) {
     const header = el('header', 'game-header');
     const logo = el('div', 'header-left');
+    const logoLink = document.createElement('a');
+    logoLink.href = '/';
     const img = document.createElement('img');
     img.src = '/assets/logo.svg';
     img.alt = 'Skorch';
     img.className = 'game-logo';
-    img.style.cursor = 'pointer';
-    img.addEventListener('click', () => {
-        if (state._roomCode) {
-            if (confirm('You are in a multiplayer game. Refreshing will disconnect you. Continue?')) {
-                location.reload();
-            }
-        } else {
-            location.reload();
-        }
-    });
-    logo.appendChild(img);
+    logoLink.appendChild(img);
+    if (state._roomCode) {
+        logoLink.addEventListener('click', (e) => {
+            if (!confirm('You are in a multiplayer game. Leave?')) e.preventDefault();
+        });
+    }
+    logo.appendChild(logoLink);
     header.appendChild(logo);
 
     // Room code (if multiplayer)
@@ -392,7 +396,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
     // Turn indicator in center of header
     const indicator = el('div', `turn-indicator${state.currentTurn === 'player' ? ' your-turn' : ''}`);
     indicator.textContent = state.gameOver
-        ? (state.winner === 'player' ? 'You Win!' : 'Computer Wins!')
+        ? (state.winner === 'player' ? 'You Win!' : (state._opponentName || 'Computer') + ' Wins!')
         : (state.currentTurn === 'player' ? 'Your Turn' : "Opponent's Turn");
     header.appendChild(indicator);
 
@@ -411,7 +415,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
         const mobileUser = getUser();
         if (mobileUser) {
             const userItem = el('div', 'drawer-user');
-            userItem.innerHTML = `<span class="drawer-user-avatar">${mobileUser.username.charAt(0).toUpperCase()}</span><span>${mobileUser.username}</span>`;
+            userItem.innerHTML = `<span class="drawer-user-avatar">${esc(mobileUser.username.charAt(0).toUpperCase())}</span><span>${esc(mobileUser.username)}</span>`;
             drawerContent.appendChild(userItem);
             const profileBtn = el('button', 'drawer-item');
             profileBtn.textContent = 'Profile';
@@ -453,6 +457,9 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
         restartBtn.addEventListener('click', () => { drawer.classList.remove('open'); onRestart(); });
         drawerContent.appendChild(restartBtn);
 
+        const diffSel = buildDifficultySelector(state.difficulty || 'medium', (level) => { drawer.classList.remove('open'); onRestart(level); }, 'drawer');
+        drawerContent.appendChild(diffSel);
+
         // Divider
         const divider2 = el('div', 'drawer-divider');
         drawerContent.appendChild(divider2);
@@ -488,7 +495,7 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
             // Logged in - show avatar with dropdown
             const userWrap = el('div', 'user-menu-wrap');
             const userBtn = el('button', 'user-menu-btn');
-            userBtn.innerHTML = `<span class="user-avatar-sm">${user.username.charAt(0).toUpperCase()}</span><span class="user-name-sm">${user.username}</span>`;
+            userBtn.innerHTML = `<span class="user-avatar-sm">${esc(user.username.charAt(0).toUpperCase())}</span><span class="user-name-sm">${esc(user.username)}</span>`;
             userWrap.appendChild(userBtn);
             const dropdown = el('div', 'user-dropdown');
             dropdown.innerHTML = `
@@ -526,9 +533,11 @@ function createHeader(state, onRestart, onMultiplayer, onAccount, onLeaderboard)
         lbBtn2.textContent = 'Leaderboard';
         lbBtn2.addEventListener('click', () => { if (onLeaderboard) onLeaderboard(); });
         actions.appendChild(lbBtn2);
+        const diffSel = buildDifficultySelector(state.difficulty || 'medium', (level) => onRestart(level), 'header');
+        actions.appendChild(diffSel);
         const restartBtn = el('button', 'btn-restart');
         restartBtn.textContent = 'Restart Game';
-        restartBtn.addEventListener('click', onRestart);
+        restartBtn.addEventListener('click', () => onRestart());
         actions.appendChild(restartBtn);
         header.appendChild(actions);
     }
@@ -634,6 +643,10 @@ function createPlayerArea(state, handlers) {
     const handSection = el('div', 'hand-section');
     const handTitle = el('h3');
     handTitle.textContent = (state._myName || 'Your Hand') + ' ';
+    if (state._myName && state._roomCode) {
+        handTitle.style.cursor = 'pointer';
+        handTitle.addEventListener('click', (e) => { if (e.target === handTitle) showPlayerCard(state._myName); });
+    }
     const countBadge = el('span', `card-count${state.player.hand.length > 7 ? ' warning' : ''}`);
     countBadge.textContent = state.player.hand.length;
     handTitle.appendChild(countBadge);
@@ -731,6 +744,10 @@ function createComputerArea(state) {
     const handSection = el('div', 'hand-section');
     const title = el('h3');
     title.textContent = (state._opponentName || 'Opponent Hand') + ' ';
+    if (state._opponentName && state._roomCode) {
+        title.style.cursor = 'pointer';
+        title.addEventListener('click', (e) => { if (e.target === title) showPlayerCard(state._opponentName); });
+    }
     if (state.computer.hand.length > 0) {
         const badge = el('span', 'card-count');
         badge.textContent = state.computer.hand.length;
@@ -795,6 +812,30 @@ function createPrisonSection(state, who, handlers) {
     return section;
 }
 
+function showDiscardModal(state) {
+    if (!state.discardPile || state.discardPile.length === 0) return;
+    const sheet = el('div', 'mobile-peek-sheet');
+    sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.remove(); });
+    const content = el('div', 'mobile-peek-content');
+    const title = el('h3');
+    title.textContent = `Discard Pile (${state.discardPile.length} cards)`;
+    title.style.cssText = 'color:white;margin-bottom:1rem;font-size:1rem;text-align:center;';
+    content.appendChild(title);
+    const cardGrid = el('div', 'discard-pile-grid');
+    for (let i = state.discardPile.length - 1; i >= 0; i--) {
+        const cardEl = createCardElement(state.discardPile[i], true);
+        cardEl.classList.add('discard-pile-card');
+        cardGrid.appendChild(cardEl);
+    }
+    content.appendChild(cardGrid);
+    const hint = el('p');
+    hint.textContent = 'Click outside to close';
+    hint.style.cssText = 'color:#6b7280;text-align:center;margin-top:1rem;font-size:0.8rem;';
+    content.appendChild(hint);
+    sheet.appendChild(content);
+    document.body.appendChild(sheet);
+}
+
 function createCenterSection(state, handlers) {
     const section = el('div', 'center-piles');
 
@@ -815,6 +856,9 @@ function createCenterSection(state, handlers) {
         const discardCount = el('span', 'pile-count');
         discardCount.textContent = state.discardPile.length;
         discardStack.appendChild(discardCount);
+        discardStack.style.cursor = 'pointer';
+        discardStack.title = 'Click to view the discard pile';
+        discardStack.addEventListener('click', () => showDiscardModal(state));
 
         // Show effective value when top card is a special (value hidden)
         if (topCard.isSpecial) {
@@ -907,8 +951,9 @@ function makeDraggable(el) {
     // Clean up previous listeners
     if (_dragCleanup) _dragCleanup();
 
+    let armed = false;
     let isDragging = false;
-    let startX, startY;
+    let startMouseX, startMouseY, offsetX, offsetY;
 
     // Restore saved position
     try {
@@ -923,33 +968,36 @@ function makeDraggable(el) {
     el.style.cursor = 'grab';
 
     el.addEventListener('mousedown', (e) => {
-        // Don't drag if clicking a button
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-        isDragging = true;
-        el.style.cursor = 'grabbing';
-        // Get actual rendered position
+        armed = true;
+        startMouseX = e.clientX;
+        startMouseY = e.clientY;
         const rect = el.getBoundingClientRect();
-        // Store offset of mouse within the element
-        startX = e.clientX - rect.left;
-        startY = e.clientY - rect.top;
-        // Kill the centering transform immediately
-        el.style.transform = 'none';
-        el.style.left = rect.left + 'px';
-        el.style.top = rect.top + 'px';
-        e.preventDefault();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
     });
 
     const onMouseMove = (e) => {
-        if (!isDragging) return;
-        el.style.left = (e.clientX - startX) + 'px';
-        el.style.top = (e.clientY - startY) + 'px';
+        if (!armed) return;
+        if (!isDragging) {
+            if (Math.abs(e.clientX - startMouseX) < 5 && Math.abs(e.clientY - startMouseY) < 5) return;
+            isDragging = true;
+            el.style.cursor = 'grabbing';
+            const rect = el.getBoundingClientRect();
+            el.style.transform = 'none';
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+        }
+        el.style.left = (e.clientX - offsetX) + 'px';
+        el.style.top = (e.clientY - offsetY) + 'px';
+        e.preventDefault();
     };
 
     const onMouseUp = () => {
+        armed = false;
         if (!isDragging) return;
         isDragging = false;
         el.style.cursor = 'grab';
-        // Save position
         try {
             localStorage.setItem(PILE_POS_KEY, JSON.stringify({
                 left: el.style.left,

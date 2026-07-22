@@ -1,5 +1,5 @@
-// js/ui/account.js
 import { login, register, getProfile, logout, isLoggedIn, getUser } from '../multiplayer/auth.js';
+import { esc } from './escape.js';
 
 export function showAccountModal(onClose) {
     const overlay = document.createElement('div');
@@ -17,9 +17,9 @@ export function showAccountModal(onClose) {
             <div class="account-modal">
                 <button class="account-close">&times;</button>
                 <div class="account-profile">
-                    <div class="profile-avatar" style="background:${avatarColor}">${avatarLetter}</div>
-                    <h2 class="profile-name">${displayName}</h2>
-                    <p style="color:#6b7280;font-size:0.8rem;margin-top:-0.5rem;margin-bottom:1rem;">@${user.username}</p>
+                    <div class="profile-avatar" style="background:${avatarColor}">${esc(avatarLetter)}</div>
+                    <h2 class="profile-name">${esc(displayName)}</h2>
+                    <p style="color:#6b7280;font-size:0.8rem;margin-top:-0.5rem;margin-bottom:1rem;">@${esc(user.username)}</p>
                     <div class="profile-stats">
                         <div class="stat-item">
                             <div class="stat-value">${user.wins || 0}</div>
@@ -42,7 +42,7 @@ export function showAccountModal(onClose) {
                     <div class="profile-edit-section">
                         <h3 style="color:#9ca3af;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem;">Edit Profile</h3>
                         <div style="margin-bottom:0.75rem;">
-                            <input type="text" class="account-input" id="edit-display-name" placeholder="Display Name" value="${user.display_name || ''}" maxlength="50">
+                            <input type="text" class="account-input" id="edit-display-name" placeholder="Display Name" value="${esc(user.display_name || '')}" maxlength="50">
                         </div>
                         <div style="margin-bottom:0.75rem;">
                             <label style="color:#9ca3af;font-size:0.8rem;display:block;margin-bottom:0.4rem;">Avatar Color</label>
@@ -88,20 +88,25 @@ export function showAccountModal(onClose) {
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('visible'));
 
-    // Close button
-    overlay.querySelector('.account-close').addEventListener('click', () => {
+    function closeModal() {
+        // Blur any focused input to dismiss keyboard
+        const focused = overlay.querySelector(':focus');
+        if (focused) focused.blur();
         overlay.classList.remove('visible');
-        setTimeout(() => overlay.remove(), 200);
+        setTimeout(() => {
+            overlay.remove();
+            // Reset viewport after keyboard dismissal on iOS
+            window.scrollTo(0, 0);
+        }, 200);
         if (onClose) onClose();
-    });
+    }
+
+    // Close button
+    overlay.querySelector('.account-close').addEventListener('click', closeModal);
 
     // Click outside to close
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.remove('visible');
-            setTimeout(() => overlay.remove(), 200);
-            if (onClose) onClose();
-        }
+        if (e.target === overlay) closeModal();
     });
 
     if (user) {

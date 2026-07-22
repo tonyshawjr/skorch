@@ -7,499 +7,41 @@
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="description" content="Skorch is a strategic card game of attacks, shields, and special powers. Play against AI or challenge friends online.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #1a1517;
-            --bg-card: #1c1d1f;
-            --bg-elevated: #222326;
-            --red: #b11f24;
-            --red-dark: #8a181c;
-            --red-glow: rgba(177, 31, 36, 0.25);
-            --white: #FFFFFF;
-            --gray-100: rgba(255,255,255,0.87);
-            --gray-200: rgba(255,255,255,0.6);
-            --gray-300: rgba(255,255,255,0.38);
-            --gray-400: rgba(255,255,255,0.12);
-            --gray-500: rgba(255,255,255,0.06);
-            --gold: #F5A623;
-            --gold-glow: rgba(245, 166, 35, 0.2);
-            --green: #34D399;
-            --nav-height: 60px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: var(--bg);
-            color: var(--white);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            min-height: 100vh;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ── Nav ── */
-        .nav {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(22, 23, 24, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            height: var(--nav-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 2rem;
-            border-bottom: 1px solid var(--gray-500);
-        }
-        .nav-logo img { height: 32px; width: auto; }
-        .nav-links { display: flex; align-items: center; gap: 2rem; }
-        .nav-links a {
-            color: var(--gray-200);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.875rem;
-            letter-spacing: 0.01em;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--white); }
-        .nav-btn {
-            background: var(--red);
-            color: var(--white) !important;
-            padding: 0.45rem 1.2rem;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: background 0.2s, transform 0.15s;
-        }
-        .nav-btn:hover {
-            background: var(--red-dark);
-            transform: translateY(-1px);
-        }
-
-        /* ── Hero ── */
-        .hero {
-            position: relative;
-            text-align: center;
-            padding: 7rem 2rem 6rem;
-            overflow: hidden;
-            min-height: 520px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 80% 60% at 50% 40%, rgba(235, 34, 40, 0.08) 0%, transparent 70%),
-                radial-gradient(ellipse 60% 50% at 30% 60%, rgba(235, 34, 40, 0.04) 0%, transparent 60%);
-            pointer-events: none;
-        }
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 120px;
-            background: linear-gradient(to bottom, transparent, var(--bg));
-            pointer-events: none;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero h1 {
-            font-family: 'Inter Tight', sans-serif;
-            font-weight: 800;
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            line-height: 1.1;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
-        }
-        .hero h1 span { color: var(--red); }
-
-        .hero-sub {
-            font-size: 1.125rem;
-            color: var(--gray-200);
-            max-width: 480px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.6;
-        }
-
-        .hero-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            background: var(--red);
-            color: var(--white);
-            padding: 0.9rem 2.5rem;
-            border-radius: 8px;
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            text-decoration: none;
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: 0 4px 24px var(--red-glow);
-        }
-        .hero-cta:hover {
-            background: var(--red-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px var(--red-glow);
-        }
-        .hero-cta svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        /* ── Floating Cards ── */
-        .floating-cards {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.25;
-        }
-        .floating-card {
-            position: absolute;
-            width: 160px;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-        .floating-card:nth-child(1) {
-            top: 10%;
-            left: 5%;
-            transform: rotate(-15deg);
-            animation: float1 6s ease-in-out infinite;
-        }
-        .floating-card:nth-child(2) {
-            top: 15%;
-            right: 5%;
-            transform: rotate(12deg);
-            animation: float2 7s ease-in-out infinite;
-        }
-        .floating-card:nth-child(3) {
-            bottom: 10%;
-            left: 8%;
-            transform: rotate(8deg);
-            animation: float3 5.5s ease-in-out infinite;
-        }
-        .floating-card:nth-child(4) {
-            bottom: 15%;
-            right: 5%;
-            transform: rotate(-10deg);
-            animation: float1 6.5s ease-in-out infinite reverse;
-        }
-        .floating-card:nth-child(5) {
-            top: 5%;
-            left: 28%;
-            transform: rotate(5deg);
-            width: 130px;
-            animation: float2 8s ease-in-out infinite;
-        }
-        .floating-card:nth-child(6) {
-            top: 12%;
-            right: 25%;
-            transform: rotate(-8deg);
-            width: 130px;
-            animation: float3 7.5s ease-in-out infinite;
-        }
-
-        @keyframes float1 {
-            0%, 100% { transform: translateY(0) rotate(-15deg); }
-            50% { transform: translateY(-15px) rotate(-12deg); }
-        }
-        @keyframes float2 {
-            0%, 100% { transform: translateY(0) rotate(12deg); }
-            50% { transform: translateY(-20px) rotate(15deg); }
-        }
-        @keyframes float3 {
-            0%, 100% { transform: translateY(0) rotate(8deg); }
-            50% { transform: translateY(-12px) rotate(5deg); }
-        }
-
-        /* ── Content ── */
-        .content {
-            max-width: 1080px;
-            margin: 0 auto;
-            padding: 3rem 2rem 4rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        /* ── Cards ── */
-        .card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 1.75rem;
-            border: 1px solid var(--gray-500);
-        }
-        .card-header {
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--gray-300);
-            margin-bottom: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .card-header .icon { font-size: 1rem; }
-
-        /* ── King Spotlight ── */
-        .king-spotlight {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 2.5rem 2rem;
-            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245, 166, 35, 0.04) 100%);
-            border: 1px solid rgba(245, 166, 35, 0.15);
-            position: relative;
-            overflow: hidden;
-        }
-        .king-spotlight::before {
-            content: '';
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .king-crown {
-            font-size: 2.5rem;
-            margin-bottom: 0.25rem;
-            position: relative;
-        }
-        .king-label {
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--gold);
-            margin-bottom: 0.75rem;
-        }
-        .king-name {
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--gold);
-        }
-        .king-stats {
-            display: flex;
-            justify-content: center;
-            gap: 2.5rem;
-            margin-top: 1.25rem;
-        }
-        .king-stat {
-            text-align: center;
-        }
-        .king-stat-value {
-            font-family: 'Inter Tight', sans-serif;
-            font-weight: 800;
-            font-size: 1.25rem;
-            color: var(--white);
-            display: block;
-        }
-        .king-stat-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--gray-300);
-        }
-        .king-empty {
-            color: var(--gray-300);
-            font-style: italic;
-            font-size: 0.95rem;
-        }
-
-        /* ── Leaderboard ── */
-        .lb-table { width: 100%; border-collapse: collapse; }
-        .lb-table th {
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--gray-300);
-            padding: 0 0 0.75rem;
-        }
-        .lb-table td {
-            padding: 0.55rem 0;
-            border-top: 1px solid var(--gray-500);
-            font-size: 0.875rem;
-        }
-        .lb-rank {
-            width: 2rem;
-            font-weight: 700;
-            color: var(--gray-300);
-        }
-        .lb-rank-1 { color: var(--gold); }
-        .lb-rank-2 { color: #A8A8A8; }
-        .lb-rank-3 { color: #CD7F32; }
-        .lb-name { font-weight: 600; }
-        .lb-wins { text-align: right; font-weight: 600; color: var(--green); }
-        .lb-elo { text-align: right; font-weight: 600; }
-        .lb-empty {
-            color: var(--gray-300);
-            font-style: italic;
-            padding: 1.5rem 0;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        .lb-view-all {
-            display: block;
-            text-align: center;
-            margin-top: 1.25rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--gray-500);
-            color: var(--red);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.8rem;
-            letter-spacing: 0.02em;
-            transition: color 0.2s;
-        }
-        .lb-view-all:hover { color: var(--white); }
-
-        /* ── Quick Play ── */
-        .quick-play { grid-column: 1 / -1; }
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-        .quick-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 2rem 1.5rem;
-            background: var(--bg-elevated);
-            border: 1px solid var(--gray-400);
-            border-radius: 12px;
-            color: var(--white);
-            text-decoration: none;
-            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
-            cursor: pointer;
-            text-align: center;
-        }
-        .quick-card:hover {
-            border-color: var(--red);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-        }
-        .quick-card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            background: rgba(235, 34, 40, 0.1);
-            border: 1px solid rgba(235, 34, 40, 0.2);
-        }
-        .quick-card-title {
-            font-family: 'Inter Tight', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-        .quick-card-desc {
-            font-size: 0.8rem;
-            color: var(--gray-300);
-            line-height: 1.4;
-        }
-
-        /* ── Footer ── */
-        .footer {
-            text-align: center;
-            padding: 3rem 2rem;
-            border-top: 1px solid var(--gray-500);
-        }
-        .footer-motto {
-            font-family: 'Inter Tight', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: var(--gray-200);
-            letter-spacing: 0.02em;
-            margin-bottom: 0.5rem;
-        }
-        .footer-copy {
-            font-size: 0.75rem;
-            color: var(--gray-300);
-        }
-
-        /* ── Shimmer ── */
-        .shimmer {
-            background: linear-gradient(90deg, var(--gray-500) 25%, var(--gray-400) 50%, var(--gray-500) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-            height: 1rem;
-            margin: 0.4rem 0;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .hero {
-                padding: 5rem 1.5rem 4rem;
-                min-height: auto;
-            }
-            .floating-card { display: none; }
-            .content {
-                grid-template-columns: 1fr;
-                padding: 2rem 1rem;
-                gap: 1rem;
-            }
-            .king-spotlight,
-            .quick-play { grid-column: 1; }
-            .quick-actions { grid-template-columns: 1fr; }
-            .nav { padding: 0 1rem; }
-            .nav-links { gap: 1.25rem; }
-            .nav-links a { font-size: 0.8rem; }
-            .king-name { font-size: 1.35rem; }
-            .king-stats { gap: 1.5rem; }
-        }
-
-        @media (max-width: 480px) {
-            .nav-links .nav-link-text { display: none; }
-            .hero h1 { font-size: 2rem; }
-            .hero-sub { font-size: 1rem; }
-        }
-    </style>
+    <link href="/css/styles.css?v=4" rel="stylesheet">
 </head>
 <body>
 
     <!-- Nav -->
-    <nav class="nav">
-        <a href="/" class="nav-logo">
-            <img src="/assets/logo.svg" alt="Skorch">
-        </a>
-        <div class="nav-links">
-            <a href="/play">Play</a>
-            <a href="/leaderboard">Leaderboard</a>
-            <a href="/rules" class="nav-link-text">Rules</a>
-            <a href="#" class="nav-btn" id="nav-auth">Log In</a>
+    <nav class="site-nav">
+        <div class="site-nav__inner">
+            <a href="/" class="site-nav__logo"><img src="/assets/logo.svg" alt="Skorch"></a>
+            <div class="site-nav__links">
+                <a href="/play" class="site-nav__link">Play</a>
+                <a href="/leaderboard" class="site-nav__link">Leaderboard</a>
+                <a href="/rules" class="site-nav__link">Rules</a>
+            </div>
+            <div class="site-nav__right">
+                <a href="/login" class="site-nav__auth-btn" id="nav-auth">Log In</a>
+                <button class="site-nav__hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+        <div class="site-nav__mobile" id="mobile-menu">
+            <a href="/play" class="site-nav__mobile-link">Play</a>
+            <a href="/leaderboard" class="site-nav__mobile-link">Leaderboard</a>
+            <a href="/rules" class="site-nav__mobile-link">Rules</a>
         </div>
     </nav>
+    <div class="site-nav__overlay" id="nav-overlay"></div>
+
+    <!-- Player Search -->
+    <div class="search-bar-wrap" id="search-wrap">
+        <input type="text" class="search-input" id="player-search" placeholder="Search players..." autocomplete="off">
+        <div class="search-results" id="search-results" style="display:none;"></div>
+    </div>
 
     <!-- Hero -->
     <section class="hero">
@@ -518,6 +60,11 @@
                 <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 Play Now
             </a>
+            <div class="join-bar">
+                <span class="join-bar-label">Have a Room Code?</span>
+                <input type="text" class="join-bar-input" id="home-room-code" placeholder="XXXX" maxlength="4" autocomplete="off" autocapitalize="characters" tabindex="-1">
+                <button class="join-bar-btn" id="home-join-btn">JOIN</button>
+            </div>
         </div>
     </section>
 
@@ -531,6 +78,14 @@
             <div id="king-content">
                 <div class="shimmer" style="width:160px;height:1.5rem;margin:0 auto;"></div>
                 <div class="shimmer" style="width:240px;height:1rem;margin:0.5rem auto;"></div>
+            </div>
+        </div>
+
+        <!-- Live Games -->
+        <div class="card" id="live-games-card">
+            <div class="card-header"><span class="icon">&#127918;</span> Live Games</div>
+            <div id="live-games-content">
+                <div class="shimmer"></div>
             </div>
         </div>
 
@@ -555,21 +110,21 @@
                     <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">1</span>
                     <div>
                         <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Play Cards</div>
-                        <div style="font-size:0.8rem;color:var(--gray-300);">Play a card equal to or higher than the discard pile. Can't play? Pick up the pile.</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Play a card equal to or higher than the discard pile. Can't play? Pick up the pile.</div>
                     </div>
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:0.75rem;">
                     <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">2</span>
                     <div>
                         <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Use Special Powers</div>
-                        <div style="font-size:0.8rem;color:var(--gray-300);">Skorch, Elude, Undead, and Demoter cards change the game instantly.</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">Skorch, Elude, Undead, and Demoter cards change the game instantly.</div>
                     </div>
                 </div>
                 <div style="display:flex;align-items:flex-start;gap:0.75rem;">
                     <span style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:1.25rem;color:var(--red);min-width:24px;">3</span>
                     <div>
                         <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.15rem;">Empty Your Hand</div>
-                        <div style="font-size:0.8rem;color:var(--gray-300);">First player to play all their cards — hand and prison — wins the game.</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">First player to play all their cards — hand and prison — wins the game.</div>
                     </div>
                 </div>
             </div>
@@ -602,95 +157,9 @@
     <!-- Footer -->
     <footer class="footer">
         <p class="footer-motto">Skorch &mdash; A Game for the Masses</p>
-        <p class="footer-copy">&copy; 2025 Skorch. All rights reserved.</p>
+        <p class="footer-copy">&copy; 2017-<script>document.write(new Date().getFullYear())</script> Tony Shaw. All rights reserved.</p>
     </footer>
 
-    <script>
-        // ── Fetch Leaderboard ──
-        async function loadLeaderboard() {
-            try {
-                const res = await fetch('/server/php/api/leaderboard.php?sort=elo&limit=5');
-                if (!res.ok) throw new Error('Failed to load');
-                const data = await res.json();
-                const players = data.leaderboard || data;
-
-                if (!players || players.length === 0) {
-                    document.getElementById('leaderboard-content').innerHTML = '<p class="lb-empty">No players yet. Be the first!</p>';
-                    document.getElementById('king-content').innerHTML = '<p class="king-empty">No king yet. Claim the throne!</p>';
-                    return;
-                }
-
-                // King
-                const king = players[0];
-                document.getElementById('king-content').innerHTML = `
-                    <div class="king-name">${escapeHtml(king.username)}</div>
-                    <div class="king-stats">
-                        <div class="king-stat">
-                            <span class="king-stat-value">${king.elo || '—'}</span>
-                            <span class="king-stat-label">ELO</span>
-                        </div>
-                        <div class="king-stat">
-                            <span class="king-stat-value">${king.wins || 0}</span>
-                            <span class="king-stat-label">Wins</span>
-                        </div>
-                        <div class="king-stat">
-                            <span class="king-stat-value">${king.games_played || 0}</span>
-                            <span class="king-stat-label">Games</span>
-                        </div>
-                    </div>
-                `;
-
-                // Table (top 5)
-                let html = `<table class="lb-table">
-                    <thead><tr>
-                        <th>#</th><th>Player</th><th style="text-align:right">ELO</th><th style="text-align:right">W</th>
-                    </tr></thead><tbody>`;
-
-                players.slice(0, 5).forEach((p, i) => {
-                    const rankClass = i < 3 ? ` lb-rank-${i + 1}` : '';
-                    html += `<tr>
-                        <td class="lb-rank${rankClass}">${i + 1}</td>
-                        <td class="lb-name">${escapeHtml(p.username)}</td>
-                        <td class="lb-elo">${p.elo || '—'}</td>
-                        <td class="lb-wins">${p.wins || 0}</td>
-                    </tr>`;
-                });
-
-                html += '</tbody></table>';
-                document.getElementById('leaderboard-content').innerHTML = html;
-
-            } catch (e) {
-                document.getElementById('leaderboard-content').innerHTML = '<p class="lb-empty">Could not load leaderboard.</p>';
-                document.getElementById('king-content').innerHTML = '<p class="king-empty">Could not load king data.</p>';
-            }
-        }
-
-        // ── Check Auth State ──
-        async function checkAuth() {
-            try {
-                const res = await fetch('/server/php/api/profile.php', { credentials: 'include' });
-                if (res.ok) {
-                    const user = await res.json();
-                    if (user && user.username) {
-                        const btn = document.getElementById('nav-auth');
-                        btn.textContent = user.username;
-                        btn.href = '/profile';
-                    }
-                }
-            } catch (e) { /* not logged in */ }
-        }
-
-        // ── Helpers ──
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        // ── Init ──
-        loadLeaderboard();
-        checkAuth();
-    </script>
-
+    <script src="/js/site.js?v=5"></script>
 </body>
 </html>

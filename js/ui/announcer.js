@@ -66,16 +66,21 @@ export function announceSpecial(type, who, duration = 1200, state = null) {
 /**
  * Show win/lose screen.
  */
-export function showGameOver(winner, onRestart) {
+export function showGameOver(winner, onRestart, opponentName, opponentUsername) {
     const isWin = winner === 'player';
+    const opponent = opponentName || 'The computer';
+    const loseSub = opponentName ? `${opponent} got the best of you.` : 'The computer got the best of you.';
+    const isMultiplayer = !!opponentUsername;
 
     const overlay = document.createElement('div');
     overlay.className = 'gameover-overlay';
     overlay.innerHTML = `
         <div class="gameover-content">
             <div class="gameover-title">${isWin ? 'VICTORY' : 'DEFEAT'}</div>
-            <div class="gameover-sub">${isWin ? 'You Skorched the competition.' : 'The computer got the best of you.'}</div>
-            <button class="gameover-btn">${isWin ? 'Play Again' : 'Rematch'}</button>
+            <div class="gameover-sub">${isWin ? 'You Skorched the competition.' : loseSub}</div>
+            ${isMultiplayer ? '<div class="gameover-friend" id="gameover-friend"></div>' : ''}
+            <button class="gameover-btn">${isMultiplayer ? 'Rematch' : 'Play Again'}</button>
+            ${isMultiplayer ? `<a href="/profile?u=${encodeURIComponent(opponentUsername)}" class="gameover-profile-link">View ${opponent}'s Profile</a>` : ''}
         </div>
     `;
 
@@ -92,4 +97,64 @@ export function showGameOver(winner, onRestart) {
             onRestart();
         }, 300);
     });
+
+    if (!isMultiplayer) {
+        let current = 'medium';
+        try {
+            const d = localStorage.getItem('skorch_ai_difficulty');
+            if (d === 'easy' || d === 'medium' || d === 'hard') current = d;
+        } catch(e) {}
+        const diffRow = document.createElement('div');
+        diffRow.className = 'gameover-diff';
+        const label = document.createElement('span');
+        label.className = 'gameover-diff-label';
+        label.textContent = 'Difficulty';
+        diffRow.appendChild(label);
+        const group = document.createElement('div');
+        group.className = 'gameover-diff-group';
+        for (const level of ['easy', 'medium', 'hard', 'insane']) {
+            const b = document.createElement('button');
+            b.className = 'gameover-diff-btn' + (current === level ? ' active' : '') + (level === 'insane' ? ' gameover-diff-btn-insane' : '');
+            b.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+            b.addEventListener('click', () => {
+                overlay.classList.add('exiting');
+                setTimeout(() => { overlay.remove(); onRestart(level); }, 300);
+            });
+            group.appendChild(b);
+        }
+        diffRow.appendChild(group);
+        overlay.querySelector('.gameover-content').appendChild(diffRow);
+    }
+
+    // Check friend status and show Add Friend button
+    if (isMultiplayer) {
+        (async () => {
+            try {
+                const res = await fetch(`/server/php/api/friends.php?action=status&username=${encodeURIComponent(opponentUsername)}`, { credentials: 'include' });
+                const data = await res.json();
+                const wrap = document.getElementById('gameover-friend');
+                if (!wrap) return;
+
+                if (data.status === 'none') {
+                    wrap.innerHTML = `<button class="gameover-add-friend" id="add-friend-go">Add ${opponent} as Friend</button>`;
+                    document.getElementById('add-friend-go').addEventListener('click', async function() {
+                        this.disabled = true;
+                        this.textContent = 'Sending...';
+                        const r = await fetch('/server/php/api/friends.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ action: 'send', username: opponentUsername })
+                        });
+                        const d = await r.json();
+                        this.textContent = d.success ? 'Request Sent!' : (d.error || 'Error');
+                    });
+                } else if (data.status === 'pending_sent') {
+                    wrap.innerHTML = '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Friend request pending</span>';
+                } else if (data.status === 'friends') {
+                    wrap.innerHTML = '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Friends</span>';
+                }
+            } catch(e) { /* not logged in or error */ }
+        })();
+    }
 }

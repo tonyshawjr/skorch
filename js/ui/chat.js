@@ -35,13 +35,19 @@ export function toggleChat() {
         unreadCount = 0;
         updateBadge();
         scrollToBottom();
-        // Auto-focus input on desktop
+        // Auto-focus input on desktop only - mobile keyboard causes viewport issues
         if (window.innerWidth > 1024) {
             setTimeout(() => {
                 const input = chatBubble?.querySelector('.chat-input');
                 if (input) input.focus();
             }, 150);
         }
+    } else {
+        // Blur input to dismiss keyboard, then reset viewport on mobile
+        const input = chatBubble?.querySelector('.chat-input');
+        if (input) input.blur();
+        // Force iOS to reset viewport after keyboard dismissal
+        setTimeout(() => window.scrollTo(0, 0), 100);
     }
 }
 
@@ -86,10 +92,24 @@ function createBubble() {
         if (!text || !onSend) return;
         onSend(text);
         input.value = '';
+        // Blur on mobile to dismiss keyboard after sending
+        if (window.innerWidth <= 1024) input.blur();
     }
 
     sendBtn.addEventListener('click', send);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+
+    // Fix iOS viewport shift when keyboard opens/closes
+    input.addEventListener('focus', () => {
+        // Scroll chat bubble into view after keyboard appears
+        setTimeout(() => {
+            if (chatBubble) chatBubble.scrollIntoView({ block: 'end' });
+        }, 300);
+    });
+    input.addEventListener('blur', () => {
+        // Reset viewport after keyboard dismisses
+        setTimeout(() => window.scrollTo(0, 0), 100);
+    });
 
     renderMessages();
 }

@@ -15,10 +15,28 @@ mkdir -p "$LOCAL_PATH/server/php/db-backups"
 ssh -p $PORT $HOST "cat $REMOTE_PATH/server/php/db/skorch.db" > "$LOCAL_PATH/server/php/db-backups/skorch-$(date +%Y%m%d-%H%M%S).db"
 echo "Database backed up locally"
 
-# 2. Deploy frontend (CSS, JS, HTML) - safe to delete and replace
+# 2. Deploy frontend (CSS, JS, HTML, pages, assets) - safe to delete and replace
 echo "Deploying frontend..."
 ssh -p $PORT $HOST "rm -rf $REMOTE_PATH/css $REMOTE_PATH/js"
 scp -P $PORT -r "$LOCAL_PATH/css" "$LOCAL_PATH/js" "$LOCAL_PATH/index.html" $HOST:$REMOTE_PATH/
+
+# Deploy sub-pages
+echo "Deploying pages..."
+ssh -p $PORT $HOST "mkdir -p $REMOTE_PATH/play $REMOTE_PATH/leaderboard $REMOTE_PATH/profile $REMOTE_PATH/rules $REMOTE_PATH/login $REMOTE_PATH/register $REMOTE_PATH/friends $REMOTE_PATH/clans $REMOTE_PATH/admin $REMOTE_PATH/assets"
+scp -P $PORT "$LOCAL_PATH/play/index.html" $HOST:$REMOTE_PATH/play/
+scp -P $PORT "$LOCAL_PATH/leaderboard/index.html" $HOST:$REMOTE_PATH/leaderboard/
+scp -P $PORT "$LOCAL_PATH/friends/index.html" $HOST:$REMOTE_PATH/friends/
+scp -P $PORT "$LOCAL_PATH/clans/index.html" $HOST:$REMOTE_PATH/clans/
+scp -P $PORT "$LOCAL_PATH/admin/index.html" $HOST:$REMOTE_PATH/admin/
+scp -P $PORT "$LOCAL_PATH/profile/index.html" $HOST:$REMOTE_PATH/profile/
+ssh -p $PORT $HOST "mkdir -p $REMOTE_PATH/profile/edit"
+scp -P $PORT "$LOCAL_PATH/profile/edit/index.html" $HOST:$REMOTE_PATH/profile/edit/
+scp -P $PORT "$LOCAL_PATH/rules/index.html" $HOST:$REMOTE_PATH/rules/
+scp -P $PORT "$LOCAL_PATH/login/index.html" $HOST:$REMOTE_PATH/login/
+scp -P $PORT "$LOCAL_PATH/register/index.html" $HOST:$REMOTE_PATH/register/
+ssh -p $PORT $HOST "mkdir -p $REMOTE_PATH/forgot-password"
+scp -P $PORT "$LOCAL_PATH/forgot-password/index.html" $HOST:$REMOTE_PATH/forgot-password/
+scp -P $PORT -r "$LOCAL_PATH/assets/"* $HOST:$REMOTE_PATH/assets/
 
 # 3. Cache bypass for client.js
 ssh -p $PORT $HOST "cp $REMOTE_PATH/js/multiplayer/client.js $REMOTE_PATH/js/multiplayer/client2.js && sed -i 's|multiplayer/client.js|multiplayer/client2.js|g' $REMOTE_PATH/js/main.js"

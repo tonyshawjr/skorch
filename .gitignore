@@ -19,3 +19,5 @@ Thumbs.db
 
 css/*.backup.css
 .serena/
+
+server/php/db-secrets.php

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sign Up - Skorch</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2rem;
+            background: radial-gradient(ellipse at top, rgba(177,31,36,0.15) 0%, transparent 50%), var(--bg-base);
+        }
+        .login-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            width: 100%; max-width: 480px;
+            padding: 2.5rem 2.5rem;
+        }
+        .login-logo { display: block; height: 50px; margin: 0 auto 1.5rem; }
+        .login-title {
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 0.25rem;
+        }
+        .login-sub {
+            text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;
+        }
+        .login-sub a { color: var(--brand-red); text-decoration: none; font-weight: 600; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .login-footer {
+            text-align: center; margin-top: 1.5rem; padding-top: 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-muted); font-size: 0.8rem;
+        }
+        .login-footer a { color: var(--brand-red); text-decoration: none; font-weight: 600; }
+        .section-label {
+            font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted);
+            margin: 1.25rem 0 0.75rem; padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        @media (max-width: 480px) {
+            .login-page { padding: 1rem; }
+            .login-card { padding: 2rem 1.5rem; }
+            .row-2, .row-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="site-nav">
+        <div class="site-nav__inner">
+            <a href="/" class="site-nav__logo"><img src="/assets/logo.svg" alt="Skorch"></a>
+            <div class="site-nav__links">
+                <a href="/play" class="site-nav__link">Play</a>
+                <a href="/leaderboard" class="site-nav__link">Leaderboard</a>
+                <a href="/rules" class="site-nav__link">Rules</a>
+            </div>
+            <div class="site-nav__right">
+                <a href="/login" class="site-nav__auth-btn">Log In</a>
+                <button class="site-nav__hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+        <div class="site-nav__mobile" id="mobile-menu">
+            <a href="/play" class="site-nav__mobile-link">Play</a>
+            <a href="/leaderboard" class="site-nav__mobile-link">Leaderboard</a>
+            <a href="/rules" class="site-nav__mobile-link">Rules</a>
+            <a href="/login" class="site-nav__mobile-link">Log In</a>
+        </div>
+    </nav>
+    <div class="site-nav__overlay" id="nav-overlay"></div>
+
+    <div class="login-page">
+        <div class="login-card">
+            <img src="/assets/logo.svg" alt="Skorch" class="login-logo">
+            <h1 class="login-title">Create Your Account</h1>
+            <p class="login-sub">Already have an account? <a href="/login">Log In</a></p>
+
+            <!-- Account -->
+            <div class="section-label">Account</div>
+            <div class="form-group">
+                <label class="form-label" for="reg-user">Username</label>
+                <input class="form-input" type="text" id="reg-user" placeholder="Choose a username" autocapitalize="none" autocorrect="off" maxlength="20">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="reg-email">Email</label>
+                <input class="form-input" type="email" id="reg-email" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="reg-pass">Password</label>
+                <input class="form-input" type="password" id="reg-pass" placeholder="6+ characters">
+            </div>
+
+            <!-- Personal -->
+            <div class="section-label">Personal Info</div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label class="form-label" for="reg-first">First Name</label>
+                    <input class="form-input" type="text" id="reg-first" placeholder="First name" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-last">Last Name</label>
+                    <input class="form-input" type="text" id="reg-last" placeholder="Last name" maxlength="50">
+                </div>
+            </div>
+            <div class="form-group" style="max-width:200px;">
+                <label class="form-label" for="reg-bday">Birthday</label>
+                <input class="form-input" type="date" id="reg-bday">
+            </div>
+
+            <!-- Location -->
+            <div class="section-label">Location</div>
+            <div class="row-3">
+                <div class="form-group">
+                    <label class="form-label" for="reg-city">City</label>
+                    <input class="form-input" type="text" id="reg-city" placeholder="City" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-state">State / Region</label>
+                    <input class="form-input" type="text" id="reg-state" placeholder="State" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-country">Country</label>
+                    <input class="form-input" type="text" id="reg-country" placeholder="Country" maxlength="100" value="US">
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-lg" id="reg-btn" style="width:100%;">Create Account</button>
+            <div id="reg-error" style="color:var(--danger);font-size:0.85rem;text-align:center;min-height:1.25rem;margin-top:0.75rem;"></div>
+
+            <div class="login-footer">
+                By signing up you agree to play fair and have fun.
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/site.js?v=3"></script>
+    <script>
+        document.getElementById('reg-btn').addEventListener('click', async function() {
+            var fields = {
+                username: document.getElementById('reg-user').value.trim(),
+                email: document.getElementById('reg-email').value.trim(),
+                password: document.getElementById('reg-pass').value,
+                first_name: document.getElementById('reg-first').value.trim(),
+                last_name: document.getElementById('reg-last').value.trim(),
+                birthday: document.getElementById('reg-bday').value,
+                city: document.getElementById('reg-city').value.trim(),
+                state_region: document.getElementById('reg-state').value.trim(),
+                country: document.getElementById('reg-country').value.trim()
+            };
+            var errorEl = document.getElementById('reg-error');
+            errorEl.textContent = '';
+
+            // Client-side validation
+            if (!fields.username) { errorEl.textContent = 'Username required'; return; }
+            if (!fields.email) { errorEl.textContent = 'Email required'; return; }
+            if (!fields.password || fields.password.length < 6) { errorEl.textContent = 'Password must be 6+ characters'; return; }
+            if (!fields.first_name || !fields.last_name) { errorEl.textContent = 'First and last name required'; return; }
+            if (!fields.birthday) { errorEl.textContent = 'Birthday required'; return; }
+            if (!fields.city || !fields.state_region || !fields.country) { errorEl.textContent = 'Location required'; return; }
+
+            this.textContent = 'Creating account...';
+            this.disabled = true;
+
+            try {
+                var res = await fetch('/server/php/api/register.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(fields)
+                });
+                var data = await res.json();
+                if (data.success) {
+                    window.location.href = '/profile';
+                } else {
+                    errorEl.textContent = data.error || 'Registration failed';
+                    this.textContent = 'Create Account';
+                    this.disabled = false;
+                }
+            } catch (e) {
+                errorEl.textContent = 'Connection error. Try again.';
+                this.textContent = 'Create Account';
+                this.disabled = false;
+            }
+        });
+
+        document.getElementById('reg-country').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') document.getElementById('reg-btn').click();
+        });
+    </script>
+</body>
+</html>

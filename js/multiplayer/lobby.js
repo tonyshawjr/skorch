@@ -16,6 +16,10 @@ export function showLobby(onBack) {
             <div class="lobby-section">
                 <h3>Create a Room</h3>
                 ${!loggedInUser ? '<div class="lobby-field"><input type="text" id="lobby-username-create" placeholder="Your name" maxlength="20" class="lobby-input" /></div>' : ''}
+                <div class="lobby-field" style="display:flex;align-items:center;gap:0.5rem;justify-content:center;">
+                    <label for="lobby-public-toggle" style="font-size:0.85rem;color:#9ca3af;cursor:pointer;">Public game</label>
+                    <input type="checkbox" id="lobby-public-toggle" checked style="cursor:pointer;" />
+                </div>
                 <button id="lobby-create-btn" class="lobby-btn lobby-btn-primary">Create Room</button>
             </div>
 
@@ -62,7 +66,9 @@ export function showLobby(onBack) {
                 const nameInput = overlay.querySelector('#lobby-username-create');
                 const username = loggedInUser ? loggedInUser.username : (nameInput ? nameInput.value.trim() : '');
                 if (!username) { alert('Enter your name'); return; }
-                handler(username);
+                const publicToggle = overlay.querySelector('#lobby-public-toggle');
+                const isPublic = publicToggle ? publicToggle.checked : true;
+                handler(username, isPublic);
             });
         },
         onJoinClick(handler) {

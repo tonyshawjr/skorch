@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Reset Password - Skorch</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2rem;
+            background: radial-gradient(ellipse at top, rgba(177,31,36,0.15) 0%, transparent 50%), var(--bg-base);
+        }
+        .login-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            width: 100%; max-width: 420px;
+            padding: 3rem 2.5rem;
+        }
+        .login-logo { display: block; height: 60px; margin: 0 auto 2rem; }
+        .login-title {
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 0.5rem;
+        }
+        .login-sub {
+            text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.5;
+        }
+        .login-footer {
+            text-align: center; margin-top: 2rem; padding-top: 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-muted); font-size: 0.8rem;
+        }
+        .login-footer a { color: var(--brand-red); text-decoration: none; font-weight: 600; }
+        .success-msg {
+            text-align: center; color: var(--green); font-size: 0.9rem;
+            padding: 1rem; background: rgba(52,211,153,0.08);
+            border: 1px solid rgba(52,211,153,0.2); border-radius: var(--radius-sm);
+        }
+        @media (max-width: 480px) {
+            .login-page { padding: 1rem; }
+            .login-card { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="site-nav">
+        <div class="site-nav__inner">
+            <a href="/" class="site-nav__logo"><img src="/assets/logo.svg" alt="Skorch"></a>
+            <div class="site-nav__links">
+                <a href="/play" class="site-nav__link">Play</a>
+                <a href="/leaderboard" class="site-nav__link">Leaderboard</a>
+                <a href="/rules" class="site-nav__link">Rules</a>
+            </div>
+            <div class="site-nav__right">
+                <a href="/login" class="site-nav__auth-btn" id="nav-auth">Log In</a>
+                <button class="site-nav__hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+        <div class="site-nav__mobile" id="mobile-menu">
+            <a href="/play" class="site-nav__mobile-link">Play</a>
+            <a href="/leaderboard" class="site-nav__mobile-link">Leaderboard</a>
+            <a href="/rules" class="site-nav__mobile-link">Rules</a>
+        </div>
+    </nav>
+    <div class="site-nav__overlay" id="nav-overlay"></div>
+
+    <div class="login-page">
+        <div class="login-card" id="card">
+            <img src="/assets/logo.svg" alt="Skorch" class="login-logo">
+            <!-- JS will populate based on whether there's a token in the URL -->
+        </div>
+    </div>
+
+    <script src="/js/site.js?v=3"></script>
+    <script>
+    (function() {
+        var token = new URLSearchParams(window.location.search).get('token');
+        var card = document.getElementById('card');
+
+        if (token) {
+            // RESET FORM — user clicked the email link
+            card.innerHTML +=
+                '<h1 class="login-title">Set New Password</h1>' +
+                '<p class="login-sub">Enter your new password below.</p>' +
+                '<div class="form-group">' +
+                    '<label class="form-label" for="new-pass">New Password</label>' +
+                    '<input class="form-input" type="password" id="new-pass" placeholder="6+ characters">' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label class="form-label" for="confirm-pass">Confirm Password</label>' +
+                    '<input class="form-input" type="password" id="confirm-pass" placeholder="Type it again">' +
+                '</div>' +
+                '<button class="btn btn-primary btn-lg" id="reset-btn" style="width:100%;">Reset Password</button>' +
+                '<div id="status" style="text-align:center;font-size:0.85rem;min-height:1.25rem;margin-top:0.75rem;"></div>' +
+                '<div class="login-footer">Remember your password? <a href="/login">Log In</a></div>';
+
+            document.getElementById('reset-btn').addEventListener('click', async function() {
+                var pass = document.getElementById('new-pass').value;
+                var confirm = document.getElementById('confirm-pass').value;
+                var st = document.getElementById('status');
+                st.style.color = 'var(--danger)';
+
+                if (!pass || pass.length < 6) { st.textContent = 'Password must be 6+ characters'; return; }
+                if (pass !== confirm) { st.textContent = 'Passwords don\'t match'; return; }
+
+                this.disabled = true;
+                this.textContent = 'Resetting...';
+                st.textContent = '';
+
+                try {
+                    var res = await fetch('/server/php/api/reset-password.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: token, password: pass })
+                    });
+                    var data = await res.json();
+                    if (data.success) {
+                        card.querySelector('.login-title').textContent = 'Password Reset';
+                        card.innerHTML = '<img src="/assets/logo.svg" alt="Skorch" class="login-logo">' +
+                            '<div class="success-msg">Your password has been updated.</div>' +
+                            '<a href="/login" class="btn btn-primary btn-lg" style="width:100%;margin-top:1.5rem;">Log In</a>';
+                    } else {
+                        st.textContent = data.error || 'Reset failed';
+                        this.disabled = false;
+                        this.textContent = 'Reset Password';
+                    }
+                } catch(e) {
+                    st.textContent = 'Connection error';
+                    this.disabled = false;
+                    this.textContent = 'Reset Password';
+                }
+            });
+
+            document.getElementById('confirm-pass').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('reset-btn').click();
+            });
+
+        } else {
+            // REQUEST FORM — user needs to enter their email
+            card.innerHTML +=
+                '<h1 class="login-title">Forgot Password</h1>' +
+                '<p class="login-sub">Enter your email and we\'ll send you a link to reset your password.</p>' +
+                '<div class="form-group">' +
+                    '<label class="form-label" for="email">Email Address</label>' +
+                    '<input class="form-input" type="email" id="email" placeholder="your@email.com">' +
+                '</div>' +
+                '<button class="btn btn-primary btn-lg" id="send-btn" style="width:100%;">Send Reset Link</button>' +
+                '<div id="status" style="text-align:center;font-size:0.85rem;min-height:1.25rem;margin-top:0.75rem;"></div>' +
+                '<div class="login-footer">Remember your password? <a href="/login">Log In</a></div>';
+
+            document.getElementById('send-btn').addEventListener('click', async function() {
+                var email = document.getElementById('email').value.trim();
+                var st = document.getElementById('status');
+
+                if (!email) { st.style.color = 'var(--danger)'; st.textContent = 'Enter your email'; return; }
+
+                this.disabled = true;
+                this.textContent = 'Sending...';
+
+                try {
+                    var res = await fetch('/server/php/api/forgot-password.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email })
+                    });
+                    var data = await res.json();
+                    card.innerHTML = '<img src="/assets/logo.svg" alt="Skorch" class="login-logo">' +
+                        '<h1 class="login-title">Check Your Email</h1>' +
+                        '<div class="success-msg">If an account with that email exists, we sent a reset link. Check your inbox (and spam folder).</div>' +
+                        '<div class="login-footer"><a href="/login">Back to Log In</a></div>';
+                } catch(e) {
+                    st.style.color = 'var(--danger)';
+                    st.textContent = 'Connection error';
+                    this.disabled = false;
+                    this.textContent = 'Send Reset Link';
+                }
+            });
+
+            document.getElementById('email').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('send-btn').click();
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

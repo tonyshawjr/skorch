@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Friends - Skorch</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="description" content="Find Skorch players, send friend requests, and see who's online.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="/css/styles.css?v=4" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="site-nav">
+        <div class="site-nav__inner">
+            <a href="/" class="site-nav__logo"><img src="/assets/logo.svg" alt="Skorch"></a>
+            <div class="site-nav__links">
+                <a href="/play" class="site-nav__link">Play</a>
+                <a href="/leaderboard" class="site-nav__link">Leaderboard</a>
+                <a href="/rules" class="site-nav__link">Rules</a>
+            </div>
+            <div class="site-nav__right">
+                <a href="/login" class="site-nav__auth-btn" id="nav-auth">Log In</a>
+                <button class="site-nav__hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                    <span class="site-nav__hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+        <div class="site-nav__mobile" id="mobile-menu">
+            <a href="/play" class="site-nav__mobile-link">Play</a>
+            <a href="/leaderboard" class="site-nav__mobile-link">Leaderboard</a>
+            <a href="/rules" class="site-nav__mobile-link">Rules</a>
+        </div>
+    </nav>
+    <div class="site-nav__overlay" id="nav-overlay"></div>
+
+    <section class="page-header">
+        <h1 class="page-title">&#128101; Friends</h1>
+        <p class="page-sub">Find players, manage your friends, and see who's online.</p>
+
+        <div class="friends-search-wrap">
+            <input type="text" class="search-input" id="player-search" placeholder="Search players by name..." autocomplete="off">
+        </div>
+    </section>
+
+    <main class="content">
+        <div class="card" id="requests-card" style="display:none;">
+            <div class="card-title">Friend Requests <span class="badge-count" id="requests-count" style="color:var(--brand-red);font-weight:700;"></span></div>
+            <div id="requests-list"></div>
+        </div>
+
+        <div id="search-results-section"><div class="shimmer"></div></div>
+
+        <div class="card">
+            <div class="card-title">Your Friends <span id="friends-count" style="color:var(--text-muted);font-weight:400;"></span></div>
+            <div id="friends-list" class="friends-list">
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+                <div class="shimmer"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p class="footer-motto">A Game for the Masses</p>
+        <p>&copy; 2017-<script>document.write(new Date().getFullYear())</script> Tony Shaw. All rights reserved.</p>
+    </footer>
+
+    <script src="/js/site.js?v=5"></script>
+</body>
+</html>

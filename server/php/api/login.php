@@ -17,16 +17,15 @@ if (!$username || !$password) {
 
 $db = getDB();
 $stmt = $db->prepare('SELECT id, username, password_hash FROM users WHERE username = :u OR email = :u');
-$stmt->bindValue(':u', $username, SQLITE3_TEXT);
-$result = $stmt->execute();
-$user = $result->fetchArray(SQLITE3_ASSOC);
+$stmt->bindValue(':u', $username, PDO::PARAM_STR);
+$stmt->execute();
+$user = $stmt->fetch();
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
     jsonResponse(['error' => 'Invalid credentials'], 401);
 }
 
-// Update last login
-$db->exec("UPDATE users SET last_login = datetime('now') WHERE id = {$user['id']}");
+$db->exec("UPDATE users SET last_login = NOW(), last_active = NOW() WHERE id = {$user['id']}");
 
 session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];

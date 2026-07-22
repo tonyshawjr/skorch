@@ -2,7 +2,7 @@ import { CardType } from './cards.js';
 import { generateDeck, shuffleDeck } from './deck.js';
 import { createPrison, isPrisonCardAccessible, removePrisonCard, isPrisonEmpty, getUnlockedCards, swapPrisonCards } from './prison.js';
 
-export function createGameState() {
+export function createGameState(difficulty = 'medium') {
     const deck = shuffleDeck(generateDeck());
     const playerPrison = createPrison(deck);
     const computerPrison = createPrison(deck);
@@ -24,6 +24,7 @@ export function createGameState() {
         computer: { hand: computerHand, prison: computerPrison },
         currentTurn: firstPlayer,
         turnCount: 1,
+        difficulty,
         burnedCards: [],
         gameOver: false,
         winner: null,
@@ -38,19 +39,10 @@ export function createGameState() {
 }
 
 export function getEffectiveValue(state) {
-    if (state.discardPile.length === 0) return 0;
-    const topCard = state.discardPile[state.discardPile.length - 1];
-    if (topCard.type === CardType.DEMOTER) return 0;
-    if (topCard.type === CardType.SKORCH) return 0;
     for (let i = state.discardPile.length - 1; i >= 0; i--) {
-        if (state.discardPile[i].type === CardType.ATTACK) {
-            return state.discardPile[i].value;
-        }
-    }
-    // If no attack card found, check if Elude is on top (value = 1 per rules)
-    if (state.discardPile.length > 0) {
-        const topCard = state.discardPile[state.discardPile.length - 1];
-        if (topCard.type === CardType.ELUDE) return 1;
+        const card = state.discardPile[i];
+        if (card.type === CardType.ATTACK) return card.value;
+        if (card.type === CardType.DEMOTER || card.type === CardType.SKORCH) return 0;
     }
     return 0;
 }
