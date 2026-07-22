@@ -38,6 +38,15 @@ function getDB() {
     return $pdo;
 }
 
+function serverSecret() {
+    static $secret = null;
+    if ($secret === null) {
+        $s = require __DIR__ . '/db-secrets.php';
+        $secret = $s['ws_secret'] ?? '';
+    }
+    return $secret;
+}
+
 function jsonResponse($data, $code = 200) {
     http_response_code($code);
     header('Content-Type: application/json');

@@ -10,7 +10,7 @@ import { initChat, addMessage, destroyChat } from './ui/chat.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { showAccountModal } from './ui/account.js';
 import { showLeaderboard } from './ui/leaderboard.js';
-import { recordMatch, isLoggedIn, getProfile, startHeartbeat } from './multiplayer/auth.js';
+import { recordMatch, isLoggedIn, getProfile, startHeartbeat, getWsTicket } from './multiplayer/auth.js';
 
 const SAVE_KEY = 'skorch_game_state';
 const DIFFICULTY_KEY = 'skorch_ai_difficulty';
@@ -598,7 +598,6 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
-                    recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
                     reportFirestorm(won);
                     showGameOver(data.winner, () => {
                         requestRematch();
@@ -629,7 +628,8 @@ async function onMultiplayer() {
                 },
                 onRoomJoined: () => {}
             });
-            createRoom(username, isPublic);
+            const ticket = await getWsTicket();
+            createRoom(username, isPublic, ticket);
         } catch (e) {
             lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
         }
@@ -690,7 +690,6 @@ async function onMultiplayer() {
                     state.gameOver = true;
                     state.winner = data.winner;
                     if (won) playVictory(); else playDefeat();
-                    recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
                     reportFirestorm(won);
                     showGameOver(won ? 'player' : 'computer', () => {
                         requestRematch();
@@ -716,7 +715,8 @@ async function onMultiplayer() {
                 onRoomCreated: () => {},
                 onRoomJoined: () => lobby.showJoining()
             });
-            joinRoom(code, username);
+            const ticket = await getWsTicket();
+            joinRoom(code, username, ticket);
         } catch (e) {
             lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
         }
@@ -784,7 +784,6 @@ async function onMultiplayerWithCode(code) {
                 state.gameOver = true;
                 state.winner = data.winner;
                 if (won) playVictory(); else playDefeat();
-                recordMatch(won, 'pvp', 0, {}, state._opponentName).catch(() => {});
                 showGameOver(won ? 'player' : 'computer', () => {
                     requestRematch();
                     state.status = 'Rematch requested...';
@@ -810,7 +809,8 @@ async function onMultiplayerWithCode(code) {
                 status.textContent = 'Connected! Waiting for game...';
             }
         });
-        joinRoom(code, username);
+        const ticket = await getWsTicket();
+        joinRoom(code, username, ticket);
     } catch (e) {
         status.textContent = 'Could not connect: ' + (e.message || 'Try again');
         status.style.color = '#ef4444';

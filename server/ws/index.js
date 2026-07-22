@@ -1,8 +1,10 @@
 const express = require('express');
 const http = require('http');
+const crypto = require('crypto');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { createRoom, joinRoom, getRoom, removePlayer, listRooms, listPublicRooms } = require('./game-room');
+const { reportMatch } = require('./report');
 const { createGameState, playFromHand, playFromPrison, pickupDiscardPile, drawCard, nextTurn, checkWin, getEffectiveValue, isValidPlay, isValidStack, executeUndeadSwap, executeUndeadTake } = require('./game-engine');
 
 const app = express();
@@ -70,7 +72,7 @@ setInterval(() => {
 
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length, build: 'sec1' });
+    res.json({ status: 'Skorch multiplayer server running', rooms: listRooms().length, build: 'sec2' });
 });
 
 // Public rooms endpoint
@@ -87,11 +89,12 @@ io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
 
     // Create a new game room
-    socket.on('create-room', ({ username, isPublic }) => {
+    socket.on('create-room', ({ username, isPublic, ticket }) => {
         if (rateLimit(socket.id)) { socket.emit('error', { message: 'Too many requests' }); return; }
         if (!validateString(username, 20)) return;
         const roomPublic = isPublic !== undefined ? !!isPublic : true;
         const room = createRoom(socket.id, username, roomPublic);
+        room.players[0].ticket = validateString(ticket, 400) ? ticket : null;
         socket.join(room.code);
         socket.emit('room-created', { code: room.code, playerId: 'player1' });
         console.log(`Room ${room.code} created by ${username} (${roomPublic ? 'public' : 'private'})`);
@@ -108,7 +111,7 @@ io.on('connection', (socket) => {
     });
 
     // Join existing room
-    socket.on('join-room', ({ code, username }) => {
+    socket.on('join-room', ({ code, username, ticket }) => {
         if (rateLimit(socket.id) || ipRateLimit(socket.handshake.address)) { socket.emit('error', { message: 'Too many requests' }); return; }
         if (!validateString(code, 4) || !validateString(username, 20)) return;
         const room = getRoom(code);
@@ -124,6 +127,7 @@ io.on('connection', (socket) => {
         // Always use the canonical room code (uppercase) for Socket.io rooms
         const canonicalCode = room.code;
         joinRoom(canonicalCode, socket.id, username);
+        if (room.players[1]) room.players[1].ticket = validateString(ticket, 400) ? ticket : null;
         socket.join(canonicalCode);
         socket.emit('room-joined', { code: canonicalCode, playerId: 'player2' });
 
@@ -134,6 +138,7 @@ io.on('connection', (socket) => {
         const state = createGameState(true);
         room.state = state;
         room.started = true;
+        room.reported = false;
 
         // Send each player their view
         const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
@@ -191,10 +196,7 @@ io.on('connection', (socket) => {
 
             // Check win
             if (checkWin(room.state, who)) {
-                room.state.gameOver = true;
-                room.state.winner = who;
-                broadcastState(room);
-                io.to(roomCode).emit('game-over', { winner: who });
+                finishGame(room, roomCode, who);
                 return;
             }
 
@@ -248,10 +250,7 @@ io.on('connection', (socket) => {
             if (result.effect === 'undead') { room.state.pendingUndeadSwap = who; }
 
             if (checkWin(room.state, who)) {
-                room.state.gameOver = true;
-                room.state.winner = who;
-                broadcastState(room);
-                io.to(roomCode).emit('game-over', { winner: who });
+                finishGame(room, roomCode, who);
                 return;
             }
 
@@ -325,6 +324,7 @@ io.on('connection', (socket) => {
             room.state = createGameState(true);
             room.rematchVotes.clear();
             room.started = true;
+            room.reported = false;
 
             const p1Socket = io.sockets.sockets.get(room.players[0].socketId);
             const p2Socket = io.sockets.sockets.get(room.players[1].socketId);
@@ -347,6 +347,24 @@ io.on('connection', (socket) => {
 });
 
 // --- HELPERS ---
+
+function finishGame(room, roomCode, winnerRole) {
+    room.state.gameOver = true;
+    room.state.winner = winnerRole;
+    broadcastState(room);
+    io.to(roomCode).emit('game-over', { winner: winnerRole });
+
+    if (room.reported) return;
+    room.reported = true;
+    const winnerSlot = winnerRole === 'player' ? 'player1' : 'player2';
+    const p1Ticket = room.players[0]?.ticket || null;
+    const p2Ticket = room.players[1]?.ticket || null;
+    if (!p1Ticket && !p2Ticket) return;
+
+    reportMatch({ p1Ticket, p2Ticket, winnerSlot, nonce: crypto.randomUUID() })
+        .then(r => { if (r && r.status !== 200) console.log(`report-match ${r.status}: ${r.body}`); })
+        .catch(e => console.log(`report-match failed: ${e.message}`));
+}
 
 function getPlayerRole(room, socketId) {
     if (room.players[0]?.socketId === socketId) return 'player';

@@ -87,12 +87,12 @@ function initSocket() {
     });
 }
 
-export function createRoom(username, isPublic) {
-    if (socket) socket.emit('create-room', { username, isPublic: isPublic !== undefined ? isPublic : true });
+export function createRoom(username, isPublic, ticket) {
+    if (socket) socket.emit('create-room', { username, isPublic: isPublic !== undefined ? isPublic : true, ticket: ticket || null });
 }
 
-export function joinRoom(code, username) {
-    if (socket) socket.emit('join-room', { code: code.toUpperCase(), username });
+export function joinRoom(code, username, ticket) {
+    if (socket) socket.emit('join-room', { code: code.toUpperCase(), username, ticket: ticket || null });
 }
 
 export function playCards(indexes) {
