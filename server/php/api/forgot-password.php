@@ -54,8 +54,8 @@ $body .= "This link expires in 1 hour.\n\n";
 $body .= "If you didn't request this, just ignore this email.\n\n";
 $body .= "- Skorch";
 
-$headers = "From: noreply@skorchthegame.com\r\n";
-$headers .= "Reply-To: noreply@skorchthegame.com\r\n";
+$headers = "From: Skorch <noreply@skorchthegame.com>\r\n";
+$headers .= "Reply-To: hello@skorchthegame.com\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
 $sent = mail($user['email'], $subject, $body, $headers);
