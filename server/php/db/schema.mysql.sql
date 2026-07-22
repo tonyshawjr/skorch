@@ -214,4 +214,16 @@ CREATE TABLE bug_reports (
     FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE clan_invites (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    clan_id INT NOT NULL,
+    user_id INT NOT NULL,
+    invited_by INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (clan_id, user_id),
+    FOREIGN KEY (clan_id) REFERENCES clans(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (invited_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

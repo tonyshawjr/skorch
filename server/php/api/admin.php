@@ -67,6 +67,7 @@ switch ($action) {
         $db->exec("DELETE FROM firestorms WHERE challenger_clan_id = $cid OR opponent_clan_id = $cid");
         $db->exec("DELETE FROM clan_members WHERE clan_id = $cid");
         $db->exec("DELETE FROM clan_requests WHERE clan_id = $cid");
+        $db->exec("DELETE FROM clan_invites WHERE clan_id = $cid");
         $db->exec("DELETE FROM clans WHERE id = $cid");
         jsonResponse(['success' => true]);
         break;

@@ -80,8 +80,9 @@ switch ($action) {
         } elseif ($m) {
             $clan['relation'] = 'in_other_clan';
         } else {
+            $invited = $db->query("SELECT 1 FROM clan_invites WHERE clan_id = $clanId AND user_id = $userId")->fetchColumn();
             $requested = $db->query("SELECT 1 FROM clan_requests WHERE clan_id = $clanId AND user_id = $userId")->fetchColumn();
-            $clan['relation'] = $requested ? 'requested' : 'can_join';
+            $clan['relation'] = $invited ? 'invited' : ($requested ? 'requested' : 'can_join');
         }
         jsonResponse(['clan' => $clan]);
         break;
@@ -208,6 +209,7 @@ switch ($action) {
         $remaining = (int)$db->query("SELECT COUNT(*) FROM clan_members WHERE clan_id = $clanId")->fetchColumn();
         if ($remaining === 0) {
             $db->exec("DELETE FROM clan_requests WHERE clan_id = $clanId");
+            $db->exec("DELETE FROM clan_invites WHERE clan_id = $clanId");
             $db->exec("DELETE FROM clans WHERE id = $clanId");
         } else {
             $db->exec("UPDATE clans SET member_count = $remaining WHERE id = $clanId");
@@ -283,7 +285,109 @@ switch ($action) {
         $clanId = (int)$m['clan_id'];
         $db->exec("DELETE FROM clan_members WHERE clan_id = $clanId");
         $db->exec("DELETE FROM clan_requests WHERE clan_id = $clanId");
+        $db->exec("DELETE FROM clan_invites WHERE clan_id = $clanId");
         $db->exec("DELETE FROM clans WHERE id = $clanId");
+        jsonResponse(['success' => true]);
+        break;
+
+    case 'invite':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { jsonResponse(['error' => 'POST required'], 405); }
+        $m = myMembership($db, $userId);
+        if (!$m || !in_array($m['role'], ['leader', 'officer'], true)) { jsonResponse(['error' => 'Only a leader or officer can invite players'], 403); }
+        $clanId = (int)$m['clan_id'];
+        $clan = clanById($db, $clanId);
+        if ((int)$clan['member_count'] >= CLAN_MAX_MEMBERS) { jsonResponse(['error' => 'Your clan is full'], 400); }
+        $targetUsername = trim($input['username'] ?? '');
+        $stmt = $db->prepare("SELECT id FROM users WHERE username = :u");
+        $stmt->bindValue(':u', $targetUsername, PDO::PARAM_STR);
+        $stmt->execute();
+        $target = $stmt->fetch();
+        if (!$target) { jsonResponse(['error' => 'Player not found'], 404); }
+        $targetId = (int)$target['id'];
+        if ($db->query("SELECT 1 FROM clan_members WHERE user_id = $targetId")->fetchColumn()) { jsonResponse(['error' => 'That player is already in a clan'], 400); }
+        $stmt = $db->prepare("INSERT IGNORE INTO clan_invites (clan_id, user_id, invited_by) VALUES (:c, :u, :b)");
+        $stmt->bindValue(':c', $clanId, PDO::PARAM_INT);
+        $stmt->bindValue(':u', $targetId, PDO::PARAM_INT);
+        $stmt->bindValue(':b', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        jsonResponse(['success' => true]);
+        break;
+
+    case 'sent_invites':
+        $m = myMembership($db, $userId);
+        if (!$m || !in_array($m['role'], ['leader', 'officer'], true)) { jsonResponse(['invites' => []]); }
+        $stmt = $db->prepare("
+            SELECT ci.id as invite_id, u.username, COALESCE(u.display_name, u.username) as display_name, u.avatar_color, u.avatar_url, s.elo_rating, ci.created_at
+            FROM clan_invites ci
+            JOIN users u ON ci.user_id = u.id
+            LEFT JOIN stats s ON u.id = s.user_id
+            WHERE ci.clan_id = :c
+            ORDER BY ci.created_at DESC
+        ");
+        $stmt->bindValue(':c', (int)$m['clan_id'], PDO::PARAM_INT);
+        $stmt->execute();
+        $out = [];
+        while ($r = $stmt->fetch()) $out[] = $r;
+        jsonResponse(['invites' => $out]);
+        break;
+
+    case 'cancel_invite':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { jsonResponse(['error' => 'POST required'], 405); }
+        $m = myMembership($db, $userId);
+        if (!$m || !in_array($m['role'], ['leader', 'officer'], true)) { jsonResponse(['error' => 'Not authorized'], 403); }
+        $targetUsername = trim($input['username'] ?? '');
+        $stmt = $db->prepare("SELECT id FROM users WHERE username = :u");
+        $stmt->bindValue(':u', $targetUsername, PDO::PARAM_STR);
+        $stmt->execute();
+        $target = $stmt->fetch();
+        if ($target) {
+            $tid = (int)$target['id'];
+            $db->exec("DELETE FROM clan_invites WHERE clan_id = " . (int)$m['clan_id'] . " AND user_id = $tid");
+        }
+        jsonResponse(['success' => true]);
+        break;
+
+    case 'my_invites':
+        $stmt = $db->prepare("
+            SELECT c.id as clan_id, c.name, c.tag, c.color, c.emblem, c.member_count, c.season_points,
+                   ib.username as invited_by
+            FROM clan_invites ci
+            JOIN clans c ON ci.clan_id = c.id
+            LEFT JOIN users ib ON ci.invited_by = ib.id
+            WHERE ci.user_id = :u
+            ORDER BY ci.created_at DESC
+        ");
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        $out = [];
+        while ($r = $stmt->fetch()) $out[] = $r;
+        jsonResponse(['invites' => $out]);
+        break;
+
+    case 'accept_invite':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { jsonResponse(['error' => 'POST required'], 405); }
+        if (myMembership($db, $userId)) { jsonResponse(['error' => 'You are already in a clan'], 400); }
+        $clanId = (int)($input['clan_id'] ?? 0);
+        if (!$db->query("SELECT 1 FROM clan_invites WHERE clan_id = $clanId AND user_id = $userId")->fetchColumn()) { jsonResponse(['error' => 'Invite not found'], 404); }
+        $clan = clanById($db, $clanId);
+        if (!$clan) { jsonResponse(['error' => 'Clan not found'], 404); }
+        if ((int)$clan['member_count'] >= CLAN_MAX_MEMBERS) { jsonResponse(['error' => 'That clan is full'], 400); }
+        $db->beginTransaction();
+        $stmt = $db->prepare("INSERT INTO clan_members (clan_id, user_id, role) VALUES (:c, :u, 'member')");
+        $stmt->bindValue(':c', $clanId, PDO::PARAM_INT);
+        $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        $db->exec("UPDATE clans SET member_count = member_count + 1 WHERE id = $clanId");
+        $db->exec("DELETE FROM clan_invites WHERE user_id = $userId");
+        $db->exec("DELETE FROM clan_requests WHERE user_id = $userId");
+        $db->commit();
+        jsonResponse(['success' => true]);
+        break;
+
+    case 'decline_invite':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { jsonResponse(['error' => 'POST required'], 405); }
+        $clanId = (int)($input['clan_id'] ?? 0);
+        $db->exec("DELETE FROM clan_invites WHERE clan_id = $clanId AND user_id = $userId");
         jsonResponse(['success' => true]);
         break;
 

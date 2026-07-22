@@ -1544,9 +1544,10 @@ function initClans() {
 
 async function renderClanHub() {
     var root = document.getElementById('clans-root');
-    var mineData = {}, listData = {};
+    var mineData = {}, listData = {}, invData = { invites: [] };
     try { mineData = await (await fetch('/server/php/api/clans.php?action=mine', { credentials: 'include' })).json(); } catch (e) {}
     try { listData = await (await fetch('/server/php/api/clans.php?action=list', { credentials: 'include' })).json(); } catch (e) {}
+    if (!mineData.clan) { try { invData = await (await fetch('/server/php/api/clans.php?action=my_invites', { credentials: 'include' })).json(); } catch (e) {} }
     var html = '';
     if (mineData.clan) {
         var c = mineData.clan;
@@ -1563,6 +1564,18 @@ async function renderClanHub() {
             '<div><div class="clan-cta-title">You\'re not in a clan yet</div><div class="clan-cta-sub">Start one and earn clan points, or join an existing clan below.</div></div>' +
             '<button class="btn btn-primary" id="create-clan-btn">Create a Clan</button>' +
         '</div>';
+    }
+    if (!mineData.clan && (invData.invites || []).length) {
+        html += '<div class="card"><div class="card-title">Clan Invitations <span style="color:var(--brand-red);font-weight:700;">' + invData.invites.length + '</span></div><div class="clan-rank-list">';
+        invData.invites.forEach(function(iv) {
+            html += '<div class="clan-rank-row clan-invite-row">' +
+                clanEmblem(iv, 'sm') +
+                '<div class="clan-rank-info"><span class="clan-rank-name">' + escapeHtml(iv.name) + (iv.tag ? ' <span class="clan-tag">[' + escapeHtml(iv.tag) + ']</span>' : '') + '</span>' +
+                '<span class="clan-rank-meta">' + iv.member_count + ' member' + (iv.member_count == 1 ? '' : 's') + (iv.invited_by ? ' &middot; invited by ' + escapeHtml(iv.invited_by) : '') + '</span></div>' +
+                '<div class="clan-member-controls"><button class="btn btn-primary btn-sm clan-inv-accept" data-id="' + iv.clan_id + '">Accept</button><button class="btn btn-ghost btn-sm clan-inv-decline" data-id="' + iv.clan_id + '">Decline</button></div>' +
+            '</div>';
+        });
+        html += '</div></div>';
     }
     var clans = listData.clans || [];
     html += '<div class="card"><div class="card-title">Clan Rankings</div>';
@@ -1585,6 +1598,19 @@ async function renderClanHub() {
     root.innerHTML = html;
     var cb = document.getElementById('create-clan-btn');
     if (cb) cb.addEventListener('click', showCreateClanModal);
+    root.querySelectorAll('.clan-inv-accept').forEach(function(b) {
+        b.addEventListener('click', async function() {
+            this.disabled = true; this.textContent = '...';
+            var d = await (await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'accept_invite', clan_id: parseInt(this.dataset.id) }) })).json();
+            if (d.success) location.reload(); else this.textContent = d.error || 'Error';
+        });
+    });
+    root.querySelectorAll('.clan-inv-decline').forEach(function(b) {
+        b.addEventListener('click', async function() {
+            await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'decline_invite', clan_id: parseInt(this.dataset.id) }) });
+            location.reload();
+        });
+    });
 }
 
 async function renderClanDetail(id) {
@@ -1612,6 +1638,10 @@ async function renderClanDetail(id) {
     '</div>';
     if (isMember) html += '<div id="firestorm-section"><div class="shimmer"></div></div>';
     if (isOfficer) html += '<div class="card" id="clan-requests-card" style="display:none;"><div class="card-title">Join Requests <span id="clan-req-count" style="color:var(--brand-red);font-weight:700;"></span></div><div id="clan-requests-list"></div></div>';
+    if (isOfficer) html += '<div class="card"><div class="card-title">Invite Players</div>' +
+        '<div class="friends-search-wrap" style="margin:0 0 0.75rem;"><input type="text" class="search-input" id="clan-invite-search" placeholder="Search players to invite..." autocomplete="off"></div>' +
+        '<div id="clan-invite-results"></div>' +
+        '<div id="clan-sent-invites"></div></div>';
     html += '<div class="card"><div class="card-title">Roster</div><div class="clan-roster">';
     c.members.forEach(function(mem) { html += renderClanMemberRow(mem, isLeader, isOfficer); });
     html += '</div></div>';
@@ -1621,7 +1651,7 @@ async function renderClanDetail(id) {
     if (isMember) {
         wireRosterActions();
         loadFirestormSection(id, c, isOfficer);
-        if (isOfficer) loadClanRequests();
+        if (isOfficer) { loadClanRequests(); initClanInvite(c); }
     }
 }
 
@@ -1661,6 +1691,17 @@ function renderClanActionButton(c) {
             else if (d.requested) this.textContent = 'Request Sent';
             else { this.textContent = d.error || 'Error'; }
         });
+    } else if (c.relation === 'invited') {
+        el.innerHTML = '<button class="btn btn-primary btn-sm" id="clan-accept-inv">Accept Invite</button> <button class="btn btn-ghost btn-sm" id="clan-decline-inv">Decline</button>';
+        document.getElementById('clan-accept-inv').addEventListener('click', async function() {
+            this.disabled = true; this.textContent = '...';
+            var d = await (await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'accept_invite', clan_id: c.id }) })).json();
+            if (d.success) location.reload(); else this.textContent = d.error || 'Error';
+        });
+        document.getElementById('clan-decline-inv').addEventListener('click', async function() {
+            await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'decline_invite', clan_id: c.id }) });
+            window.location.href = '/clans';
+        });
     } else if (c.relation === 'requested') {
         el.innerHTML = '<button class="btn btn-ghost" disabled>Request Pending</button>';
     } else if (c.relation === 'in_other_clan') {
@@ -1698,6 +1739,89 @@ function wireRosterActions() {
     root.querySelectorAll('.clan-kick-btn').forEach(function(b) { b.addEventListener('click', async function() { if (!confirm('Remove ' + this.dataset.u + ' from the clan?')) return; await act('kick', this.dataset.u); location.reload(); }); });
     root.querySelectorAll('.clan-promote-btn').forEach(function(b) { b.addEventListener('click', async function() { await act('promote', this.dataset.u); location.reload(); }); });
     root.querySelectorAll('.clan-demote-btn').forEach(function(b) { b.addEventListener('click', async function() { await act('demote', this.dataset.u); location.reload(); }); });
+}
+
+function initClanInvite(c) {
+    var memberSet = {};
+    (c.members || []).forEach(function(m) { memberSet[m.username] = true; });
+    var input = document.getElementById('clan-invite-search');
+    if (input) {
+        var timer = null;
+        input.addEventListener('input', function() {
+            clearTimeout(timer);
+            var q = input.value.trim();
+            var results = document.getElementById('clan-invite-results');
+            if (q.length < 2) { if (results) results.innerHTML = ''; return; }
+            timer = setTimeout(function() { runClanInviteSearch(q, memberSet); }, 300);
+        });
+    }
+    loadSentInvites();
+}
+
+async function runClanInviteSearch(q, memberSet) {
+    var section = document.getElementById('clan-invite-results');
+    if (!section) return;
+    try {
+        var d = await (await fetch('/server/php/api/search.php?q=' + encodeURIComponent(q) + '&limit=20', { credentials: 'include' })).json();
+        var players = (d.results || []).filter(function(p) { return p.username !== window.__me && !memberSet[p.username]; });
+        if (players.length === 0) { section.innerHTML = '<p class="empty-state">No players found.</p>'; return; }
+        var html = '<div class="friends-list">';
+        players.forEach(function(p) {
+            var name = p.display_name || p.username;
+            var initial = (name || '?').charAt(0).toUpperCase();
+            var av = p.avatar_url
+                ? '<img src="' + escapeAttr(p.avatar_url) + '" class="friend-row-avatar friend-avatar-img">'
+                : '<div class="friend-row-avatar" style="background:' + escapeAttr(p.avatar_color || '#b11f24') + ';">' + escapeHtml(initial) + '</div>';
+            html += '<div class="friend-row">' +
+                '<a href="/profile?u=' + encodeURIComponent(p.username) + '" class="friend-row-main">' + av +
+                    '<div class="friend-row-info"><span class="friend-row-name">' + escapeHtml(name) + '</span><span class="friend-row-meta">Elo ' + (p.elo_rating || 1200) + '</span></div>' +
+                '</a>' +
+                '<button class="btn btn-primary btn-sm clan-invite-btn" data-username="' + escapeAttr(p.username) + '">Invite</button>' +
+            '</div>';
+        });
+        html += '</div>';
+        section.innerHTML = html;
+        section.querySelectorAll('.clan-invite-btn').forEach(function(btn) {
+            btn.addEventListener('click', async function() {
+                var self = this; self.disabled = true; self.textContent = '...';
+                try {
+                    var r = await (await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'invite', username: self.dataset.username }) })).json();
+                    if (r.success) { self.textContent = 'Invited'; loadSentInvites(); }
+                    else { self.textContent = r.error || 'Error'; }
+                } catch (e) { self.textContent = 'Error'; }
+            });
+        });
+    } catch (e) { section.innerHTML = ''; }
+}
+
+async function loadSentInvites() {
+    var el = document.getElementById('clan-sent-invites');
+    if (!el) return;
+    try {
+        var d = await (await fetch('/server/php/api/clans.php?action=sent_invites', { credentials: 'include' })).json();
+        var invites = d.invites || [];
+        if (invites.length === 0) { el.innerHTML = ''; return; }
+        var html = '<div class="clan-sent-title">Pending Invites (' + invites.length + ')</div><div class="friends-list">';
+        invites.forEach(function(iv) {
+            var name = iv.display_name || iv.username;
+            var av = iv.avatar_url
+                ? '<img src="' + escapeAttr(iv.avatar_url) + '" class="friend-row-avatar friend-avatar-img">'
+                : '<div class="friend-row-avatar" style="background:' + escapeAttr(iv.avatar_color || '#b11f24') + ';">' + escapeHtml(name.charAt(0).toUpperCase()) + '</div>';
+            html += '<div class="friend-row">' +
+                '<div class="friend-row-main">' + av + '<div class="friend-row-info"><span class="friend-row-name">' + escapeHtml(name) + '</span><span class="friend-row-meta">Elo ' + (iv.elo_rating || 1200) + '</span></div></div>' +
+                '<button class="btn btn-ghost btn-sm clan-cancel-inv-btn" data-username="' + escapeAttr(iv.username) + '">Cancel</button>' +
+            '</div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+        el.querySelectorAll('.clan-cancel-inv-btn').forEach(function(btn) {
+            btn.addEventListener('click', async function() {
+                var self = this; self.disabled = true; self.textContent = '...';
+                await fetch('/server/php/api/clans.php', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ action: 'cancel_invite', username: self.dataset.username }) });
+                loadSentInvites();
+            });
+        });
+    } catch (e) { el.innerHTML = ''; }
 }
 
 async function loadClanRequests() {

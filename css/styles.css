@@ -4094,10 +4094,14 @@ select.form-input {
 .clan-role-leader { background: rgba(245, 166, 35, 0.18); color: var(--brand-gold); }
 .clan-role-officer { background: rgba(177, 31, 36, 0.18); color: var(--brand-red-light); }
 .clan-member-controls { display: flex; gap: 0.3rem; flex-shrink: 0; }
+.clan-sent-title { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin: 0.85rem 0 0.4rem; }
+.clan-invite-row { flex-wrap: wrap; cursor: default; }
 @media (max-width: 600px) {
     .clan-member-row .friend-row-main { flex-basis: 100%; }
-    .clan-member-row .clan-member-controls { flex-basis: 100%; margin-top: 0.5rem; }
-    .clan-member-row .clan-member-controls .btn { flex: 1; min-height: 40px; }
+    .clan-member-row .clan-member-controls,
+    .clan-invite-row .clan-member-controls { flex-basis: 100%; margin-top: 0.5rem; }
+    .clan-member-row .clan-member-controls .btn,
+    .clan-invite-row .clan-member-controls .btn { flex: 1; min-height: 40px; }
 }
 
 .firestorm-status { color: var(--text-muted); font-size: 0.9rem; margin: 0.25rem 0 0.75rem; }
