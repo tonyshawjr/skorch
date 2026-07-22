@@ -14,11 +14,11 @@ $input = getInput();
 
 $won = (bool)($input['won'] ?? false);
 $gameType = $input['game_type'] ?? 'ai';
-$duration = (int)($input['duration'] ?? 0);
-$skorches = (int)($input['skorches'] ?? 0);
-$shields = (int)($input['shields'] ?? 0);
-$undeads = (int)($input['undeads'] ?? 0);
-$eludes = (int)($input['eludes'] ?? 0);
+$duration = min(max((int)($input['duration'] ?? 0), 0), 86400);
+$skorches = min(max((int)($input['skorches'] ?? 0), 0), 20);
+$shields = min(max((int)($input['shields'] ?? 0), 0), 20);
+$undeads = min(max((int)($input['undeads'] ?? 0), 0), 20);
+$eludes = min(max((int)($input['eludes'] ?? 0), 0), 20);
 $opponentId = isset($input['opponent_id']) ? (int)$input['opponent_id'] : null;
 if ($opponentId !== null && $opponentId <= 0) $opponentId = null;
 $opponentName = $input['opponent_name'] ?? null;
@@ -26,7 +26,9 @@ $allowedDifficulties = ['easy', 'medium', 'hard', 'insane'];
 $difficulty = in_array($input['difficulty'] ?? '', $allowedDifficulties, true) ? $input['difficulty'] : null;
 
 $db = getDB();
-
+if (rateLimitHit($db, 'match:' . $userId, 30, 300)) {
+    jsonResponse(['error' => 'Too many matches submitted. Please slow down.'], 429);
+}
 
 if (!$opponentId && $opponentName) {
     $stmt = $db->prepare('SELECT id FROM users WHERE username = :name');
@@ -68,13 +70,8 @@ if (($gameType === 'multiplayer' || $gameType === 'pvp') && $opponentId) {
     $eloChange = round($K * ($actualScore - $expectedScore));
 
     
-    $newElo = max(100, $myElo + $eloChange); 
+    $newElo = max(100, $myElo + $eloChange);
     $db->exec("UPDATE stats SET elo_rating = $newElo WHERE user_id = $userId");
-
-    
-    $oppChange = -$eloChange;
-    $newOppElo = max(100, $oppElo + $oppChange);
-    $db->exec("UPDATE stats SET elo_rating = $newOppElo WHERE user_id = $opponentId");
 } elseif ($gameType === 'ai') {
     
     $eloChange = $won ? 5 : -3;
