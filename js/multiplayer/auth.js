@@ -69,17 +69,6 @@ export async function recordMatch(won, gameType = 'ai', duration = 0, stats = {}
     }).then(r => r.json()).catch(() => null);
 }
 
-export async function getWsTicket() {
-    if (!currentUser) return null;
-    try {
-        const res = await fetch(`${API_URL}/ws-ticket.php`, { credentials: 'include' });
-        const data = await res.json();
-        return data.ticket || null;
-    } catch {
-        return null;
-    }
-}
-
 export async function getLeaderboard(sort = 'wins', limit = 20) {
     const res = await fetch(`${API_URL}/leaderboard.php?sort=${sort}&limit=${limit}`);
     return res.json();

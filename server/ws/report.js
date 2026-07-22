@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 
 const DEFAULT_URL = 'https://play.skorchthegame.com/server/php/api/report-match.php';
-const FALLBACK_SECRET = 'a86a4a7cccfd5b6263ff0e276ea9d7a1fc2008e4fbcd35c562ef777fcfeb00fb';
 
 function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
@@ -9,7 +8,11 @@ function sleep(ms) {
 
 async function reportMatch({ p1Ticket, p2Ticket, winnerSlot, nonce, apiUrl, secret }) {
     apiUrl = apiUrl || process.env.MATCH_REPORT_URL || DEFAULT_URL;
-    secret = secret || process.env.WS_SECRET || FALLBACK_SECRET;
+    secret = secret || process.env.WS_SECRET;
+    if (!secret) {
+        console.log('report-match skipped: WS_SECRET not configured');
+        return { status: 0, body: 'no secret' };
+    }
 
     const payload = {
         p1_ticket: p1Ticket || null,

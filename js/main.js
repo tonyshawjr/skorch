@@ -5,12 +5,23 @@ import { showUndeadModal } from './ui/undead-modal.js';
 import { animatePop, animateBurn, animateSlideIn, animateShake, wait } from './ui/animations.js';
 import { announceSpecial, showGameOver } from './ui/announcer.js';
 import { initSound, playCardSnap, playCardStack, playCardDraw, playPickup, playSkorch, playShield, playDemoter, playElude, playUndead, playError, playVictory, playDefeat, playTurnDing } from './ui/sound.js';
-import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected, sendChat } from './multiplayer/client.js';
+import { connect, createRoom, joinRoom, playCards as mpPlayCards, pickup as mpPickup, playPrison as mpPlayPrison, undeadSwap as mpUndeadSwap, requestRematch, disconnect, getRoomCode, isConnected, sendChat } from './multiplayer/client.js?v=b2';
 import { initChat, addMessage, destroyChat } from './ui/chat.js';
 import { showLobby } from './multiplayer/lobby.js';
 import { showAccountModal } from './ui/account.js';
 import { showLeaderboard } from './ui/leaderboard.js';
-import { recordMatch, isLoggedIn, getProfile, startHeartbeat, getWsTicket } from './multiplayer/auth.js';
+import { recordMatch, isLoggedIn, getProfile, startHeartbeat } from './multiplayer/auth.js';
+
+async function fetchWsTicket() {
+    if (!isLoggedIn()) return null;
+    try {
+        const res = await fetch('/server/php/api/ws-ticket.php', { credentials: 'include' });
+        const data = await res.json();
+        return data.ticket || null;
+    } catch {
+        return null;
+    }
+}
 
 const SAVE_KEY = 'skorch_game_state';
 const DIFFICULTY_KEY = 'skorch_ai_difficulty';
@@ -628,7 +639,7 @@ async function onMultiplayer() {
                 },
                 onRoomJoined: () => {}
             });
-            const ticket = await getWsTicket();
+            const ticket = await fetchWsTicket();
             createRoom(username, isPublic, ticket);
         } catch (e) {
             lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
@@ -715,7 +726,7 @@ async function onMultiplayer() {
                 onRoomCreated: () => {},
                 onRoomJoined: () => lobby.showJoining()
             });
-            const ticket = await getWsTicket();
+            const ticket = await fetchWsTicket();
             joinRoom(code, username, ticket);
         } catch (e) {
             lobby.showError('Could not connect: ' + (e.message || 'Server may be waking up, try again in 30s'));
@@ -809,7 +820,7 @@ async function onMultiplayerWithCode(code) {
                 status.textContent = 'Connected! Waiting for game...';
             }
         });
-        const ticket = await getWsTicket();
+        const ticket = await fetchWsTicket();
         joinRoom(code, username, ticket);
     } catch (e) {
         status.textContent = 'Could not connect: ' + (e.message || 'Try again');
