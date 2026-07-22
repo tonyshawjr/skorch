@@ -21,3 +21,7 @@ css/*.backup.css
 .serena/
 
 server/php/db-secrets.php
+docs/SECURITY-AUDIT.md
+docs/MATCH-AUTHORITY-DESIGN.md
+docs/DB-MIGRATION-PLAN.md
+docs/BUILD-STATE-CLANS.md
