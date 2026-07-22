@@ -63,7 +63,9 @@ Backed up live code to `server/php.sqlite-bak` (instant rollback), deployed the 
 
 ## Status: ✅ COMPLETE — the game runs on MySQL as of 2026-07-21.
 Rollback if ever needed: `rm -rf server/php && mv server/php.sqlite-bak server/php` on the VPS (restores the SQLite version); the old `skorch.db` is untouched.
-Optional follow-ups: strip the inconsistent pre-existing code comments (some files lost them during conversion, some kept them); add DB transactions to the multi-step operations.
+Follow-ups — ✅ DONE (2026-07-21):
+- **Comment consistency:** stripped all comments from the `server/php` PHP files via a tokenizer pass (safe — only comment tokens removed, strings/hex/URLs untouched); every file passes `php -l`.
+- **DB transactions:** wrapped the three multi-write operations — clan create, Firestorm accept (with rollback on the "just taken" guard), and season end — in `beginTransaction()`/`commit()`. Verified on staging with DB-level checks (clan+member both persist; firestorm status→active + match rows created; season points reset + history snapshotted) and re-tested live. The other multi-write clan/admin actions (join/approve/kick/leave/disband/delete_clan) remain non-transactional as before — available for the same treatment if wanted.
 
 ---
 

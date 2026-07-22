@@ -16,34 +16,34 @@ if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 $db = getDB();
 
-// Find user by email
+
 $stmt = $db->prepare('SELECT id, username, email FROM users WHERE email = :email');
 $stmt->bindValue(':email', $email, PDO::PARAM_STR);
 $stmt->execute();
 $user = $stmt->fetch();
 
 if (!$user) {
-    // Don't reveal whether email exists — always show success
+    
     jsonResponse(['success' => true, 'message' => 'If an account with that email exists, a reset link has been sent.']);
 }
 
-// Generate token (64 char hex)
-$token = bin2hex(random_bytes(32));
-$expiresAt = date('Y-m-d H:i:s', time() + 3600); // 1 hour
 
-// Delete old tokens for this user
+$token = bin2hex(random_bytes(32));
+$expiresAt = date('Y-m-d H:i:s', time() + 3600); 
+
+
 $stmt = $db->prepare('DELETE FROM password_resets WHERE user_id = :uid');
 $stmt->bindValue(':uid', $user['id'], PDO::PARAM_INT);
 $stmt->execute();
 
-// Insert new token
+
 $stmt = $db->prepare('INSERT INTO password_resets (user_id, token, expires_at) VALUES (:uid, :token, :exp)');
 $stmt->bindValue(':uid', $user['id'], PDO::PARAM_INT);
 $stmt->bindValue(':token', $token, PDO::PARAM_STR);
 $stmt->bindValue(':exp', $expiresAt, PDO::PARAM_STR);
 $stmt->execute();
 
-// Send email
+
 $resetUrl = "https://play.skorchthegame.com/forgot-password/?token=" . $token;
 $subject = "Skorch - Reset Your Password";
 $body = "Hey {$user['username']},\n\n";

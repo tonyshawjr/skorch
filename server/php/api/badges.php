@@ -6,7 +6,7 @@ $db = getDB();
 
 switch ($action) {
     case 'all':
-        // Return all badge definitions
+        
         $result = $db->query("SELECT id, name, description, category, xp_reward, icon FROM badges ORDER BY category, xp_reward");
         $badges = [];
         while ($row = $result->fetch()) {
@@ -21,7 +21,7 @@ switch ($action) {
             jsonResponse(['error' => 'Username required'], 400);
         }
 
-        // Look up user
+        
         $stmt = $db->prepare("SELECT id FROM users WHERE username = :name");
         $stmt->bindValue(':name', $username, PDO::PARAM_STR);
         $stmt->execute();
@@ -31,7 +31,7 @@ switch ($action) {
             jsonResponse(['error' => 'User not found'], 404);
         }
 
-        // Get earned badges with definitions
+        
         $stmt = $db->prepare("
             SELECT b.id, b.name, b.description, b.category, b.xp_reward, b.icon, ub.earned_at
             FROM user_badges ub

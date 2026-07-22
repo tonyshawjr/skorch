@@ -17,28 +17,28 @@ $db = getDB();
 $updates = [];
 $params = [];
 
-// Display name (optional, max 50 chars)
+
 if (isset($data['display_name'])) {
     $name = trim(substr($data['display_name'], 0, 50));
     $updates[] = 'display_name = :display_name';
     $params[':display_name'] = $name ?: null;
 }
 
-// Bio (optional, max 200 chars)
+
 if (isset($data['bio'])) {
     $bio = trim(substr($data['bio'], 0, 200));
     $updates[] = 'bio = :bio';
     $params[':bio'] = $bio ?: null;
 }
 
-// Avatar color (hex color)
+
 if (isset($data['avatar_color'])) {
     $color = preg_match('/^#[0-9a-fA-F]{6}$/', $data['avatar_color']) ? $data['avatar_color'] : null;
     $updates[] = 'avatar_color = :avatar_color';
     $params[':avatar_color'] = $color;
 }
 
-// Region
+
 if (isset($data['region'])) {
     $validRegions = ['NA-East', 'NA-West', 'EU-West', 'EU-East', 'Asia', 'Oceania', 'South America', 'Africa', 'Middle East'];
     $region = in_array($data['region'], $validRegions) ? $data['region'] : null;
@@ -46,7 +46,7 @@ if (isset($data['region'])) {
     $params[':region'] = $region;
 }
 
-// Play style
+
 if (isset($data['play_style'])) {
     $validStyles = ['Competitive', 'Casual', 'Just for Fun'];
     $style = in_array($data['play_style'], $validStyles) ? $data['play_style'] : null;
@@ -54,7 +54,7 @@ if (isset($data['play_style'])) {
     $params[':play_style'] = $style;
 }
 
-// Birthday (YYYY-MM-DD)
+
 if (isset($data['birthday'])) {
     $bday = $data['birthday'];
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $bday)) {
@@ -63,7 +63,7 @@ if (isset($data['birthday'])) {
     }
 }
 
-// First/Last name
+
 if (isset($data['first_name'])) {
     $updates[] = 'first_name = :first_name';
     $params[':first_name'] = trim(substr($data['first_name'], 0, 50)) ?: null;
@@ -73,7 +73,7 @@ if (isset($data['last_name'])) {
     $params[':last_name'] = trim(substr($data['last_name'], 0, 50)) ?: null;
 }
 
-// Location
+
 if (isset($data['city'])) {
     $updates[] = 'city = :city';
     $params[':city'] = trim(substr($data['city'], 0, 100)) ?: null;
@@ -87,7 +87,7 @@ if (isset($data['country'])) {
     $params[':country'] = trim(substr($data['country'], 0, 100)) ?: null;
 }
 
-// Social links (JSON object)
+
 if (isset($data['social_links'])) {
     $allowed = ['youtube', 'twitch', 'instagram', 'discord', 'twitter', 'tiktok'];
     $links = [];
@@ -101,10 +101,10 @@ if (isset($data['social_links'])) {
     $params[':social_links'] = count($links) > 0 ? json_encode($links) : null;
 }
 
-// Display preference: 'username' or 'display_name'
+
 if (isset($data['display_preference'])) {
     $pref = in_array($data['display_preference'], ['username', 'display_name']) ? $data['display_preference'] : 'username';
-    // Store in session for now, could add DB column later
+    
     $_SESSION['display_preference'] = $pref;
 }
 

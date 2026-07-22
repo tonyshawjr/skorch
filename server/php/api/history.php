@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $db = getDB();
 $limit = min((int)($_GET['limit'] ?? 20), 50);
 
-// If username param provided, show that player's history (public)
-// Otherwise require auth and show own history
+
+
 $username = isset($_GET['u']) ? trim($_GET['u']) : null;
 
 if ($username) {

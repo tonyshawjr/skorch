@@ -27,7 +27,7 @@ $difficulty = in_array($input['difficulty'] ?? '', $allowedDifficulties, true) ?
 
 $db = getDB();
 
-// Look up opponent by username if no ID provided
+
 if (!$opponentId && $opponentName) {
     $stmt = $db->prepare('SELECT id FROM users WHERE username = :name');
     $stmt->bindValue(':name', $opponentName, PDO::PARAM_STR);
@@ -36,7 +36,7 @@ if (!$opponentId && $opponentName) {
     if ($row) $opponentId = $row['id'];
 }
 
-// Record match
+
 $stmt = $db->prepare('INSERT INTO matches (player1_id, player2_id, winner_id, game_type, duration_seconds, difficulty) VALUES (:p1, :p2, :w, :t, :d, :diff)');
 $stmt->bindValue(':p1', $userId, PDO::PARAM_INT);
 $stmt->bindValue(':p2', $opponentId, $opponentId ? PDO::PARAM_INT : PDO::PARAM_NULL);
@@ -46,7 +46,7 @@ $stmt->bindValue(':d', $duration, PDO::PARAM_INT);
 $stmt->bindValue(':diff', $difficulty, $difficulty ? PDO::PARAM_STR : PDO::PARAM_NULL);
 $stmt->execute();
 
-// Update stats
+
 $field = $won ? 'wins' : 'losses';
 $streakUpdate = $won
     ? "win_streak = win_streak + 1, best_streak = GREATEST(best_streak, win_streak + 1)"
@@ -54,29 +54,29 @@ $streakUpdate = $won
 
 $db->exec("UPDATE stats SET games_played = games_played + 1, $field = $field + 1, $streakUpdate, total_skorches = total_skorches + $skorches, total_shields = total_shields + $shields, total_undeads = total_undeads + $undeads, total_skorch_plays = total_skorch_plays + $skorches, total_shield_plays = total_shield_plays + $shields, total_undead_plays = total_undead_plays + $undeads, total_elude_plays = total_elude_plays + $eludes WHERE user_id = $userId");
 
-// Elo calculation for multiplayer matches
+
 $eloChange = 0;
 if (($gameType === 'multiplayer' || $gameType === 'pvp') && $opponentId) {
-    // Get both players' Elo ratings
+    
     $myElo = $db->query("SELECT elo_rating FROM stats WHERE user_id = $userId")->fetchColumn() ?: 1200;
     $oppElo = $db->query("SELECT elo_rating FROM stats WHERE user_id = $opponentId")->fetchColumn() ?: 1200;
 
-    // Elo formula: K-factor = 32 (standard for new rating systems)
+    
     $K = 32;
     $expectedScore = 1 / (1 + pow(10, ($oppElo - $myElo) / 400));
     $actualScore = $won ? 1 : 0;
     $eloChange = round($K * ($actualScore - $expectedScore));
 
-    // Update my Elo
-    $newElo = max(100, $myElo + $eloChange); // Floor at 100
+    
+    $newElo = max(100, $myElo + $eloChange); 
     $db->exec("UPDATE stats SET elo_rating = $newElo WHERE user_id = $userId");
 
-    // Update opponent's Elo (opposite result)
+    
     $oppChange = -$eloChange;
     $newOppElo = max(100, $oppElo + $oppChange);
     $db->exec("UPDATE stats SET elo_rating = $newOppElo WHERE user_id = $opponentId");
 } elseif ($gameType === 'ai') {
-    // Small Elo adjustment for AI games (+5 win, -3 loss) so single-player still matters
+    
     $eloChange = $won ? 5 : -3;
     $myElo = $db->query("SELECT elo_rating FROM stats WHERE user_id = $userId")->fetchColumn() ?: 1200;
     $newElo = max(100, $myElo + $eloChange);
@@ -98,17 +98,17 @@ if ($won) {
     }
 }
 
-// --- XP Awards ---
+
 $xpGained = 0;
 
-// Base XP for match outcome
+
 if ($won) {
     $xpGained += ($gameType === 'pvp' || $gameType === 'multiplayer') ? 40 : 15;
 } else {
     $xpGained += 10;
 }
 
-// Win streak bonus (3+)
+
 if ($won) {
     $currentStreak = (int)$db->query("SELECT win_streak FROM stats WHERE user_id = $userId")->fetchColumn();
     if ($currentStreak >= 3) {
@@ -116,17 +116,17 @@ if ($won) {
     }
 }
 
-// First game today bonus + daily streak tracking
+
 $today = date('Y-m-d');
 $statsRow = $db->query("SELECT last_game_date, daily_streak FROM stats WHERE user_id = $userId")->fetch();
 $lastGameDate = $statsRow['last_game_date'] ?? null;
 $dailyStreak  = (int)($statsRow['daily_streak'] ?? 0);
 
 if ($lastGameDate !== $today) {
-    // First game of the day
+    
     $xpGained += 20;
 
-    // Update daily streak
+    
     if ($lastGameDate === date('Y-m-d', strtotime('-1 day'))) {
         $dailyStreak++;
     } else {
@@ -140,13 +140,13 @@ if ($lastGameDate !== $today) {
     $stmtStreak->execute();
 }
 
-// Skorch card plays bonus (+5 XP per Skorch card played)
+
 $xpGained += $skorches * 5;
 
-// Award the XP
+
 $xpResult = awardXP($db, $userId, $xpGained);
 
-// Check and award badges
+
 require_once __DIR__ . '/check-badges.php';
 $newBadges = checkAndAwardBadges($db, $userId);
 

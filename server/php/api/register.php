@@ -18,7 +18,7 @@ $city = trim($input['city'] ?? '');
 $stateRegion = trim($input['state_region'] ?? '');
 $country = trim($input['country'] ?? '');
 
-// Validation
+
 if (strlen($username) < 3 || strlen($username) > 20) {
     jsonResponse(['error' => 'Username must be 3-20 characters'], 400);
 }
@@ -37,7 +37,7 @@ if (!$firstName || !$lastName) {
 if (!$birthday || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthday)) {
     jsonResponse(['error' => 'Birthday required'], 400);
 }
-// Age check — must be 13+
+
 $bday = new DateTime($birthday);
 $now = new DateTime();
 $age = $now->diff($bday)->y;
@@ -50,7 +50,7 @@ if (!$city || !$stateRegion || !$country) {
 
 $db = getDB();
 
-// Check existing
+
 $stmt = $db->prepare('SELECT id FROM users WHERE username = :u OR email = :e');
 $stmt->bindValue(':u', $username, PDO::PARAM_STR);
 $stmt->bindValue(':e', $email, PDO::PARAM_STR);
@@ -59,7 +59,7 @@ if ($stmt->fetch()) {
     jsonResponse(['error' => 'Username or email already taken'], 409);
 }
 
-// Create user
+
 $hash = password_hash($password, PASSWORD_BCRYPT);
 $displayName = $firstName . ' ' . $lastName;
 $stmt = $db->prepare('INSERT INTO users (username, email, password_hash, first_name, last_name, display_name, birthday, city, state_region, country, last_active) VALUES (:u, :e, :p, :fn, :ln, :dn, :bd, :ci, :sr, :co, NOW())');
@@ -77,10 +77,10 @@ $stmt->execute();
 
 $userId = (int)$db->lastInsertId();
 
-// Create stats row
+
 $db->exec("INSERT INTO stats (user_id) VALUES ($userId)");
 
-// Auto-login
+
 $_SESSION['user_id'] = $userId;
 $_SESSION['username'] = $username;
 

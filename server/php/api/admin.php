@@ -112,6 +112,7 @@ switch ($action) {
         $sid = (int)$season['id'];
         $champion = null;
         $rank = 0;
+        $db->beginTransaction();
         $res = $db->query("SELECT id, season_points FROM clans ORDER BY season_points DESC, member_count DESC");
         while ($r = $res->fetch()) {
             $rank++;
@@ -135,6 +136,7 @@ switch ($action) {
         $db->exec("UPDATE clan_members SET season_points = 0");
         $champVal = $champion === null ? 'NULL' : $champion;
         $db->exec("UPDATE seasons SET status = 'ended', ended_at = NOW(), champion_clan_id = $champVal WHERE id = $sid");
+        $db->commit();
         jsonResponse(['success' => true, 'champion_clan_id' => $champion]);
         break;
 

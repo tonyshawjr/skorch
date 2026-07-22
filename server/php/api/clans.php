@@ -104,6 +104,7 @@ switch ($action) {
         $exists->execute();
         if ($exists->fetch()) { jsonResponse(['error' => 'That clan name is taken'], 409); }
 
+        $db->beginTransaction();
         $stmt = $db->prepare("INSERT INTO clans (name, tag, description, color, founder_id, is_open, member_count) VALUES (:n, :t, :d, :c, :f, :o, 1)");
         $stmt->bindValue(':n', $name, PDO::PARAM_STR);
         $stmt->bindValue(':t', $tag, PDO::PARAM_STR);
@@ -118,6 +119,7 @@ switch ($action) {
         $stmt->bindValue(':c', $clanId, PDO::PARAM_INT);
         $stmt->bindValue(':u', $userId, PDO::PARAM_INT);
         $stmt->execute();
+        $db->commit();
 
         jsonResponse(['success' => true, 'clan_id' => $clanId]);
         break;

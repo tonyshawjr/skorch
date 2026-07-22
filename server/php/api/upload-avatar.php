@@ -16,7 +16,7 @@ if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
 
 $file = $_FILES['avatar'];
 
-// Validate file type
+
 $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -26,18 +26,18 @@ if (!in_array($mimeType, $allowedTypes)) {
     jsonResponse(['error' => 'Only JPEG, PNG, GIF, and WebP images are allowed'], 400);
 }
 
-// Validate file size (2MB max)
+
 if ($file['size'] > 2 * 1024 * 1024) {
     jsonResponse(['error' => 'Image must be under 2MB'], 400);
 }
 
-// Create uploads directory
+
 $uploadDir = __DIR__ . '/../uploads/avatars/';
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }
 
-// Generate filename from user ID
+
 $ext = match($mimeType) {
     'image/jpeg' => 'jpg',
     'image/png' => 'png',
@@ -47,18 +47,18 @@ $ext = match($mimeType) {
 };
 $filename = "avatar_{$userId}.{$ext}";
 
-// Delete old avatar if exists (different extension)
+
 foreach (glob($uploadDir . "avatar_{$userId}.*") as $old) {
     unlink($old);
 }
 
-// Move uploaded file
+
 $destination = $uploadDir . $filename;
 if (!move_uploaded_file($file['tmp_name'], $destination)) {
     jsonResponse(['error' => 'Failed to save file'], 500);
 }
 
-// Resize image to 256x256 max (if GD is available)
+
 if (function_exists('imagecreatefromjpeg')) {
     $info = getimagesize($destination);
     $width = $info[0];
@@ -79,7 +79,7 @@ if (function_exists('imagecreatefromjpeg')) {
 
         if ($src) {
             $dst = imagecreatetruecolor(256, 256);
-            // Preserve transparency for PNG/GIF/WebP
+            
             if (in_array($mimeType, ['image/png', 'image/gif', 'image/webp'])) {
                 imagealphablending($dst, false);
                 imagesavealpha($dst, true);
@@ -100,7 +100,7 @@ if (function_exists('imagecreatefromjpeg')) {
     }
 }
 
-// Update database with avatar URL
+
 $avatarUrl = "/server/php/uploads/avatars/{$filename}";
 $db = getDB();
 $stmt = $db->prepare('UPDATE users SET avatar_url = :url WHERE id = :id');

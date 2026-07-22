@@ -209,8 +209,9 @@ switch ($action) {
         if (!$lineup) { jsonResponse(['error' => 'Invalid lineup — pick ' . $rosterSize . ' distinct clan members in seed order'], 400); }
 
         $endsAt = date('Y-m-d H:i:s', time() + 86400);
+        $db->beginTransaction();
         $affected = $db->exec("UPDATE firestorms SET opponent_clan_id = $clanId, status = 'active', started_at = NOW(), ends_at = '$endsAt' WHERE id = $fid AND status = 'open'");
-        if ($affected === 0) { jsonResponse(['error' => 'Firestorm was just taken'], 409); }
+        if ($affected === 0) { $db->rollBack(); jsonResponse(['error' => 'Firestorm was just taken'], 409); }
         foreach ($lineup as $slot) {
             $stmt = $db->prepare("INSERT INTO firestorm_lineups (firestorm_id, clan_id, user_id, seed) VALUES (:f, :c, :u, :s)");
             $stmt->bindValue(':f', $fid, PDO::PARAM_INT);
@@ -229,6 +230,7 @@ switch ($action) {
             $stmt->bindValue(':ou', $ou, PDO::PARAM_INT);
             $stmt->execute();
         }
+        $db->commit();
         jsonResponse(['success' => true, 'firestorm_id' => $fid]);
         break;
 
